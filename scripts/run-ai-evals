@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-echo "AI eval runner is not wired yet."
-echo "Planned behavior: run schema, citation, advice-boundary, prompt-injection, stale-data, and ownership-isolation fixtures."
-exit 0

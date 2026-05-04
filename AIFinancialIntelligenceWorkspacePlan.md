@@ -106,7 +106,7 @@ Go REST request/response payloads are defined in OpenAPI and validated server-si
 
 ## AI Development Setup
 - Maintain project AI instructions in `AGENTS.md` and detailed workflow docs under `docs/`.
-- Use the repo-local skill scaffolds in `ai-dev/skills`: finance product guardrails, Go finance API work, Supabase schema work, Next.js fintech UI work, AI feature/eval work, and security review work.
+- Create project-specific AI skills after the initial scaffold: finance product guardrails, Go finance API work, Supabase schema work, Next.js fintech UI work, AI feature/eval work, and security review work.
 - Each skill should be concise, task-triggered, and backed by references instead of large duplicated context.
 - Keep deterministic scripts for repeatable AI-agent work: generate OpenAPI clients, validate migrations, run AI eval fixtures, seed demo finance data, and inspect unsafe AI responses.
 - Future agents must treat `docs/AI_INTEGRATION_AND_DEV_SETUP.md` as the source of truth for AI behavior, model usage, evals, and agent workflow.
@@ -127,7 +127,7 @@ Go REST request/response payloads are defined in OpenAPI and validated server-si
 4. Build portfolio, watchlist, charts, asset search, cached market-data provider, SEC filings provider.
 5. Add AI foundation: Gateway configuration, streaming chat route, tool registry, structured output schemas, citation persistence, AI quota tracking, and eval fixtures.
 6. Add AI research briefs, goal planner, gamification, usage limits, and entitlement checks.
-7. Expand project AI dev setup as implementation starts: AI feature docs, real eval scripts, skill references, and agent guardrails.
+7. Add project AI dev setup: `AGENTS.md`, AI feature docs, project-specific skill plan, eval scripts, and agent guardrails.
 8. Add Stripe Billing, Resend emails, PostHog events, Sentry, Cloudflare security notes, docs.
 9. Polish recruiter demo: seeded account, cinematic dashboard states, README architecture diagram, screenshots, test coverage report.
 

@@ -115,7 +115,7 @@ Required repo docs:
 - `docs/API_SPEC.md`: Go API and AI tool-facing contracts.
 - `docs/DATABASE_SCHEMA.md`: tables used by AI, RAG, usage, and evals.
 
-Recommended project-specific skills are scaffolded in `ai-dev/skills`:
+Recommended project-specific skills:
 - `finance-product-guardrails`: use when writing product copy, AI prompts, pricing, goals, or gamification.
 - `go-finance-api`: use when editing the Go service, OpenAPI contracts, `sqlc` queries, or finance calculations.
 - `nextjs-fintech-ui`: use when building the metal/glass dashboard, charts, responsive layouts, or AI panels.
@@ -132,12 +132,10 @@ Skill design rules:
 
 Recommended deterministic scripts:
 - `scripts/generate-openapi-client`
+- `scripts/seed-demo-finance-data`
 - `scripts/run-ai-evals`
 - `scripts/check-ai-safety-fixtures`
 - `scripts/validate-supabase-migrations`
-
-Additional scripts to add after the app scaffold exists:
-- `scripts/seed-demo-finance-data`
 - `scripts/check-public-env-leaks`
 - `scripts/snapshot-demo-prompts`
 
@@ -149,7 +147,7 @@ Additional scripts to add after the app scaffold exists:
 5. Implement filing summarizer with chunk retrieval and `pgvector`.
 6. Implement goal planner with safe gamification outputs.
 7. Add billing limits, cost tracking, and AI usage UI.
-8. Expand the existing `AGENTS.md`, project-specific skills, and deterministic placeholder scripts as the real app scaffold appears.
+8. Add `AGENTS.md`, project-specific skill plan, and deterministic AI eval scripts.
 
 ## Acceptance Criteria
 - The demo includes at least one real model call, not static AI copy.
