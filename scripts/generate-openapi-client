@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "OpenAPI client generation is not wired yet."
+echo "Planned behavior: generate the TypeScript client from the Go API OpenAPI spec into packages/contracts."
+exit 0

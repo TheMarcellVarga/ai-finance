@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "Supabase migration validation is not wired yet."
+echo "Planned behavior: validate SQL migrations, RLS expectations, vector setup, and schema drift."
+exit 0
