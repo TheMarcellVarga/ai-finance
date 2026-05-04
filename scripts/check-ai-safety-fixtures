@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "AI safety fixture checks are not wired yet."
+echo "Planned behavior: verify refusal/reframe behavior for trading-bot, buy/sell, guaranteed-return, prompt-injection, and data-exfiltration prompts."
+exit 0

@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Research Features"
+  short_description: "Build cited AI research features."
+  default_prompt: "Implement or review AI research features with tool calling, structured output, citations, RAG, usage tracking, and evals."

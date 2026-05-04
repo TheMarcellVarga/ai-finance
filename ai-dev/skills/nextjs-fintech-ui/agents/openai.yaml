@@ -1,0 +1,4 @@
+interface:
+  display_name: "Next.js Fintech UI"
+  short_description: "Build polished fintech UI safely."
+  default_prompt: "Build or review a responsive Next.js fintech UI surface with dashboard density, AI panels, and dark metal/glass styling."

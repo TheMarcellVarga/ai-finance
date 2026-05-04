@@ -12,6 +12,7 @@ Create a compact documentation layer so any AI coding agent can understand the p
 - `docs/DATABASE_SCHEMA.md`: planned relational tables, ownership model, key fields, relationships, and RLS expectations.
 - `docs/API_SPEC.md`: REST API routes, request/response expectations, auth rules, and error conventions.
 - `docs/AI_FEATURES.md`: AI research briefs, goal planner, prompt rules, structured outputs, citations, safety boundaries.
+- `docs/AI_INTEGRATION_AND_DEV_SETUP.md`: real AI runtime architecture, tool calling, RAG, evals, usage/cost controls, and project-specific AI skill setup.
 - `docs/DESIGN_SYSTEM.md`: dark metal/glass aesthetic, responsive layout rules, component choices, dashboard UX patterns.
 - `docs/SECURITY_AND_COMPLIANCE.md`: finance-specific security, auth, rate limiting, audit logs, privacy, disclaimers.
 - `docs/TESTING_STRATEGY.md`: unit, integration, AI fixture, E2E, visual, and security test coverage.
@@ -20,7 +21,8 @@ Create a compact documentation layer so any AI coding agent can understand the p
 ## Important Content Rules
 - Every doc must reinforce: this is an AI financial research and portfolio decision-support tool, not an AI trading bot.
 - `AGENTS.md` should instruct future AI agents to avoid trade execution, investment advice promises, brokerage features, and unrealistic return claims.
-- Technical docs should assume Next.js App Router, TypeScript, Supabase Postgres, Clerk, Stripe, Vercel, Upstash, Resend, PostHog, Sentry, and Vercel AI SDK.
+- AI docs must require real model integration, structured outputs, citations, persisted AI runs, safety evals, and future project-specific skills.
+- Technical docs should assume Next.js App Router, TypeScript, Go finance API, Supabase Postgres, Clerk, Stripe, Vercel, Vercel AI SDK, Vercel AI Gateway, Supabase `pgvector`, Upstash, Resend, PostHog, and Sentry.
 - Keep docs practical and implementation-oriented, not pitch-deck prose.
 
 ## Execution Order

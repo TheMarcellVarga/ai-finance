@@ -1,0 +1,4 @@
+interface:
+  display_name: "Security Review Fintech"
+  short_description: "Review fintech security risks."
+  default_prompt: "Review this fintech change for auth, financial-data privacy, AI safety, billing, API, and deployment security risks."

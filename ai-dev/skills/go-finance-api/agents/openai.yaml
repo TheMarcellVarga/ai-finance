@@ -1,0 +1,4 @@
+interface:
+  display_name: "Go Finance API"
+  short_description: "Build secure Go finance APIs."
+  default_prompt: "Implement or review a Go finance API change with auth, ownership, OpenAPI, and sqlc constraints."

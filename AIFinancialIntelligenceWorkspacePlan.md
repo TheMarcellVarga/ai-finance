@@ -3,7 +3,7 @@
 ## Summary
 Build a greenfield recruiter-grade fintech product: a cinematic public SaaS site plus an authenticated AI financial research and portfolio decision-support workspace. The product must never present itself as an AI trading bot, automated advisor, broker, or return-guarantee system.
 
-Core stack: Next.js App Router, TypeScript, Tailwind, shadcn/ui, Clerk, Supabase Postgres, Go backend service, `pgx`/`sqlc`, Stripe Billing, Vercel, Cloudflare, Upstash Redis, Resend, PostHog, Sentry, Vercel AI SDK, `lightweight-charts`, and Recharts. Use US equities/ETFs for v1.
+Core stack: Next.js App Router, TypeScript, Tailwind, shadcn/ui, Clerk, Supabase Postgres, Go backend service, `pgx`/`sqlc`, Stripe Billing, Vercel, Cloudflare, Upstash Redis, Resend, PostHog, Sentry, Vercel AI SDK, Vercel AI Gateway, Supabase `pgvector`, `lightweight-charts`, and Recharts. Use US equities/ETFs for v1.
 
 Backend decision: use Go for the dedicated finance/data backend. Keep Next.js as the web app, server-rendered product surface, authenticated BFF, AI streaming surface, and webhook entrypoint. Use Go for portfolio calculations, market-data ingestion, provider normalization, REST APIs, rate-limited finance endpoints, audit logging, and future background jobs. Python is optional later for notebooks, offline research, or specialized quant/ML experiments, but it should not be the primary backend for v1.
 
@@ -29,6 +29,7 @@ Backend decision: use Go for the dedicated finance/data backend. Keep Next.js as
 - Cloudflare handles DNS, WAF, Turnstile for public forms, bot protection, and security headers.
 - Deploy Next.js to Vercel. Deploy the Go API as a container service, preferably Google Cloud Run, Fly.io, or Railway for v1. Put it behind `api.<domain>` via Cloudflare.
 - Pinecone is deferred. Use Supabase `pgvector` first for research/document embeddings; introduce Pinecone only if retrieval scale or latency demands it.
+- AI is a first-class system layer, not a static wrapper around prompts. The Next.js AI runtime performs streaming UX, tool orchestration, structured generation, citations, eval capture, and usage accounting. See `docs/AI_INTEGRATION_AND_DEV_SETUP.md`.
 
 ## Backend Service Shape
 - Language/runtime: Go 1.23+.
@@ -54,7 +55,12 @@ Tables:
 - `transactions`: holding/portfolio id, buy/sell/deposit/withdrawal/dividend, date, amount.
 - `watchlists` and `watchlist_items`.
 - `research_documents`: asset id, source type, title, URL, fetched text, embedding status.
+- `research_chunks`: document id, chunk text, embedding vector, source locator, token count.
+- `ai_threads`: user id, title, surface, linked portfolio/watchlist/asset, status.
+- `ai_messages`: thread id, role, content, tool calls, citations, safety labels.
 - `ai_briefs`: user id, asset/portfolio id, prompt, model, output JSON, citations, token cost.
+- `ai_tool_runs`: user id, thread id, tool name, validated input JSON, output summary, latency, status.
+- `ai_evaluations`: feature, fixture name, prompt hash, expected behavior, result, model, created_at.
 - `goals`: user id, target amount, deadline, risk preference, contribution cadence, status.
 - `goal_milestones`, `challenges`, `achievements`, `user_achievements`.
 - `audit_logs`: user id, action, entity, IP hash, user agent hash.
@@ -71,8 +77,12 @@ Expose versioned REST from the Go API under `/v1`. Next.js may proxy or wrap the
 - `POST /v1/portfolios/:id/holdings`
 - `POST /v1/watchlists/:id/items`
 - `POST /v1/research/brief`
+- `POST /v1/research/documents`
+- `GET /v1/research/documents/:id/chunks`
 - `POST /v1/goals`
 - `POST /v1/goals/:id/generate-plan`
+- `GET /v1/ai/context/portfolio/:portfolioId`
+- `POST /v1/ai/tool-results`
 - `GET /v1/usage`
 - `POST /api/webhooks/stripe`
 - `POST /api/webhooks/clerk`
@@ -86,11 +96,20 @@ Go REST request/response payloads are defined in OpenAPI and validated server-si
 - Provider layer: define `MarketDataProvider`, `FilingsProvider`, and `NewsProvider` interfaces so Finnhub/Twelve Data/FMP can be added later without rewriting app code.
 
 ## AI Behavior
-- Use Vercel AI SDK for structured outputs and streaming assistant UX.
-- AI outputs must include: summary, key risks, supporting data, citations, confidence label, and “not financial advice” notice.
-- Never generate trade instructions like “buy now” or “sell immediately.” Use decision-support language: “watch,” “review,” “risk factor,” “scenario,” “tradeoff.”
-- Store AI runs, citations, model, token usage, latency, and user-facing output.
-- Guardrails: prompt-injection checks for fetched documents, max context limits, no hidden system prompt exposure, no personal financial advice framing.
+- Use Vercel AI SDK through Vercel AI Gateway for real chat, structured outputs, tool calling, and streaming UI. Direct provider SDKs are only used where Gateway does not cover the capability, such as embeddings.
+- AI product features: portfolio copilot, asset research brief, SEC filing summarizer, watchlist digest, goal planner, risk explainer, and research-room assistant.
+- AI tools call application-owned data, never raw database connections from the model: `getPortfolioSnapshot`, `getAssetProfile`, `getPriceHistory`, `getFilingChunks`, `getWatchlistMovers`, `getGoalState`, and `createGoalDraft`.
+- Structured AI outputs must include: summary, cited facts, risk factors, assumptions, confidence label, data freshness, refusal/safety state, and “not financial advice” notice.
+- Store AI threads, messages, tool runs, citations, model, token usage, latency, retrieved context, safety labels, and user-facing output.
+- Guardrails: prompt-injection checks for fetched documents, max context limits, no hidden system prompt exposure, no personal financial advice framing, no trade execution, no guaranteed return claims.
+- Add AI eval fixtures before launch: schema validity, citation presence, refusal of trading-bot prompts, portfolio ownership isolation, prompt-injection resistance, stale-data disclosure, and goal-plan compliance.
+
+## AI Development Setup
+- Maintain project AI instructions in `AGENTS.md` and detailed workflow docs under `docs/`.
+- Create project-specific AI skills after the initial scaffold: finance product guardrails, Go finance API work, Supabase schema work, Next.js fintech UI work, AI feature/eval work, and security review work.
+- Each skill should be concise, task-triggered, and backed by references instead of large duplicated context.
+- Keep deterministic scripts for repeatable AI-agent work: generate OpenAPI clients, validate migrations, run AI eval fixtures, seed demo finance data, and inspect unsafe AI responses.
+- Future agents must treat `docs/AI_INTEGRATION_AND_DEV_SETUP.md` as the source of truth for AI behavior, model usage, evals, and agent workflow.
 
 ## Security
 - Clerk session validation on all app routes and APIs.
@@ -106,15 +125,18 @@ Go REST request/response payloads are defined in OpenAPI and validated server-si
 2. Add Clerk auth, onboarding, protected app layout, Supabase setup, SQL migrations, seed data.
 3. Scaffold the Go API service with health checks, Clerk JWT middleware, Postgres connection, OpenAPI, and CI test commands.
 4. Build portfolio, watchlist, charts, asset search, cached market-data provider, SEC filings provider.
-5. Add AI research briefs, goal planner, gamification, usage limits, and entitlement checks.
-6. Add Stripe Billing, Resend emails, PostHog events, Sentry, Cloudflare security notes, docs.
-7. Polish recruiter demo: seeded account, cinematic dashboard states, README architecture diagram, screenshots, test coverage report.
+5. Add AI foundation: Gateway configuration, streaming chat route, tool registry, structured output schemas, citation persistence, AI quota tracking, and eval fixtures.
+6. Add AI research briefs, goal planner, gamification, usage limits, and entitlement checks.
+7. Add project AI dev setup: `AGENTS.md`, AI feature docs, project-specific skill plan, eval scripts, and agent guardrails.
+8. Add Stripe Billing, Resend emails, PostHog events, Sentry, Cloudflare security notes, docs.
+9. Polish recruiter demo: seeded account, cinematic dashboard states, README architecture diagram, screenshots, test coverage report.
 
 ## Test Plan
 - Unit: Zod schemas, Go finance calculations, goal planner, entitlement logic, provider normalization.
 - Integration: Go REST APIs, `sqlc` queries, Supabase migrations, Stripe webhook lifecycle, Clerk webhook sync.
 - Contract: OpenAPI schema validation and generated TypeScript client compatibility.
 - AI fixtures: structured output validity, citation persistence, refusal of trading-bot prompts, prompt-injection samples.
+- AI evals: run curated prompts against portfolio copilot, filing summarizer, goal planner, and risk explainer; fail CI if schemas break, citations disappear, or advice boundaries are violated.
 - E2E: landing page, pricing, sign-up, onboarding, create portfolio, add holding, generate AI brief, create goal, upgrade billing.
 - Visual/responsive: mobile, 13-inch laptop, 16-inch laptop, wide desktop, dark mode contrast, dashboard chart overflow.
 - Security checks: dependency audit, secret scanning, auth bypass tests, rate-limit tests, webhook signature failure tests.
@@ -126,5 +148,6 @@ Go REST request/response payloads are defined in OpenAPI and validated server-si
 - Supabase Postgres is preferred over Firebase because relational finance data is central.
 - Go is the primary backend language for finance/data APIs. Next.js remains the frontend, BFF, AI UX, and webhook layer.
 - Python is not part of the v1 request path unless a specific quant or ML need appears.
+- Real AI integration is mandatory for v1: no fake “AI” cards, static summaries, or hard-coded assistant outputs in the recruiter demo.
 - Product is decision-support only, not brokerage, trade execution, or regulated investment advice.
-- Current source checks: Supabase billing/docs, Clerk pricing, Stripe Billing, SEC EDGAR APIs, Alpha Vantage support/rate limits, Upstash pricing, Pinecone pricing, and local Vercel Next.js/AI SDK/shadcn guidance.
+- Current source checks: Supabase billing/docs, Clerk pricing, Stripe Billing, SEC EDGAR APIs, Alpha Vantage support/rate limits, Upstash pricing, Pinecone pricing, Vercel AI SDK docs, OpenAI structured output/tool-calling docs, and local Vercel Next.js/AI SDK/shadcn guidance.

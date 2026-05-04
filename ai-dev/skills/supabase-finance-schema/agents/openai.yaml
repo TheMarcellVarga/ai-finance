@@ -1,0 +1,4 @@
+interface:
+  display_name: "Supabase Finance Schema"
+  short_description: "Design secure finance schemas."
+  default_prompt: "Design or review Supabase finance schema, migrations, RLS, vector search, and data privacy changes."
