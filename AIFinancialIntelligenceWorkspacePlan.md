@@ -11,6 +11,8 @@ Backend decision: use Go for the dedicated finance/data backend. Keep Next.js as
 - Marketing: `/`, `/product`, `/pricing`, `/security`, `/blog`, `/terms`, `/privacy`.
 - App: `/app`, `/app/portfolio`, `/app/research`, `/app/goals`, `/app/watchlist`, `/app/risk`, `/app/settings`, `/app/billing`.
 - Hero aesthetic: dark metal/glass, cinematic depth, subtle market-map visuals, dense dashboard previews, premium fintech tone. Responsive layouts for mobile, laptop, wide desktop.
+- Product and marketing pages should use licensed stock imagery and short stock video loops where they strengthen the product story: abstract market infrastructure, analysts at work, financial data walls, premium workstation shots, glass/metal UI closeups, and subtle motion backgrounds.
+- Generate an original logo and brand asset set for the product before implementation polish: wordmark, icon mark, favicon, app icon, social preview image, and dark/light-safe variants.
 - Main dashboard: portfolio value, allocation, volatility proxy, sector exposure, watchlist movers, saved AI briefs, goal progress, and risk warnings.
 - AI research: prompt-based market questions, company/ETF research briefs, SEC filing summaries, watchlist summaries, and portfolio risk explanations with citations.
 - Goals/gamification: user defines target amount, time horizon, contribution cadence, and risk preference; app generates milestones, challenges, achievements, streaks, and progress states.
@@ -111,6 +113,13 @@ Go REST request/response payloads are defined in OpenAPI and validated server-si
 - Keep deterministic scripts for repeatable AI-agent work: generate OpenAPI clients, validate migrations, run AI eval fixtures, seed demo finance data, and inspect unsafe AI responses.
 - Future agents must treat `docs/AI_INTEGRATION_AND_DEV_SETUP.md` as the source of truth for AI behavior, model usage, evals, and agent workflow.
 
+## Brand And Media Direction
+- Brand should feel like a premium AI finance terminal: precise, dark, cinematic, analytical, and trustworthy.
+- Use stock photos/videos only when they reveal relevant context: trading/research desks, data centers, abstract financial markets, analysts reviewing dashboards, or macro city/finance imagery. Avoid generic smiling office stock photos.
+- Keep video subtle and performance-safe: short muted loops, compressed assets, poster images, no autoplay dependency for core messaging, and reduced-motion fallbacks.
+- Generate logo concepts with AI image generation, then convert the selected direction into production assets. Avoid using generated raster text as the final wordmark; recreate final typography/vector assets in code or design tooling.
+- Store final media under a documented asset structure after the app scaffold exists, with source/license notes for all stock assets.
+
 ## Security
 - Clerk session validation on all app routes and APIs.
 - Stripe webhook signature verification; Clerk webhook verification.
@@ -121,7 +130,7 @@ Go REST request/response payloads are defined in OpenAPI and validated server-si
 - Add visible disclaimers on AI research, goals, projections, risk panels, and pricing pages.
 
 ## Build Phases
-1. Scaffold Next.js app, design system, landing page, pricing, security page, footer/header, responsive shell.
+1. Define brand direction, generate logo concepts, collect licensed stock image/video candidates, then scaffold Next.js app, design system, landing page, pricing, security page, footer/header, responsive shell.
 2. Add Clerk auth, onboarding, protected app layout, Supabase setup, SQL migrations, seed data.
 3. Scaffold the Go API service with health checks, Clerk JWT middleware, Postgres connection, OpenAPI, and CI test commands.
 4. Build portfolio, watchlist, charts, asset search, cached market-data provider, SEC filings provider.
@@ -139,6 +148,7 @@ Go REST request/response payloads are defined in OpenAPI and validated server-si
 - AI evals: run curated prompts against portfolio copilot, filing summarizer, goal planner, and risk explainer; fail CI if schemas break, citations disappear, or advice boundaries are violated.
 - E2E: landing page, pricing, sign-up, onboarding, create portfolio, add holding, generate AI brief, create goal, upgrade billing.
 - Visual/responsive: mobile, 13-inch laptop, 16-inch laptop, wide desktop, dark mode contrast, dashboard chart overflow.
+- Media QA: verify stock images/videos load, have fallbacks, do not harm Core Web Vitals, respect reduced-motion preferences, and have clear license/source notes.
 - Security checks: dependency audit, secret scanning, auth bypass tests, rate-limit tests, webhook signature failure tests.
 
 ## Assumptions
@@ -149,5 +159,6 @@ Go REST request/response payloads are defined in OpenAPI and validated server-si
 - Go is the primary backend language for finance/data APIs. Next.js remains the frontend, BFF, AI UX, and webhook layer.
 - Python is not part of the v1 request path unless a specific quant or ML need appears.
 - Real AI integration is mandatory for v1: no fake “AI” cards, static summaries, or hard-coded assistant outputs in the recruiter demo.
+- Brand/logo generation and licensed stock image/video selection are part of the product polish plan, but stock assets must be license-safe and performance-optimized.
 - Product is decision-support only, not brokerage, trade execution, or regulated investment advice.
 - Current source checks: Supabase billing/docs, Clerk pricing, Stripe Billing, SEC EDGAR APIs, Alpha Vantage support/rate limits, Upstash pricing, Pinecone pricing, Vercel AI SDK docs, OpenAI structured output/tool-calling docs, and local Vercel Next.js/AI SDK/shadcn guidance.

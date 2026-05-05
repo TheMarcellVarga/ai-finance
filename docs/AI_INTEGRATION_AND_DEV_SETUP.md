@@ -123,6 +123,12 @@ Recommended project-specific skills are scaffolded in `ai-dev/skills`:
 - `ai-research-features`: use when changing prompts, tool calling, RAG, structured outputs, citations, or evals.
 - `security-review-fintech`: use before merging auth, billing, portfolio, AI, or financial-data changes.
 
+External frontend quality skill:
+- Taste Skill by Leon Lin should be used as an optional frontend taste layer during UI implementation, redesign, and screenshot-to-code work.
+- Prefer `gpt-tasteskill` or `taste-skill` for premium frontend execution; consider `image-to-code-skill` when implementing from the inspiration screenshot.
+- Taste Skill is not the source of truth for finance behavior, compliance boundaries, backend architecture, AI safety, or data security. Use it together with `nextjs-fintech-ui`, `finance-product-guardrails`, and `security-review-fintech`.
+- Install when implementation starts with `npx skills add https://github.com/Leonxlnx/taste-skill`, then select the relevant included skill variant for the task.
+
 Skill design rules:
 - Keep each `SKILL.md` concise and task-triggered.
 - Put detailed schemas, prompt examples, and policies in `references/` files.
@@ -165,3 +171,5 @@ Additional scripts to add after the app scaffold exists:
 - Vercel AI SDK structured data: https://ai-sdk.dev/docs/ai-sdk-core/generating-structured-data
 - OpenAI structured outputs: https://platform.openai.com/docs/guides/structured-outputs
 - OpenAI function calling: https://platform.openai.com/docs/guides/function-calling
+- Taste Skill: https://www.tasteskill.dev/
+- Taste Skill GitHub: https://github.com/Leonxlnx/taste-skill
