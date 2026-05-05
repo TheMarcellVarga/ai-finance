@@ -6,11 +6,14 @@ This repo is for an AI Financial Intelligence Workspace: a fintech/wealthtech re
 Future agents must keep the product recruiter-grade: real data flows, real AI integration, secure backend boundaries, polished responsive UI, and clear finance compliance judgment.
 
 ## Source Of Truth
-Before implementing product, backend, AI, schema, or security work, read the relevant docs:
-- `AIFinancialIntelligenceWorkspacePlan.md`
-- `docs/AI_INTEGRATION_AND_DEV_SETUP.md`
-- `docs/BACKEND_DECISION.md`
-- `AIProjectMarkdownDocsPlan.md`
+Before implementing product, backend, AI, schema, or security work, read the relevant docs in this order:
+1. `docs/MASTER_EXECUTION_ROADMAP.md`
+2. `AIFinancialIntelligenceWorkspacePlan.md`
+3. `docs/AI_INTEGRATION_AND_DEV_SETUP.md`
+4. `docs/BACKEND_DECISION.md`
+5. `AIProjectMarkdownDocsPlan.md`
+
+`docs/MASTER_EXECUTION_ROADMAP.md` is the execution authority. Follow its phase order, dependency rules, skill routing, task template, and acceptance gates unless the user explicitly updates the roadmap.
 
 Use `ai-dev/skills` as the repo-local skill source for future AI-assisted implementation. These skills are scaffolds for planning and should be installed or copied into the active agent skill path only when implementation starts.
 
@@ -44,6 +47,9 @@ Use `ai-dev/skills` as the repo-local skill source for future AI-assisted implem
 - Stripe and Clerk webhooks require signature verification.
 
 ## Working Style
+- Start every implementation task by identifying the roadmap phase and primary/support skill.
+- Do not skip ahead to later roadmap phases unless the current phase acceptance gate is already satisfied or the user explicitly changes priorities.
+- If a requested task conflicts with the roadmap order, update or clarify the roadmap before implementing.
 - Prefer implementation decisions already documented in this repo over inventing new architecture.
 - If a plan is ambiguous, update the docs before implementation.
 - Keep future changes scoped: no unrelated refactors, no hidden trading-bot features, and no unreviewed provider changes.

@@ -109,6 +109,7 @@ Create a first-class AI development environment so future agents can work safely
 
 Required repo docs:
 - `AGENTS.md`: top-level rules for AI agents working in this repo.
+- `docs/MASTER_EXECUTION_ROADMAP.md`: primary execution authority for phase order, task routing, dependencies, and acceptance gates.
 - `docs/AI_INTEGRATION_AND_DEV_SETUP.md`: source of truth for AI product behavior and agent workflow.
 - `docs/AI_FEATURES.md`: detailed schemas, prompts, tools, and UI rendering rules.
 - `docs/SECURITY_AND_COMPLIANCE.md`: finance safety, data privacy, auth, and audit rules.

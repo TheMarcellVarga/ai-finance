@@ -8,6 +8,7 @@ Create a compact documentation layer so any AI coding agent can understand the p
 - `AGENTS.md`: instructions for AI agents working in this repo, including product boundaries, coding standards, security rules, and what not to build.
 - `docs/PRODUCT_SPEC.md`: target users, product positioning, feature set, monetization, non-goals, and compliance-safe language.
 - `docs/IMPLEMENTATION_PLAN.md`: phased build roadmap from scaffold to recruiter-ready demo.
+- `docs/MASTER_EXECUTION_ROADMAP.md`: master timeline, AI task orchestration model, phase gates, skill routing, dependencies, and done definitions.
 - `docs/ARCHITECTURE.md`: Next.js/Vercel/Supabase/Clerk/Stripe/Upstash/AI SDK architecture and data flow.
 - `docs/DATABASE_SCHEMA.md`: planned relational tables, ownership model, key fields, relationships, and RLS expectations.
 - `docs/API_SPEC.md`: REST API routes, request/response expectations, auth rules, and error conventions.

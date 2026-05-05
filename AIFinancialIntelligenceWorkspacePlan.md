@@ -32,6 +32,7 @@ Backend decision: use Go for the dedicated finance/data backend. Keep Next.js as
 - Deploy Next.js to Vercel. Deploy the Go API as a container service, preferably Google Cloud Run, Fly.io, or Railway for v1. Put it behind `api.<domain>` via Cloudflare.
 - Pinecone is deferred. Use Supabase `pgvector` first for research/document embeddings; introduce Pinecone only if retrieval scale or latency demands it.
 - AI is a first-class system layer, not a static wrapper around prompts. The Next.js AI runtime performs streaming UX, tool orchestration, structured generation, citations, eval capture, and usage accounting. See `docs/AI_INTEGRATION_AND_DEV_SETUP.md`.
+- Execute the project through `docs/MASTER_EXECUTION_ROADMAP.md`, which is the execution authority for phase order, skill routing, dependencies, and acceptance gates.
 
 ## Backend Service Shape
 - Language/runtime: Go 1.23+.
@@ -130,6 +131,8 @@ Go REST request/response payloads are defined in OpenAPI and validated server-si
 - Add visible disclaimers on AI research, goals, projections, risk panels, and pricing pages.
 
 ## Build Phases
+Use `docs/MASTER_EXECUTION_ROADMAP.md` as the detailed timeline and orchestration plan. The summary phases are:
+
 1. Define brand direction, generate logo concepts, collect licensed stock image/video candidates, then scaffold Next.js app, design system, landing page, pricing, security page, footer/header, responsive shell.
 2. Add Clerk auth, onboarding, protected app layout, Supabase setup, SQL migrations, seed data.
 3. Scaffold the Go API service with health checks, Clerk JWT middleware, Postgres connection, OpenAPI, and CI test commands.
