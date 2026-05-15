@@ -12,23 +12,23 @@ const navItems = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-20 border-b border-white/10 bg-zinc-950/72 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-20 px-3 pt-3">
+      <div className="glass-surface mx-auto flex h-16 w-full max-w-7xl items-center justify-between rounded-full px-4 sm:px-5 lg:px-6">
         <BrandMark />
-        <nav className="hidden items-center gap-7 text-sm text-zinc-400 md:flex">
+        <nav className="hidden items-center rounded-full bg-black/24 p-1 text-sm text-zinc-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:flex">
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="transition hover:text-white">
+            <Link key={item.href} href={item.href} className="rounded-full px-4 py-2 transition hover:bg-white/[0.07] hover:text-white">
               {item.label}
             </Link>
           ))}
         </nav>
-        <Button asChild size="lg" className="hidden bg-cyan-200 text-zinc-950 hover:bg-cyan-100 md:inline-flex">
+        <Button asChild size="lg" className="hidden rounded-full bg-cyan-200 px-5 text-zinc-950 shadow-[0_16px_44px_rgba(103,232,249,0.16)] hover:bg-cyan-100 md:inline-flex">
           <Link href="/app">
             Open workspace
             <ArrowRight data-icon="inline-end" />
           </Link>
         </Button>
-        <Button asChild size="sm" variant="outline" className="border-white/15 bg-white/[0.03] text-white md:hidden">
+        <Button asChild size="sm" className="rounded-full bg-white/[0.04] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-white/10 md:hidden">
           <Link href="/app">Workspace</Link>
         </Button>
       </div>

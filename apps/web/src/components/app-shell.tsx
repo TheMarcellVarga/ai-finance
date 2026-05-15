@@ -18,15 +18,17 @@ const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-dvh bg-zinc-950 text-white">
-      <aside className="fixed inset-y-0 left-0 hidden w-72 border-r border-white/10 bg-zinc-950/90 p-5 lg:block">
-        <BrandMark />
-        <nav className="mt-10 space-y-1">
+    <div className="page-stage min-h-dvh bg-zinc-950 text-white">
+      <aside className="fixed inset-y-4 left-4 hidden w-72 rounded-[2rem] bg-zinc-950/68 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_32px_90px_rgba(0,0,0,0.42)] backdrop-blur-2xl lg:block">
+        <div className="glass-surface rounded-[1.5rem] p-3">
+          <BrandMark />
+        </div>
+        <nav className="mt-6 space-y-2">
           {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-zinc-400 transition hover:bg-white/[0.06] hover:text-white"
+              className="glass-hover flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-zinc-400 transition hover:bg-white/[0.06] hover:text-white"
             >
               <item.icon className="size-4 text-cyan-200/70" />
               {item.label}
@@ -34,16 +36,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
       </aside>
-      <div className="lg:pl-72">
-        <header className="sticky top-0 z-10 border-b border-white/10 bg-zinc-950/75 px-4 py-4 backdrop-blur-xl lg:hidden">
+      <div className="lg:pl-80">
+        <header className="sticky top-0 z-10 px-3 py-3 lg:hidden">
+          <div className="glass-surface rounded-[1.5rem] p-4">
           <BrandMark />
           <nav className="mt-4 flex gap-2 overflow-x-auto pb-1 text-sm text-zinc-400">
             {nav.slice(0, 6).map((item) => (
-              <Link key={item.href} href={item.href} className="shrink-0 rounded-md border border-white/10 px-3 py-1.5">
+              <Link key={item.href} href={item.href} className="shrink-0 rounded-full bg-white/[0.035] px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                 {item.label}
               </Link>
             ))}
           </nav>
+          </div>
         </header>
         <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
       </div>
