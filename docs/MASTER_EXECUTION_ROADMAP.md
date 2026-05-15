@@ -47,7 +47,7 @@ Assume a focused solo/AI-assisted build. Compress or expand based on available t
 | 8. Polish And Portfolio Case Study | 5-10 days | Brand assets, stock media, mobile pass, screenshots, README, architecture diagram, demo video. |
 
 ## Phase 0: Control Plane
-Status: mostly scaffolded.
+Status: complete.
 
 Deliverables:
 - `AGENTS.md`
@@ -55,6 +55,7 @@ Deliverables:
 - `docs/MASTER_EXECUTION_ROADMAP.md`
 - `ai-dev/skills/*`
 - placeholder scripts for OpenAPI generation, AI evals, migration validation, and AI safety fixtures
+- documentation map: `README.md`, product, implementation, architecture, database, API, AI, design, security, testing, and environment docs
 
 Acceptance gate:
 - All skill folders validate.
@@ -62,6 +63,8 @@ Acceptance gate:
 - No app implementation has started before product/brand decisions are locked.
 
 ## Phase 1: Product And Brand Lock
+Status: drafted.
+
 Primary skills: `finance-product-guardrails`, `nextjs-fintech-ui`, Taste Skill.
 
 Deliverables:
@@ -81,6 +84,8 @@ Acceptance gate:
 - Logo/media direction is specific enough to generate assets.
 
 ## Phase 2: App Scaffold And Design System
+Status: in progress.
+
 Primary skills: `nextjs-fintech-ui`, Taste Skill.
 
 Deliverables:
