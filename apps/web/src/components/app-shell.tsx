@@ -19,7 +19,7 @@ const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="page-stage min-h-dvh bg-zinc-950 text-white">
-      <aside className="fixed inset-y-4 left-4 hidden w-72 rounded-[1.2rem] bg-zinc-950/48 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_28px_76px_rgba(0,0,0,0.38)] backdrop-blur-2xl lg:block">
+      <aside className="fixed inset-y-4 left-4 hidden w-72 rounded-[1.2rem] border border-white/10 bg-zinc-950/56 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_28px_76px_rgba(0,0,0,0.42)] backdrop-blur-2xl lg:block">
         <div className="glass-surface rounded-[1rem] p-3">
           <BrandMark />
         </div>
@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link
               key={item.href}
               href={item.href}
-              className="glass-hover flex items-center gap-3 rounded-[0.95rem] border border-transparent px-3 py-2.5 text-sm text-zinc-400 transition-[background-color,color,border-color,box-shadow] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-white/10 hover:text-white"
+              className="glass-hover flex items-center gap-3 rounded-[0.95rem] border border-transparent px-3 py-2.5 text-sm text-zinc-400 transition-[background-color,color,border-color,box-shadow] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-cyan-200/15 hover:text-cyan-50"
             >
               <item.icon className="size-4 text-cyan-200/70" />
               {item.label}
@@ -42,7 +42,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <BrandMark />
           <nav className="mt-4 flex gap-2 overflow-x-auto pb-1 text-sm text-zinc-400">
             {nav.slice(0, 6).map((item) => (
-              <Link key={item.href} href={item.href} className="shrink-0 rounded-[0.85rem] bg-white/[0.035] px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
+              <Link key={item.href} href={item.href} className="shrink-0 rounded-[0.85rem] border border-white/10 bg-white/[0.025] px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-[background-color,color,border-color,box-shadow] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-cyan-200/15 hover:bg-black/25 hover:text-cyan-50">
                 {item.label}
               </Link>
             ))}

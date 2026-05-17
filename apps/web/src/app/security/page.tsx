@@ -14,7 +14,9 @@ export default function SecurityPage() {
   return (
     <MarketingPage>
       <section className="page-stage px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(103,232,249,0.14),transparent_24rem),radial-gradient(circle_at_76%_22%,rgba(39,39,42,0.7),transparent_28rem),linear-gradient(180deg,rgba(9,9,11,0),rgba(9,9,11,0.62)_76%)]" />
+        <div className="pointer-events-none cinematic-grid absolute inset-0 opacity-35" />
+        <div className="relative z-10 mx-auto max-w-7xl">
           <div className="section-shell rounded-[1.25rem] p-6 sm:p-10 lg:p-12">
             <div className="grid gap-10 lg:grid-cols-[0.92fr_1.08fr]">
               <div className="max-w-3xl">
@@ -31,7 +33,7 @@ export default function SecurityPage() {
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 {controls.map((control) => (
-                  <article key={control.title} className="glass-surface rounded-[1.15rem] p-6">
+                  <article key={control.title} className="glass-hover glass-surface rounded-[1.15rem] p-6">
                     <control.icon className="size-5 text-cyan-200" />
                     <h2 className="type-card-title mt-6 text-xl text-white">{control.title}</h2>
                     <p className="mt-3 text-sm leading-6 text-zinc-400">{control.body}</p>

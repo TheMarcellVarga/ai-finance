@@ -25,8 +25,8 @@ const footerGroups = [
 
 export function SiteFooter() {
   return (
-    <footer className="relative bg-zinc-950/80 px-3 pb-3">
-      <div className="section-shell relative mx-auto w-full max-w-7xl overflow-hidden rounded-[1.35rem] px-5 py-7 text-sm text-zinc-500 sm:px-8 sm:py-8">
+    <footer className="relative bg-zinc-950/88 px-3 pb-3">
+      <div className="section-shell relative mx-auto w-full max-w-7xl overflow-hidden rounded-[1.35rem] border border-white/10 px-5 py-7 text-sm text-zinc-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_30px_90px_rgba(0,0,0,0.38)] sm:px-8 sm:py-8">
         <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/28 to-transparent" />
         <div className="grid gap-8 lg:grid-cols-[1.25fr_1fr] lg:items-start">
           <div className="space-y-5">
@@ -63,7 +63,7 @@ export function SiteFooter() {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className="rounded-[0.7rem] px-0 py-1.5 text-zinc-400 transition-[color,background-color] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-white/[0.03] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/35 sm:px-1"
+                      className="rounded-[0.7rem] border border-transparent px-0 py-1.5 text-zinc-400 transition-[background-color,color,border-color,box-shadow] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-cyan-200/15 hover:bg-black/25 hover:text-cyan-50 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.055)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/35 sm:px-2"
                     >
                       {link.label}
                     </Link>
