@@ -40,7 +40,7 @@ export function SiteFooter() {
               <Button
                 asChild
                 size="lg"
-                className="rounded-[0.95rem] bg-cyan-200 px-5 text-zinc-950 shadow-[0_18px_48px_rgba(103,232,249,0.12)] hover:bg-cyan-100/90 hover:shadow-[0_18px_36px_rgba(103,232,249,0.1)]"
+                className="rounded-[0.95rem] px-5"
               >
                 <Link href="/app">
                   Open workspace

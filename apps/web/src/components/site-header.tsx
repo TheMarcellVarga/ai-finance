@@ -29,7 +29,7 @@ export function SiteHeader() {
         <Button
           asChild
           size="lg"
-          className="hidden rounded-[0.95rem] bg-cyan-200 px-5 text-zinc-950 shadow-[0_16px_44px_rgba(103,232,249,0.14)] hover:bg-cyan-100/90 hover:shadow-[0_16px_36px_rgba(103,232,249,0.12)] md:inline-flex"
+          className="hidden rounded-[0.95rem] px-5 md:inline-flex"
         >
           <Link href="/app">
             Open workspace
@@ -39,7 +39,8 @@ export function SiteHeader() {
         <Button
           asChild
           size="sm"
-          className="rounded-[0.9rem] border border-white/10 bg-white/[0.025] text-zinc-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl hover:border-white/15 hover:bg-white/[0.04] hover:text-white md:hidden"
+          variant="outline"
+          className="rounded-[0.9rem] md:hidden"
         >
           <Link href="/app">Workspace</Link>
         </Button>

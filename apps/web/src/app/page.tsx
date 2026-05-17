@@ -43,7 +43,7 @@ export default function Home() {
             assumptions, and data freshness.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Button asChild size="lg" className="rounded-[0.95rem] bg-cyan-200 px-5 text-zinc-950 shadow-[0_18px_50px_rgba(103,232,249,0.14)] hover:bg-cyan-100/90 hover:shadow-[0_18px_42px_rgba(103,232,249,0.12)]">
+            <Button asChild size="lg" className="rounded-[0.95rem] px-5">
               <Link href="/app">
                 Open workspace scaffold
                 <ArrowRight data-icon="inline-end" />
@@ -52,7 +52,8 @@ export default function Home() {
             <Button
               asChild
               size="lg"
-              className="rounded-[0.95rem] border border-white/10 bg-white/[0.025] px-5 text-zinc-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl hover:border-white/15 hover:bg-white/[0.04] hover:text-white"
+              variant="outline"
+              className="rounded-[0.95rem] px-5"
             >
               <Link href="/product">Review product plan</Link>
             </Button>
