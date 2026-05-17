@@ -33,7 +33,7 @@ export default function ProductPage() {
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 {features.map((feature, index) => (
-                  <article key={feature.title} className="glass-surface glass-hover rounded-[1.15rem] p-6">
+                  <article key={feature.title} className="glass-surface rounded-[1.15rem] p-6">
                     <div className="flex items-start justify-between gap-3">
                       <feature.icon className="size-5 text-cyan-200" />
                       <span className="rounded-full bg-cyan-200/8 px-2.5 py-1 text-[0.62rem] uppercase tracking-[0.12em] text-cyan-100">

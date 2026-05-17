@@ -25,7 +25,7 @@ export default function PricingPage() {
             </div>
             <div className="mt-12 grid gap-4 lg:grid-cols-4">
               {tiers.map(([name, price, portfolios, briefs, scope], index) => (
-                <article key={name} className={`glass-surface glass-hover rounded-[1.15rem] p-6 ${index === 1 ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_26px_78px_rgba(103,232,249,0.09)]" : ""}`}>
+                <article key={name} className={`glass-surface rounded-[1.15rem] p-6 ${index === 1 ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_26px_78px_rgba(103,232,249,0.09)]" : ""}`}>
                   <div className="flex items-start justify-between gap-3">
                     <h2 className="text-lg font-semibold text-white">{name}</h2>
                     <span className="rounded-full bg-white/[0.04] px-2.5 py-1 text-[0.62rem] uppercase tracking-[0.12em] text-zinc-500">

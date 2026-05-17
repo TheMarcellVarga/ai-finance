@@ -61,7 +61,7 @@ export default function Home() {
             ].map((item) => {
               const Icon = item.icon;
               return (
-                <span key={item.label} className="glass-hover flex items-center justify-between gap-3 rounded-[1rem] bg-white/[0.035] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-xl">
+                <span key={item.label} className="flex items-center justify-between gap-3 rounded-[1rem] bg-white/[0.035] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-xl">
                   <span className="flex items-center gap-2">
                     <Icon className="size-4 text-cyan-200" />
                     {item.label}
@@ -82,7 +82,7 @@ export default function Home() {
           {pillars.map((pillar) => {
             const Icon = pillar.icon;
             return (
-              <article key={pillar.title} className="glass-surface glass-hover rounded-[1.15rem] p-6">
+              <article key={pillar.title} className="glass-surface rounded-[1.15rem] p-6">
                 <Icon className="size-5 text-cyan-200" />
                 <h2 className="mt-5 text-lg font-semibold text-white">{pillar.title}</h2>
                 <p className="mt-3 text-sm leading-6 text-zinc-400">{pillar.body}</p>

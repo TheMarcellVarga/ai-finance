@@ -46,7 +46,7 @@ export function MarketShell() {
         </div>
         <div className="relative mt-5 grid grid-cols-2 gap-3 2xl:grid-cols-4">
           {metrics.map(([label, value, meta, status]) => (
-            <div key={label} className="glass-hover min-w-0 rounded-[1rem] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
+            <div key={label} className="min-w-0 rounded-[1rem] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
               <div className="flex items-start justify-between gap-2">
                 <p className="text-xs text-zinc-500">{label}</p>
                 <span className="rounded-full bg-black/20 px-2 py-0.5 text-[0.62rem] uppercase tracking-[0.12em] text-zinc-500">{status}</span>
@@ -57,7 +57,7 @@ export function MarketShell() {
           ))}
         </div>
         <div className="relative mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="glass-hover rounded-[1.15rem] bg-white/[0.035] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
+          <div className="rounded-[1.15rem] bg-white/[0.035] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-white">Allocation review</p>
@@ -81,7 +81,7 @@ export function MarketShell() {
               ))}
             </div>
           </div>
-          <div className="glass-hover rounded-[1.15rem] bg-white/[0.035] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
+          <div className="rounded-[1.15rem] bg-white/[0.035] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm font-medium text-white">
                 <Sparkles className="size-4 text-cyan-200" />
@@ -93,7 +93,7 @@ export function MarketShell() {
               {workstream.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <div key={item.label} className="rounded-[0.9rem] bg-zinc-950/28 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition hover:-translate-y-0.5 hover:bg-white/[0.06]">
+                  <div key={item.label} className="rounded-[0.9rem] bg-zinc-950/28 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                     <div className="flex items-start justify-between gap-3">
                     <span className="flex items-start gap-2 text-xs text-zinc-300">
                       <Icon className="mt-0.5 size-3.5 text-cyan-200/80" />

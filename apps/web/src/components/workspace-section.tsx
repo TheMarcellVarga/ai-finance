@@ -22,7 +22,7 @@ export function WorkspaceSection({ eyebrow, title, body }: WorkspaceSectionProps
       </div>
       <div className="mt-10 grid gap-4 md:grid-cols-3">
         {phaseItems.map(([item, affordance, state], index) => (
-          <div key={item} className="glass-surface glass-hover rounded-[1.15rem] p-6">
+          <div key={item} className="glass-surface rounded-[1.15rem] p-6">
             <div className="flex items-start justify-between gap-3">
               <p className="font-mono text-xs text-cyan-100">0{index + 1}</p>
               <span className="rounded-full bg-white/[0.04] px-2.5 py-1 text-[0.62rem] uppercase tracking-[0.12em] text-zinc-500">{state}</span>

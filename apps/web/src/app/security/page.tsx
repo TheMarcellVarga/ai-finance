@@ -31,7 +31,7 @@ export default function SecurityPage() {
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 {controls.map((control) => (
-                  <article key={control.title} className="glass-surface glass-hover rounded-[1.15rem] p-6">
+                  <article key={control.title} className="glass-surface rounded-[1.15rem] p-6">
                     <control.icon className="size-5 text-cyan-200" />
                     <h2 className="mt-6 text-xl font-semibold text-white">{control.title}</h2>
                     <p className="mt-3 text-sm leading-6 text-zinc-400">{control.body}</p>
