@@ -16,10 +16,10 @@ export default function PricingPage() {
         <div className="mx-auto max-w-7xl">
           <div className="section-shell rounded-[1.25rem] p-6 sm:p-10 lg:p-12">
             <div className="max-w-4xl">
-              <p className="inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase tracking-[0.24em] text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+              <p className="type-label inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                 Pricing
               </p>
-              <h1 className="mt-6 text-balance text-4xl font-semibold tracking-tight text-white sm:text-6xl">
+              <h1 className="type-display mt-6 text-balance text-4xl text-white sm:text-6xl">
                 Research entitlements without trading incentives.
               </h1>
             </div>
@@ -27,7 +27,7 @@ export default function PricingPage() {
               {tiers.map(([name, price, portfolios, briefs, scope], index) => (
                 <article key={name} className={`glass-surface rounded-[1.15rem] p-6 ${index === 1 ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_26px_78px_rgba(103,232,249,0.09)]" : ""}`}>
                   <div className="flex items-start justify-between gap-3">
-                    <h2 className="text-lg font-semibold text-white">{name}</h2>
+                    <h2 className="type-card-title text-lg text-white">{name}</h2>
                     <span className="rounded-full bg-white/[0.04] px-2.5 py-1 text-[0.62rem] uppercase tracking-[0.12em] text-zinc-500">
                       Research
                     </span>

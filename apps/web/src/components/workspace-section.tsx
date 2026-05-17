@@ -14,8 +14,8 @@ export function WorkspaceSection({ eyebrow, title, body }: WorkspaceSectionProps
   return (
     <section className="section-shell rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
       <div className="max-w-3xl">
-        <p className="inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase tracking-[0.24em] text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">{eyebrow}</p>
-        <h1 className="mt-6 text-3xl font-semibold tracking-tight text-white sm:text-5xl">
+        <p className="type-label inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">{eyebrow}</p>
+        <h1 className="type-display mt-6 text-3xl text-white sm:text-5xl">
           {title}
         </h1>
         <p className="mt-4 text-sm leading-6 text-zinc-400">{body}</p>
@@ -27,7 +27,7 @@ export function WorkspaceSection({ eyebrow, title, body }: WorkspaceSectionProps
               <p className="font-mono text-xs text-cyan-100">0{index + 1}</p>
               <span className="rounded-full bg-white/[0.04] px-2.5 py-1 text-[0.62rem] uppercase tracking-[0.12em] text-zinc-500">{state}</span>
             </div>
-            <h2 className="mt-4 text-lg font-semibold text-white">{item}</h2>
+            <h2 className="type-card-title mt-4 text-lg text-white">{item}</h2>
             <p className="mt-2 text-xs uppercase tracking-[0.14em] text-cyan-100/75">{affordance}</p>
             <p className="mt-2 text-sm leading-6 text-zinc-500">
               Phase scaffold only. Real data, auth, and persistence arrive in the ordered roadmap phases.

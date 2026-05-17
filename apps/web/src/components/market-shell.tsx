@@ -32,8 +32,8 @@ export function MarketShell() {
           <div className="pointer-events-none cinematic-grid absolute inset-0 opacity-70" />
         <div className="relative flex items-start justify-between pb-5">
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-cyan-200/80">Workspace preview</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">Research cockpit</h2>
+            <p className="type-label text-xs uppercase text-cyan-200/80">Workspace preview</p>
+            <h2 className="type-card-title mt-2 text-2xl text-white">Research cockpit</h2>
             <div className="mt-3 flex flex-wrap gap-2 text-[0.68rem] uppercase tracking-[0.14em] text-zinc-400">
               <span className="rounded-[0.75rem] bg-white/[0.04] px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">Citations 12</span>
               <span className="rounded-[0.75rem] bg-amber-300/10 px-3 py-1.5 text-amber-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">1 review flag</span>
@@ -60,7 +60,7 @@ export function MarketShell() {
           <div className="rounded-[1.15rem] bg-white/[0.035] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-white">Allocation review</p>
+                <p className="text-sm font-light tracking-[-0.01em] text-white">Allocation review</p>
                 <p className="mt-1 text-xs text-zinc-500">Sector weights vs policy band</p>
               </div>
               <TriangleAlert className="size-4 text-amber-200" />
@@ -83,7 +83,7 @@ export function MarketShell() {
           </div>
           <div className="rounded-[1.15rem] bg-white/[0.035] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
             <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm font-medium text-white">
+              <div className="flex items-center gap-2 text-sm font-light tracking-[-0.01em] text-white">
                 <Sparkles className="size-4 text-cyan-200" />
                 Evidence queue
               </div>

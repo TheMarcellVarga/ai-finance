@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -132,6 +132,24 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer utilities {
+  .type-display {
+    font-weight: 200;
+    letter-spacing: -0.055em;
+    line-height: 0.96;
+  }
+
+  .type-label {
+    font-weight: 300;
+    letter-spacing: 0.22em;
+  }
+
+  .type-card-title {
+    font-weight: 300;
+    letter-spacing: -0.025em;
   }
 }
 

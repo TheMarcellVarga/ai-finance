@@ -20,10 +20,10 @@ export default function ProductPage() {
           <div className="section-shell rounded-[1.25rem] p-6 sm:p-10 lg:p-12">
             <div className="grid gap-10 lg:grid-cols-[0.92fr_1.08fr]">
               <div className="max-w-3xl">
-                <p className="inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase tracking-[0.24em] text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                <p className="type-label inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                   Product
                 </p>
-                <h1 className="mt-6 text-balance text-4xl font-semibold tracking-tight text-white sm:text-5xl xl:text-6xl">
+                <h1 className="type-display mt-6 text-balance text-4xl text-white sm:text-5xl xl:text-6xl">
                   Evidence, ownership, and safe AI boundaries in one dark workspace.
                 </h1>
                 <p className="mt-6 text-base leading-7 text-zinc-400">
@@ -40,7 +40,7 @@ export default function ProductPage() {
                         {featureMeta[index]}
                       </span>
                     </div>
-                    <h2 className="mt-6 text-xl font-semibold text-white">{feature.title}</h2>
+                    <h2 className="type-card-title mt-6 text-xl text-white">{feature.title}</h2>
                     <p className="mt-3 text-sm leading-6 text-zinc-400">{feature.body}</p>
                   </article>
                 ))}

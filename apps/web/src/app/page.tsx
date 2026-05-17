@@ -31,10 +31,10 @@ export default function Home() {
         <div className="pointer-events-none cinematic-grid absolute inset-0 opacity-45" />
         <div className="mx-auto grid min-h-[calc(100dvh-4rem)] w-full max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:px-8">
         <div className="relative z-10 max-w-3xl lg:-translate-y-12">
-          <p className="mb-5 inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase tracking-[0.22em] text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl">
+          <p className="type-label mb-5 inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl">
             AI financial research workspace
           </p>
-          <h1 className="text-balance text-5xl font-semibold tracking-tight text-white xl:text-6xl 2xl:text-7xl">
+          <h1 className="type-display text-balance text-5xl text-white xl:text-6xl 2xl:text-7xl">
             Portfolio intelligence with sources, safety, and structure.
           </h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-zinc-400">
@@ -84,7 +84,7 @@ export default function Home() {
             return (
               <article key={pillar.title} className="glass-surface rounded-[1.15rem] p-6">
                 <Icon className="size-5 text-cyan-200" />
-                <h2 className="mt-5 text-lg font-semibold text-white">{pillar.title}</h2>
+                <h2 className="type-card-title mt-5 text-lg text-white">{pillar.title}</h2>
                 <p className="mt-3 text-sm leading-6 text-zinc-400">{pillar.body}</p>
               </article>
             );

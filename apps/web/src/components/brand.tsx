@@ -10,10 +10,10 @@ export function BrandMark() {
         </span>
       </span>
       <span className="leading-none">
-        <span className="block text-sm font-semibold tracking-tight text-white">
+        <span className="block text-sm font-light tracking-[-0.03em] text-white">
           Aperture
         </span>
-        <span className="block text-[0.68rem] uppercase tracking-[0.24em] text-zinc-500">
+        <span className="block text-[0.68rem] font-light uppercase tracking-[0.24em] text-zinc-500">
           Financial Intelligence
         </span>
       </span>
