@@ -37,7 +37,11 @@ export function SiteFooter() {
               provide personalized investment advice, or promise outcomes.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button asChild size="lg" className="rounded-[0.95rem] bg-cyan-200 px-5 text-zinc-950 shadow-[0_18px_48px_rgba(103,232,249,0.14)] hover:bg-cyan-100">
+              <Button
+                asChild
+                size="lg"
+                className="rounded-[0.95rem] bg-cyan-200 px-5 text-zinc-950 shadow-[0_18px_48px_rgba(103,232,249,0.12)] hover:bg-cyan-100/90 hover:shadow-[0_18px_36px_rgba(103,232,249,0.1)]"
+              >
                 <Link href="/app">
                   Open workspace
                   <ArrowRight data-icon="inline-end" />
@@ -59,7 +63,7 @@ export function SiteFooter() {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className="rounded-[0.7rem] px-0 py-1.5 text-zinc-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 sm:px-1"
+                      className="rounded-[0.7rem] px-0 py-1.5 text-zinc-400 transition-[color,background-color] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-white/[0.03] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/35 sm:px-1"
                     >
                       {link.label}
                     </Link>

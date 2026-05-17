@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link
               key={item.href}
               href={item.href}
-              className="glass-hover flex items-center gap-3 rounded-[0.95rem] px-3 py-2.5 text-sm text-zinc-400 transition hover:bg-white/[0.06] hover:text-white"
+              className="glass-hover flex items-center gap-3 rounded-[0.95rem] border border-transparent px-3 py-2.5 text-sm text-zinc-400 transition-[background-color,color,border-color,box-shadow] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-white/10 hover:text-white"
             >
               <item.icon className="size-4 text-cyan-200/70" />
               {item.label}

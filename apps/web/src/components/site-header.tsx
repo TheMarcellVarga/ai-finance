@@ -17,18 +17,30 @@ export function SiteHeader() {
         <BrandMark />
         <nav className="hidden items-center rounded-[0.95rem] bg-black/20 p-1 text-sm font-light text-zinc-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:flex">
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="rounded-[0.8rem] px-4 py-2 transition hover:bg-white/[0.07] hover:text-white">
+            <Link
+              key={item.href}
+              href={item.href}
+              className="rounded-[0.8rem] px-4 py-2 transition-[background-color,color] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-white/[0.05] hover:text-white"
+            >
               {item.label}
             </Link>
           ))}
         </nav>
-        <Button asChild size="lg" className="hidden rounded-[0.95rem] bg-cyan-200 px-5 text-zinc-950 shadow-[0_16px_44px_rgba(103,232,249,0.16)] hover:bg-cyan-100 md:inline-flex">
+        <Button
+          asChild
+          size="lg"
+          className="hidden rounded-[0.95rem] bg-cyan-200 px-5 text-zinc-950 shadow-[0_16px_44px_rgba(103,232,249,0.14)] hover:bg-cyan-100/90 hover:shadow-[0_16px_36px_rgba(103,232,249,0.12)] md:inline-flex"
+        >
           <Link href="/app">
             Open workspace
             <ArrowRight data-icon="inline-end" />
           </Link>
         </Button>
-        <Button asChild size="sm" className="rounded-[0.9rem] bg-white/[0.04] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-white/10 md:hidden">
+        <Button
+          asChild
+          size="sm"
+          className="rounded-[0.9rem] border border-white/10 bg-white/[0.025] text-zinc-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl hover:border-white/15 hover:bg-white/[0.04] hover:text-white md:hidden"
+        >
           <Link href="/app">Workspace</Link>
         </Button>
       </div>
