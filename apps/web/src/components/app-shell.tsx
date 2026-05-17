@@ -19,8 +19,8 @@ const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="page-stage min-h-dvh bg-zinc-950 text-white">
-      <aside className="fixed inset-y-4 left-4 hidden w-72 rounded-[2rem] bg-zinc-950/68 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_32px_90px_rgba(0,0,0,0.42)] backdrop-blur-2xl lg:block">
-        <div className="glass-surface rounded-[1.5rem] p-3">
+      <aside className="fixed inset-y-4 left-4 hidden w-72 rounded-[1.2rem] bg-zinc-950/48 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_28px_76px_rgba(0,0,0,0.38)] backdrop-blur-2xl lg:block">
+        <div className="glass-surface rounded-[1rem] p-3">
           <BrandMark />
         </div>
         <nav className="mt-6 space-y-2">
@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link
               key={item.href}
               href={item.href}
-              className="glass-hover flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-zinc-400 transition hover:bg-white/[0.06] hover:text-white"
+              className="glass-hover flex items-center gap-3 rounded-[0.95rem] px-3 py-2.5 text-sm text-zinc-400 transition hover:bg-white/[0.06] hover:text-white"
             >
               <item.icon className="size-4 text-cyan-200/70" />
               {item.label}
@@ -38,11 +38,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
       <div className="lg:pl-80">
         <header className="sticky top-0 z-10 px-3 py-3 lg:hidden">
-          <div className="glass-surface rounded-[1.5rem] p-4">
+          <div className="glass-surface rounded-[1.1rem] p-4">
           <BrandMark />
           <nav className="mt-4 flex gap-2 overflow-x-auto pb-1 text-sm text-zinc-400">
             {nav.slice(0, 6).map((item) => (
-              <Link key={item.href} href={item.href} className="shrink-0 rounded-full bg-white/[0.035] px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+              <Link key={item.href} href={item.href} className="shrink-0 rounded-[0.85rem] bg-white/[0.035] px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
                 {item.label}
               </Link>
             ))}
