@@ -38,7 +38,7 @@ export default function Home() {
             Portfolio intelligence with sources, safety, and structure.
           </h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-zinc-400">
-            Aperture helps users inspect portfolios, research assets, summarize filings,
+            Valmont helps users inspect portfolios, research assets, summarize filings,
             and compare goal scenarios with AI-assisted outputs that show citations,
             assumptions, and data freshness.
           </p>

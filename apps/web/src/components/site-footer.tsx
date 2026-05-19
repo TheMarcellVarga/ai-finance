@@ -33,7 +33,7 @@ export function SiteFooter() {
             <BrandMark />
             <p className="max-w-xl leading-6 text-zinc-400">
               AI-assisted research and portfolio decision support for cited briefs,
-              scenario review, and risk explanation. Aperture does not execute trades,
+              scenario review, and risk explanation. Valmont does not execute trades,
               provide personalized investment advice, or promise outcomes.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -74,7 +74,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="mt-7 flex flex-col gap-2 border-t border-white/10 pt-5 font-mono text-[0.68rem] uppercase tracking-[0.18em] text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
-          <span>2026 Aperture Labs</span>
+          <span>2026 Valmont Wealth</span>
           <span>Research support only. Not financial advice.</span>
         </div>
       </div>
