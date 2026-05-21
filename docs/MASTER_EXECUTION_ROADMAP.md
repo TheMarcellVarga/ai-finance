@@ -84,7 +84,7 @@ Acceptance gate:
 - Logo/media direction is specific enough to generate assets.
 
 ## Phase 2: App Scaffold And Design System
-Status: in progress.
+Status: complete.
 
 Primary skills: `nextjs-fintech-ui`, Taste Skill.
 

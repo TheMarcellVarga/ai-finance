@@ -251,3 +251,24 @@
 .soft-divider {
   background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.12), transparent);
 }
+
+.aperture-mark {
+  background:
+    conic-gradient(
+      from 10deg,
+      rgb(103 232 249 / 0.15) 0 24deg,
+      rgb(255 255 255 / 0.045) 24deg 48deg,
+      transparent 48deg 72deg,
+      rgb(103 232 249 / 0.32) 72deg 100deg,
+      rgb(255 255 255 / 0.05) 100deg 132deg,
+      transparent 132deg 160deg,
+      rgb(103 232 249 / 0.24) 160deg 194deg,
+      rgb(255 255 255 / 0.04) 194deg 224deg,
+      transparent 224deg 252deg,
+      rgb(103 232 249 / 0.22) 252deg 288deg,
+      rgb(255 255 255 / 0.05) 288deg 318deg,
+      transparent 318deg 360deg
+    ),
+    radial-gradient(circle at 50% 50%, rgb(103 232 249 / 0.14), transparent 1.1rem),
+    rgb(9 9 11);
+}

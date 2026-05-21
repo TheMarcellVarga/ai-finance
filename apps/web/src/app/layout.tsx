@@ -14,9 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://aperture-financial-intelligence.local"),
   title: {
-    default: "Valmont Private Wealth Intelligence",
-    template: "%s | Valmont Private Wealth Intelligence",
+    default: "Aperture Financial Intelligence",
+    template: "%s | Aperture Financial Intelligence",
   },
   description:
     "AI financial research and portfolio decision-support workspace with cited briefs, risk context, and safe scenario planning.",

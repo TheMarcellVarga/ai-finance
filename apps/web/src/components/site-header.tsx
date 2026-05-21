@@ -8,6 +8,7 @@ const navItems = [
   { href: "/product", label: "Product" },
   { href: "/pricing", label: "Pricing" },
   { href: "/security", label: "Security" },
+  { href: "/blog", label: "Briefs" },
 ];
 
 export function SiteHeader() {
