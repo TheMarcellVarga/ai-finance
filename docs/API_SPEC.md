@@ -23,6 +23,8 @@ The Go service exposes versioned REST APIs under `/v1`. Next.js may wrap selecte
 | `PATCH` | `/v1/portfolios/:id` | Update portfolio |
 | `DELETE` | `/v1/portfolios/:id` | Delete portfolio |
 | `POST` | `/v1/portfolios/:id/holdings` | Add or update holding |
+| `GET` | `/v1/watchlists` | List user watchlists |
+| `POST` | `/v1/watchlists` | Create watchlist |
 | `POST` | `/v1/watchlists/:id/items` | Add watchlist item |
 | `POST` | `/v1/research/brief` | Create research brief request |
 | `POST` | `/v1/research/documents` | Ingest research document |
@@ -64,9 +66,9 @@ Do not expose whether another user's resource exists.
 3. Generate or validate TypeScript client through `scripts/generate-openapi-client`.
 4. Add tests for auth, ownership, validation, and error shape.
 
-## Phase 3 Contract Artifacts
+## Phase 4 Contract Artifacts
 
 - OpenAPI source: `packages/contracts/openapi/finance-api.yaml`
-- Generated TypeScript client placeholder: `packages/contracts/src/generated/client.ts`
+- Generated TypeScript client: `packages/contracts/src/generated/client.ts`
 - Go handlers: `services/api/internal/httpapi`
 - Local verification: `scripts/generate-openapi-client`

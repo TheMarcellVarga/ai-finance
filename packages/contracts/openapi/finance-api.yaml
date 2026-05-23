@@ -60,6 +60,156 @@ paths:
                 $ref: "#/components/schemas/UsageResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+  /v1/portfolios:
+    get:
+      operationId: listPortfolios
+      responses:
+        "200":
+          description: Owner-scoped portfolios
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createPortfolio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePortfolioRequest"
+      responses:
+        "201":
+          description: Created portfolio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/portfolios/{id}:
+    get:
+      operationId: getPortfolio
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Owner-scoped portfolio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updatePortfolio
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePortfolioRequest"
+      responses:
+        "200":
+          description: Updated portfolio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deletePortfolio
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Deleted portfolio
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/portfolios/{id}/holdings:
+    post:
+      operationId: addHolding
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddHoldingRequest"
+      responses:
+        "200":
+          description: Portfolio with added holding
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/watchlists:
+    get:
+      operationId: listWatchlists
+      responses:
+        "200":
+          description: Owner-scoped watchlists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createWatchlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWatchlistRequest"
+      responses:
+        "201":
+          description: Created watchlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/watchlists/{id}/items:
+    post:
+      operationId: addWatchlistItem
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddWatchlistItemRequest"
+      responses:
+        "200":
+          description: Watchlist with added item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 components:
   securitySchemes:
     ClerkBearer:
@@ -74,6 +224,19 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource was not found or is not owned by the current user
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
   schemas:
     HealthResponse:
       type: object
@@ -104,6 +267,17 @@ components:
           type: string
         cik:
           type: string
+        capturedAt:
+          type: string
+          format: date-time
+        freshness:
+          type: string
+        provider:
+          type: string
+        displayPrice:
+          type: string
+        dailyChangeBps:
+          type: integer
     AssetSearchResponse:
       type: object
       required: [data, meta]
@@ -162,6 +336,226 @@ components:
                     type: integer
                   status:
                     type: string
+    ContractMeta:
+      type: object
+      required: [provider, freshness, capturedAt]
+      properties:
+        provider:
+          type: string
+        freshness:
+          type: string
+        capturedAt:
+          type: string
+          format: date-time
+    DataFreshness:
+      type: object
+      required: [provider, capturedAt, freshness]
+      properties:
+        provider:
+          type: string
+        capturedAt:
+          type: string
+          format: date-time
+        freshness:
+          type: string
+    Allocation:
+      type: object
+      required: [label, weightBps, status]
+      properties:
+        label:
+          type: string
+        weightBps:
+          type: integer
+        status:
+          type: string
+          enum: [ok, review]
+    Holding:
+      type: object
+      required: [id, asset, quantity, displayQuantity, displayAvgCost, displayValue, weightBps]
+      properties:
+        id:
+          type: string
+        asset:
+          $ref: "#/components/schemas/Asset"
+        quantity:
+          type: integer
+        displayQuantity:
+          type: string
+        displayAvgCost:
+          type: string
+        displayValue:
+          type: string
+        weightBps:
+          type: integer
+        notes:
+          type: string
+    PortfolioSummary:
+      type: object
+      required: [displayTotalValue, topConcentrationTicker, topConcentrationBps, holdingCount, reviewFlags]
+      properties:
+        displayTotalValue:
+          type: string
+        topConcentrationTicker:
+          type: string
+        topConcentrationBps:
+          type: integer
+        holdingCount:
+          type: integer
+        reviewFlags:
+          type: integer
+    Portfolio:
+      type: object
+      required: [id, name, baseCurrency, visibility, holdings, transactions, summary, allocation, dataFreshness]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        baseCurrency:
+          type: string
+        visibility:
+          type: string
+        holdings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Holding"
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        summary:
+          $ref: "#/components/schemas/PortfolioSummary"
+        allocation:
+          type: array
+          items:
+            $ref: "#/components/schemas/Allocation"
+        dataFreshness:
+          $ref: "#/components/schemas/DataFreshness"
+    Transaction:
+      type: object
+      required: [id, type, transactionDate, displayAmount]
+      properties:
+        id:
+          type: string
+        assetTicker:
+          type: string
+        type:
+          type: string
+          enum: [buy, sell, deposit, withdrawal, dividend]
+        transactionDate:
+          type: string
+          format: date
+        quantity:
+          type: integer
+        displayQuantity:
+          type: string
+        displayAmount:
+          type: string
+        notes:
+          type: string
+    PortfolioListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Portfolio"
+        meta:
+          $ref: "#/components/schemas/ContractMeta"
+    PortfolioResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/Portfolio"
+        meta:
+          $ref: "#/components/schemas/ContractMeta"
+    CreatePortfolioRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        baseCurrency:
+          type: string
+        seedDemo:
+          type: boolean
+    UpdatePortfolioRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        baseCurrency:
+          type: string
+    AddHoldingRequest:
+      type: object
+      required: [ticker]
+      properties:
+        ticker:
+          type: string
+        quantity:
+          type: integer
+        averageCostCents:
+          type: integer
+        notes:
+          type: string
+    WatchlistItem:
+      type: object
+      required: [id, asset]
+      properties:
+        id:
+          type: string
+        asset:
+          $ref: "#/components/schemas/Asset"
+        notes:
+          type: string
+    Watchlist:
+      type: object
+      required: [id, name, items, dataFreshness]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WatchlistItem"
+        dataFreshness:
+          $ref: "#/components/schemas/DataFreshness"
+    WatchlistListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Watchlist"
+        meta:
+          $ref: "#/components/schemas/ContractMeta"
+    WatchlistResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/Watchlist"
+        meta:
+          $ref: "#/components/schemas/ContractMeta"
+    CreateWatchlistRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        seedDemo:
+          type: boolean
+    AddWatchlistItemRequest:
+      type: object
+      required: [ticker]
+      properties:
+        ticker:
+          type: string
+        notes:
+          type: string
     ErrorResponse:
       type: object
       required: [error]

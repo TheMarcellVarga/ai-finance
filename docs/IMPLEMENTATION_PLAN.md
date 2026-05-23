@@ -20,7 +20,7 @@ Gate:
 
 ## Phase 1: Product And Brand Lock
 
-Status: drafted.
+Status: complete.
 
 Primary skills:
 - `finance-product-guardrails`
@@ -59,8 +59,15 @@ Gate:
 
 ## Phase 4: Portfolio Workspace MVP
 
+Status: complete.
+
 Work:
 - Build onboarding, portfolio CRUD, holdings, transactions, watchlist, asset search, summary cards, allocation charts, and cached market data.
+
+Artifacts:
+- Go API portfolio CRUD, holdings, transactions, watchlists, owner isolation, and deterministic demo market-data metadata.
+- OpenAPI and generated TypeScript client coverage for portfolio and watchlist flows.
+- Portfolio workspace UI with demo portfolio creation, summary cards, holdings table, transaction ledger, allocation bars, watchlist, and stale-data disclosure.
 
 Gate:
 - User can complete the golden path through portfolio creation and cannot access another user's portfolio.

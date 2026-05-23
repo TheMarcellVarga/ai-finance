@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -91,6 +92,102 @@ func TestAssetSearchUsesSeedData(t *testing.T) {
 	}
 	if got := res.Body.String(); !contains(got, "AAPL") {
 		t.Fatalf("expected AAPL in response, got %s", got)
+	}
+}
+
+func TestPortfolioGoldenPathIsOwnerScoped(t *testing.T) {
+	handler := testHandler(t)
+
+	createReq := httptest.NewRequest(http.MethodPost, "/v1/portfolios", bytes.NewBufferString(`{"name":"Demo research portfolio","baseCurrency":"USD","seedDemo":true}`))
+	createReq.Header.Set("Authorization", "Bearer dev:user_owner")
+	createRes := httptest.NewRecorder()
+
+	handler.ServeHTTP(createRes, createReq)
+
+	if createRes.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", createRes.Code, createRes.Body.String())
+	}
+
+	var created struct {
+		Data struct {
+			ID       string `json:"id"`
+			Holdings []struct {
+				Asset struct {
+					Ticker string `json:"ticker"`
+				} `json:"asset"`
+			} `json:"holdings"`
+			Summary struct {
+				DisplayTotalValue string `json:"displayTotalValue"`
+				HoldingCount      int    `json:"holdingCount"`
+			} `json:"summary"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(createRes.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if created.Data.ID == "" {
+		t.Fatalf("expected portfolio id in response")
+	}
+	if created.Data.Summary.HoldingCount == 0 || created.Data.Summary.DisplayTotalValue == "" {
+		t.Fatalf("expected seeded holdings and summary, got %#v", created.Data.Summary)
+	}
+
+	ownerReq := httptest.NewRequest(http.MethodGet, "/v1/portfolios/"+created.Data.ID, nil)
+	ownerReq.Header.Set("Authorization", "Bearer dev:user_owner")
+	ownerRes := httptest.NewRecorder()
+	handler.ServeHTTP(ownerRes, ownerReq)
+	if ownerRes.Code != http.StatusOK {
+		t.Fatalf("owner expected 200, got %d: %s", ownerRes.Code, ownerRes.Body.String())
+	}
+
+	otherReq := httptest.NewRequest(http.MethodGet, "/v1/portfolios/"+created.Data.ID, nil)
+	otherReq.Header.Set("Authorization", "Bearer dev:user_other")
+	otherRes := httptest.NewRecorder()
+	handler.ServeHTTP(otherRes, otherReq)
+	if otherRes.Code != http.StatusNotFound {
+		t.Fatalf("other user expected 404, got %d: %s", otherRes.Code, otherRes.Body.String())
+	}
+}
+
+func TestHoldingAndWatchlistMutationsUseCuratedAssets(t *testing.T) {
+	handler := testHandler(t)
+
+	createReq := httptest.NewRequest(http.MethodPost, "/v1/portfolios", bytes.NewBufferString(`{"name":"Research","seedDemo":false}`))
+	createReq.Header.Set("Authorization", "Bearer dev:user_portfolio")
+	createRes := httptest.NewRecorder()
+	handler.ServeHTTP(createRes, createReq)
+	if createRes.Code != http.StatusCreated {
+		t.Fatalf("expected portfolio 201, got %d: %s", createRes.Code, createRes.Body.String())
+	}
+	var created struct {
+		Data struct {
+			ID string `json:"id"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(createRes.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+
+	holdingReq := httptest.NewRequest(http.MethodPost, "/v1/portfolios/"+created.Data.ID+"/holdings", bytes.NewBufferString(`{"ticker":"AAPL","quantity":12,"averageCostCents":19000}`))
+	holdingReq.Header.Set("Authorization", "Bearer dev:user_portfolio")
+	holdingRes := httptest.NewRecorder()
+	handler.ServeHTTP(holdingRes, holdingReq)
+	if holdingRes.Code != http.StatusOK {
+		t.Fatalf("expected holding 200, got %d: %s", holdingRes.Code, holdingRes.Body.String())
+	}
+	if got := holdingRes.Body.String(); !contains(got, `"ticker":"AAPL"`) || !contains(got, `"displayValue"`) {
+		t.Fatalf("expected AAPL holding with market value, got %s", got)
+	}
+
+	watchlistReq := httptest.NewRequest(http.MethodPost, "/v1/watchlists", bytes.NewBufferString(`{"name":"AI infrastructure","seedDemo":true}`))
+	watchlistReq.Header.Set("Authorization", "Bearer dev:user_portfolio")
+	watchlistRes := httptest.NewRecorder()
+	handler.ServeHTTP(watchlistRes, watchlistReq)
+	if watchlistRes.Code != http.StatusCreated {
+		t.Fatalf("expected watchlist 201, got %d: %s", watchlistRes.Code, watchlistRes.Body.String())
+	}
+	if got := watchlistRes.Body.String(); !contains(got, `"freshness":"deterministic-demo-data"`) {
+		t.Fatalf("expected freshness metadata, got %s", got)
 	}
 }
 

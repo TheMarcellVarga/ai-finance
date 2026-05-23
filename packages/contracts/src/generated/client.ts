@@ -5,6 +5,11 @@ export type Asset = {
   type: "equity" | "etf";
   sector?: string;
   cik?: string;
+  capturedAt?: string;
+  freshness?: string;
+  provider?: string;
+  displayPrice?: string;
+  dailyChangeBps?: number;
 };
 
 export type AssetSearchResponse = {
@@ -41,6 +46,123 @@ export type UsageResponse = {
       status: string;
     }>;
   };
+};
+
+export type ContractMeta = {
+  provider: string;
+  freshness: string;
+  capturedAt: string;
+};
+
+export type DataFreshness = ContractMeta;
+
+export type Allocation = {
+  label: string;
+  weightBps: number;
+  status: "ok" | "review";
+};
+
+export type Holding = {
+  id: string;
+  asset: Asset;
+  quantity: number;
+  displayQuantity: string;
+  displayAvgCost: string;
+  displayValue: string;
+  weightBps: number;
+  notes?: string;
+};
+
+export type PortfolioSummary = {
+  displayTotalValue: string;
+  topConcentrationTicker: string;
+  topConcentrationBps: number;
+  holdingCount: number;
+  reviewFlags: number;
+};
+
+export type Transaction = {
+  id: string;
+  assetTicker?: string;
+  type: "buy" | "sell" | "deposit" | "withdrawal" | "dividend";
+  transactionDate: string;
+  quantity?: number;
+  displayQuantity?: string;
+  displayAmount: string;
+  notes?: string;
+};
+
+export type Portfolio = {
+  id: string;
+  name: string;
+  baseCurrency: string;
+  visibility: string;
+  holdings: Holding[];
+  transactions: Transaction[];
+  summary: PortfolioSummary;
+  allocation: Allocation[];
+  dataFreshness: DataFreshness;
+};
+
+export type PortfolioListResponse = {
+  data: Portfolio[];
+  meta: ContractMeta;
+};
+
+export type PortfolioResponse = {
+  data: Portfolio;
+  meta: ContractMeta;
+};
+
+export type CreatePortfolioRequest = {
+  name?: string;
+  baseCurrency?: string;
+  seedDemo?: boolean;
+};
+
+export type UpdatePortfolioRequest = {
+  name?: string;
+  baseCurrency?: string;
+};
+
+export type AddHoldingRequest = {
+  ticker: string;
+  quantity?: number;
+  averageCostCents?: number;
+  notes?: string;
+};
+
+export type WatchlistItem = {
+  id: string;
+  asset: Asset;
+  notes?: string;
+};
+
+export type Watchlist = {
+  id: string;
+  name: string;
+  items: WatchlistItem[];
+  dataFreshness: DataFreshness;
+};
+
+export type WatchlistListResponse = {
+  data: Watchlist[];
+  meta: ContractMeta;
+};
+
+export type WatchlistResponse = {
+  data: Watchlist;
+  meta: ContractMeta;
+};
+
+export type CreateWatchlistRequest = {
+  name?: string;
+  seedDemo?: boolean;
+};
+
+export type AddWatchlistItemRequest = {
+  ticker: string;
+  notes?: string;
 };
 
 export type FinanceApiClientOptions = {
@@ -80,18 +202,65 @@ export class FinanceApiClient {
     return this.request<UsageResponse>("/v1/usage", { auth: true });
   }
 
-  private async request<T>(path: string, options: { auth?: boolean } = {}): Promise<T> {
+  async listPortfolios(): Promise<PortfolioListResponse> {
+    return this.request<PortfolioListResponse>("/v1/portfolios", { auth: true });
+  }
+
+  async createPortfolio(body: CreatePortfolioRequest): Promise<PortfolioResponse> {
+    return this.request<PortfolioResponse>("/v1/portfolios", { auth: true, method: "POST", body });
+  }
+
+  async getPortfolio(id: string): Promise<PortfolioResponse> {
+    return this.request<PortfolioResponse>(`/v1/portfolios/${encodeURIComponent(id)}`, { auth: true });
+  }
+
+  async updatePortfolio(id: string, body: UpdatePortfolioRequest): Promise<PortfolioResponse> {
+    return this.request<PortfolioResponse>(`/v1/portfolios/${encodeURIComponent(id)}`, { auth: true, method: "PATCH", body });
+  }
+
+  async deletePortfolio(id: string): Promise<void> {
+    await this.request<void>(`/v1/portfolios/${encodeURIComponent(id)}`, { auth: true, method: "DELETE", empty: true });
+  }
+
+  async addHolding(id: string, body: AddHoldingRequest): Promise<PortfolioResponse> {
+    return this.request<PortfolioResponse>(`/v1/portfolios/${encodeURIComponent(id)}/holdings`, { auth: true, method: "POST", body });
+  }
+
+  async listWatchlists(): Promise<WatchlistListResponse> {
+    return this.request<WatchlistListResponse>("/v1/watchlists", { auth: true });
+  }
+
+  async createWatchlist(body: CreateWatchlistRequest): Promise<WatchlistResponse> {
+    return this.request<WatchlistResponse>("/v1/watchlists", { auth: true, method: "POST", body });
+  }
+
+  async addWatchlistItem(id: string, body: AddWatchlistItemRequest): Promise<WatchlistResponse> {
+    return this.request<WatchlistResponse>(`/v1/watchlists/${encodeURIComponent(id)}/items`, { auth: true, method: "POST", body });
+  }
+
+  private async request<T>(
+    path: string,
+    options: { auth?: boolean; method?: string; body?: unknown; empty?: boolean } = {},
+  ): Promise<T> {
     const headers = new Headers({ Accept: "application/json" });
+    const init: RequestInit = { headers, method: options.method ?? "GET" };
     if (options.auth && this.getToken) {
       const token = await this.getToken();
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
     }
+    if (options.body !== undefined) {
+      headers.set("Content-Type", "application/json");
+      init.body = JSON.stringify(options.body);
+    }
 
-    const response = await this.fetcher(`${this.baseUrl}${path}`, { headers });
+    const response = await this.fetcher(`${this.baseUrl}${path}`, init);
     if (!response.ok) {
       throw new Error(`Finance API request failed: ${response.status}`);
+    }
+    if (options.empty || response.status === 204) {
+      return undefined as T;
     }
     return response.json() as Promise<T>;
   }

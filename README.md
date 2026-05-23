@@ -6,9 +6,9 @@ This project is not a trading bot, brokerage product, robo-advisor, return-predi
 
 ## Current Status
 
-Roadmap phase: Phase 3, Backend And Data Foundation, complete.
+Roadmap phase: Phase 4, Portfolio Workspace MVP, complete.
 
-Phase 0 control-plane assets, Phase 1 product/brand direction, Phase 2 app scaffold/design system, and the Phase 3 backend/data foundation are in place:
+Phase 0 control-plane assets, Phase 1 product/brand direction, Phase 2 app scaffold/design system, Phase 3 backend/data foundation, and Phase 4 portfolio workspace MVP are in place:
 - [Agent instructions](AGENTS.md)
 - [Master execution roadmap](docs/MASTER_EXECUTION_ROADMAP.md)
 - [AI integration and development setup](docs/AI_INTEGRATION_AND_DEV_SETUP.md)
@@ -18,6 +18,8 @@ Phase 0 control-plane assets, Phase 1 product/brand direction, Phase 2 app scaff
 - OpenAPI contract and generated TypeScript client in [packages/contracts](packages/contracts)
 - Supabase migrations and deterministic seed data in [supabase/migrations](supabase/migrations)
 - Deterministic workflow scripts in [scripts](scripts)
+- Owner-scoped portfolio/watchlist API flows with deterministic cached market-data metadata
+- Portfolio workspace UI with demo portfolio creation, holdings, transactions, allocation review, watchlist, and decision-support disclaimers
 
 ## Product Direction
 

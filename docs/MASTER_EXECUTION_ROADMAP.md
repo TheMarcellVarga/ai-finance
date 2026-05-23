@@ -63,7 +63,7 @@ Acceptance gate:
 - No app implementation has started before product/brand decisions are locked.
 
 ## Phase 1: Product And Brand Lock
-Status: drafted.
+Status: complete.
 
 Primary skills: `finance-product-guardrails`, `nextjs-fintech-ui`, Taste Skill.
 
@@ -134,6 +134,8 @@ Acceptance gate:
 - Seed data supports a polished offline demo.
 
 ## Phase 4: Portfolio Workspace MVP
+Status: complete.
+
 Primary skills: `go-finance-api`, `nextjs-fintech-ui`.
 
 Deliverables:
@@ -146,6 +148,13 @@ Deliverables:
 - allocation and price charts
 - cached market data display
 - demo account or deterministic seed flow
+
+Completed artifacts:
+- Owner-scoped Go portfolio endpoints for list, create, read, update, delete, and add holding using deterministic demo market data.
+- Owner-scoped Go watchlist endpoints for list, create, and add item.
+- OpenAPI 3.1 contract and generated TypeScript client expanded for portfolio and watchlist flows.
+- Portfolio workspace UI with demo portfolio creation, holdings table, allocation bars, watchlist, cached data freshness, and decision-support disclaimer.
+- Handler tests covering the portfolio golden path, owner isolation, holding mutation, watchlist creation, and cached data metadata.
 
 Acceptance gate:
 - User can complete the golden path through portfolio creation.
