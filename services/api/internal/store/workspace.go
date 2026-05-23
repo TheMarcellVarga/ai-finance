@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 var (
@@ -17,7 +18,6 @@ var (
 
 type WorkspaceStore struct {
 	mu         sync.Mutex
-	assets     *SeedAssetStore
 	portfolios map[string]*Portfolio
 	watchlists map[string]*Watchlist
 }
@@ -95,12 +95,8 @@ type WatchlistItem struct {
 	Notes string `json:"notes,omitempty"`
 }
 
-func NewWorkspaceStore(assets *SeedAssetStore) *WorkspaceStore {
-	if assets == nil {
-		assets = NewSeedAssetStore()
-	}
+func NewWorkspaceStore() *WorkspaceStore {
 	return &WorkspaceStore{
-		assets:     assets,
 		portfolios: map[string]*Portfolio{},
 		watchlists: map[string]*Watchlist{},
 	}
@@ -120,7 +116,7 @@ func (s *WorkspaceStore) ListPortfolios(userID string) []Portfolio {
 	return portfolios
 }
 
-func (s *WorkspaceStore) CreatePortfolio(userID, name, baseCurrency string, seedDemo bool) (Portfolio, error) {
+func (s *WorkspaceStore) CreatePortfolio(userID, name, baseCurrency string, initialHoldings []Holding) (Portfolio, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -131,55 +127,23 @@ func (s *WorkspaceStore) CreatePortfolio(userID, name, baseCurrency string, seed
 	}
 
 	portfolio := &Portfolio{
-		ID:           newID("pf"),
-		UserID:       userID,
-		Name:         name,
-		BaseCurrency: baseCurrency,
-		Visibility:   "private",
-		DataFreshness: DataFreshness{
-			Provider:   "demo-seed",
-			CapturedAt: "2026-05-22T21:00:00Z",
-			Freshness:  "deterministic-demo-data",
-		},
+		ID:            newID("pf"),
+		UserID:        userID,
+		Name:          name,
+		BaseCurrency:  baseCurrency,
+		Visibility:    "private",
+		DataFreshness: dataFreshnessFromAssets(initialHoldings),
 	}
-	if seedDemo {
-		for _, seed := range []struct {
-			ticker           string
-			quantity         int64
-			averageCostCents int64
-			notes            string
-		}{
-			{"NVDA", 420, 11820, "AI infrastructure exposure for concentration review."},
-			{"MSFT", 120, 40510, "Large-cap software and cloud allocation."},
-			{"VTI", 185, 28142, "Broad market ballast for comparison."},
-			{"JPM", 90, 23884, "Financials exposure in seeded demo account."},
-			{"BND", 320, 7310, "Fixed-income sleeve for allocation review."},
-		} {
-			asset, ok := s.assets.ByTicker(seed.ticker)
-			if !ok {
-				return Portfolio{}, ErrBadTicker
-			}
-			portfolio.Holdings = append(portfolio.Holdings, Holding{
-				ID:               newID("hld"),
-				Asset:            asset,
-				Quantity:         seed.quantity,
-				DisplayQuantity:  formatShares(seed.quantity),
-				AverageCostCents: seed.averageCostCents,
-				DisplayAvgCost:   formatMoney(seed.averageCostCents),
-				Notes:            seed.notes,
-			})
-			portfolio.Transactions = append(portfolio.Transactions, Transaction{
-				ID:              newID("txn"),
-				AssetTicker:     seed.ticker,
-				Type:            "buy",
-				TransactionDate: "2026-05-01",
-				Quantity:        seed.quantity,
-				DisplayQuantity: formatShares(seed.quantity),
-				AmountCents:     seed.quantity * seed.averageCostCents,
-				DisplayAmount:   formatMoney(seed.quantity * seed.averageCostCents),
-				Notes:           "Seeded demo transaction for portfolio review.",
-			})
+	for _, holding := range initialHoldings {
+		if holding.Quantity <= 0 || holding.Asset.Ticker == "" {
+			continue
 		}
+		holding.ID = newID("hld")
+		holding.DisplayQuantity = formatShares(holding.Quantity)
+		holding.DisplayAvgCost = formatMoney(holding.AverageCostCents)
+		holding.Notes = strings.TrimSpace(holding.Notes)
+		portfolio.Holdings = append(portfolio.Holdings, holding)
+		portfolio.Transactions = append(portfolio.Transactions, transactionForHolding(holding.Asset.Ticker, holding.Quantity, holding.AverageCostCents, holding.Notes))
 	}
 	s.recalculatePortfolio(portfolio)
 	s.portfolios[portfolio.ID] = portfolio
@@ -227,7 +191,7 @@ func (s *WorkspaceStore) DeletePortfolio(userID, id string) error {
 	return nil
 }
 
-func (s *WorkspaceStore) AddHolding(userID, portfolioID, ticker string, quantity int64, averageCostCents int64, notes string) (Portfolio, error) {
+func (s *WorkspaceStore) AddHolding(userID, portfolioID string, asset Asset, quantity int64, averageCostCents int64, notes string) (Portfolio, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -235,8 +199,7 @@ func (s *WorkspaceStore) AddHolding(userID, portfolioID, ticker string, quantity
 	if !ok || portfolio.UserID != userID {
 		return Portfolio{}, ErrNotFound
 	}
-	asset, ok := s.assets.ByTicker(ticker)
-	if !ok {
+	if strings.TrimSpace(asset.Ticker) == "" || asset.PriceCents <= 0 {
 		return Portfolio{}, ErrBadTicker
 	}
 	if quantity <= 0 {
@@ -255,6 +218,7 @@ func (s *WorkspaceStore) AddHolding(userID, portfolioID, ticker string, quantity
 				portfolio.Holdings[i].Notes = strings.TrimSpace(notes)
 			}
 			portfolio.Transactions = append(portfolio.Transactions, transactionForHolding(asset.Ticker, quantity, averageCostCents, notes))
+			portfolio.DataFreshness = dataFreshnessFromAssets(portfolio.Holdings)
 			s.recalculatePortfolio(portfolio)
 			return clonePortfolio(portfolio), nil
 		}
@@ -270,6 +234,7 @@ func (s *WorkspaceStore) AddHolding(userID, portfolioID, ticker string, quantity
 		Notes:            strings.TrimSpace(notes),
 	})
 	portfolio.Transactions = append(portfolio.Transactions, transactionForHolding(asset.Ticker, quantity, averageCostCents, notes))
+	portfolio.DataFreshness = dataFreshnessFromAssets(portfolio.Holdings)
 	s.recalculatePortfolio(portfolio)
 	return clonePortfolio(portfolio), nil
 }
@@ -288,34 +253,28 @@ func (s *WorkspaceStore) ListWatchlists(userID string) []Watchlist {
 	return watchlists
 }
 
-func (s *WorkspaceStore) CreateWatchlist(userID, name string, seedDemo bool) (Watchlist, error) {
+func (s *WorkspaceStore) CreateWatchlist(userID, name string, initialAssets []Asset) (Watchlist, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	watchlist := &Watchlist{
-		ID:     newID("wl"),
-		UserID: userID,
-		Name:   cleanName(name, "Research watchlist"),
-		DataFreshness: DataFreshness{
-			Provider:   "demo-seed",
-			CapturedAt: "2026-05-22T21:00:00Z",
-			Freshness:  "deterministic-demo-data",
-		},
+		ID:            newID("wl"),
+		UserID:        userID,
+		Name:          cleanName(name, "Research watchlist"),
+		DataFreshness: dataFreshnessFromAssets(nil),
 	}
-	if seedDemo {
-		for _, ticker := range []string{"AAPL", "NVDA", "MSFT", "VTI"} {
-			asset, ok := s.assets.ByTicker(ticker)
-			if !ok {
-				return Watchlist{}, ErrBadTicker
-			}
-			watchlist.Items = append(watchlist.Items, WatchlistItem{ID: newID("wli"), Asset: asset})
+	for _, asset := range initialAssets {
+		if strings.TrimSpace(asset.Ticker) == "" {
+			continue
 		}
+		watchlist.Items = append(watchlist.Items, WatchlistItem{ID: newID("wli"), Asset: asset})
 	}
+	watchlist.DataFreshness = watchlistFreshness(watchlist.Items)
 	s.watchlists[watchlist.ID] = watchlist
 	return cloneWatchlist(watchlist), nil
 }
 
-func (s *WorkspaceStore) AddWatchlistItem(userID, watchlistID, ticker, notes string) (Watchlist, error) {
+func (s *WorkspaceStore) AddWatchlistItem(userID, watchlistID string, asset Asset, notes string) (Watchlist, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -323,8 +282,7 @@ func (s *WorkspaceStore) AddWatchlistItem(userID, watchlistID, ticker, notes str
 	if !ok || watchlist.UserID != userID {
 		return Watchlist{}, ErrNotFound
 	}
-	asset, ok := s.assets.ByTicker(ticker)
-	if !ok {
+	if strings.TrimSpace(asset.Ticker) == "" {
 		return Watchlist{}, ErrBadTicker
 	}
 	for _, item := range watchlist.Items {
@@ -337,6 +295,7 @@ func (s *WorkspaceStore) AddWatchlistItem(userID, watchlistID, ticker, notes str
 		Asset: asset,
 		Notes: strings.TrimSpace(notes),
 	})
+	watchlist.DataFreshness = watchlistFreshness(watchlist.Items)
 	return cloneWatchlist(watchlist), nil
 }
 
@@ -416,6 +375,32 @@ func cloneWatchlist(watchlist *Watchlist) Watchlist {
 	copyWatchlist := *watchlist
 	copyWatchlist.Items = append([]WatchlistItem(nil), watchlist.Items...)
 	return copyWatchlist
+}
+
+func dataFreshnessFromAssets(holdings []Holding) DataFreshness {
+	provider := "real-provider"
+	freshness := "provider-reported"
+	capturedAt := time.Now().UTC().Format(time.RFC3339)
+	for _, holding := range holdings {
+		if holding.Asset.Provider != "" {
+			provider = holding.Asset.Provider
+		}
+		if holding.Asset.Freshness != "" {
+			freshness = holding.Asset.Freshness
+		}
+		if holding.Asset.CapturedAt != "" {
+			capturedAt = holding.Asset.CapturedAt
+		}
+	}
+	return DataFreshness{Provider: provider, CapturedAt: capturedAt, Freshness: freshness}
+}
+
+func watchlistFreshness(items []WatchlistItem) DataFreshness {
+	holdings := make([]Holding, 0, len(items))
+	for _, item := range items {
+		holdings = append(holdings, Holding{Asset: item.Asset})
+	}
+	return dataFreshnessFromAssets(holdings)
 }
 
 func cleanName(value string, fallback string) string {

@@ -49,7 +49,7 @@ Forbidden:
 
 1. Visitor lands on a premium fintech marketing page and understands the product is research and decision support.
 2. User signs in through Clerk.
-3. User creates or loads a seeded demo portfolio.
+3. User creates or loads a provider-backed research portfolio.
 4. User reviews allocation, concentration, watchlist, risk, and data freshness.
 5. User asks for a portfolio brief.
 6. The app streams a real AI response using application-owned data tools.
@@ -76,7 +76,7 @@ Use curated US equities and ETFs for v1:
 - Energy/industrials: XOM, CAT
 - ETFs: SPY, QQQ, VTI, IWM, AGG, GLD, VNQ
 
-Demo data should be deterministic and clearly labeled when cached or stale.
+Market data should come from configured server-side providers and clearly show freshness or provider failures.
 
 ## Brand Direction
 
@@ -92,7 +92,7 @@ Keywords:
 
 Visual direction:
 - Dark-first interface with graphite, black, cool gray, restrained cyan/green accents, and sparing warm risk colors.
-- Dense dashboard previews with real-looking but seed-backed finance data.
+- Dense dashboard previews with real provider-backed finance data.
 - Original logo mark and wordmark, not AI-raster text.
 - Licensed stock media around analyst workstations, data infrastructure, market maps, finance districts, and premium device/dashboard contexts.
 

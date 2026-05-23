@@ -39,7 +39,12 @@ Never expose service-role keys, provider keys, webhook secrets, raw JWTs, or pri
 - `SENTRY_DSN`
 - `POSTHOG_PERSONAL_API_KEY` if needed server-side
 - `VERCEL_AI_GATEWAY_API_KEY` or Vercel-managed AI Gateway credentials
-- provider keys such as Alpha Vantage or SEC user-agent contact settings
+- `FMP_API_KEY`
+- `TWELVE_DATA_API_KEY`
+- `FINNHUB_API_KEY`
+- `FINNHUB_WEBHOOK_SECRET`
+- `SEC_USER_AGENT`
+- `FINANCE_API_BASE_URL` for the Next.js server-side BFF route when it calls the Go API
 
 ## AI Configuration
 
@@ -56,8 +61,9 @@ AI runtime should track:
 ## Provider Notes
 
 - SEC EDGAR requests need a compliant user agent/contact.
-- Alpha Vantage and similar providers must be cached aggressively because free tiers are limited.
-- Demo data must work when external providers fail.
+- FMP is the current Phase 4 quote/search provider and must be configured only in server environments.
+- Twelve Data, Finnhub, and SEC EDGAR are configured for follow-on provider and filing work.
+- Provider failures must be shown clearly; the app must not fabricate market prices.
 
 ## Setup Order
 

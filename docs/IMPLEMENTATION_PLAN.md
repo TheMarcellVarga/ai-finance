@@ -52,7 +52,7 @@ Status: complete.
 
 Work:
 - Create `services/api`.
-- Add Go health endpoint, middleware shape, OpenAPI contract, Supabase migrations, `pgx`, `sqlc`, seed data, and provider interfaces.
+- Add Go health endpoint, middleware shape, OpenAPI contract, Supabase migrations, `pgx`, `sqlc`, and provider interfaces.
 
 Gate:
 - API starts locally, migrations validate, and authenticated request path is defined.
@@ -62,12 +62,12 @@ Gate:
 Status: complete.
 
 Work:
-- Build onboarding, portfolio CRUD, holdings, transactions, watchlist, asset search, summary cards, allocation charts, and cached market data.
+- Build onboarding, portfolio CRUD, holdings, transactions, watchlist, asset search, summary cards, allocation charts, and real provider market data.
 
 Artifacts:
-- Go API portfolio CRUD, holdings, transactions, watchlists, owner isolation, and deterministic demo market-data metadata.
+- Go API portfolio CRUD, holdings, transactions, watchlists, owner isolation, and real provider market-data metadata.
 - OpenAPI and generated TypeScript client coverage for portfolio and watchlist flows.
-- Portfolio workspace UI with demo portfolio creation, summary cards, holdings table, transaction ledger, allocation bars, watchlist, and stale-data disclosure.
+- Portfolio workspace UI with provider-backed portfolio creation, summary cards, holdings table, transaction ledger, allocation bars, watchlist, and freshness disclosure.
 
 Gate:
 - User can complete the golden path through portfolio creation and cannot access another user's portfolio.

@@ -21,6 +21,37 @@ export type AssetSearchResponse = {
   };
 };
 
+export type QuoteSnapshot = {
+  ticker: string;
+  priceCents: number;
+  displayPrice: string;
+  dailyChangeBps?: number;
+  timestamp: string;
+  provider: string;
+  freshness: string;
+};
+
+export type QuoteResponse = {
+  data: QuoteSnapshot;
+  meta: ContractMeta;
+};
+
+export type IntradayPoint = {
+  timestamp: string;
+  closeCents: number;
+  displayClose: string;
+  volume?: number;
+  provider: string;
+};
+
+export type IntradayResponse = {
+  data: IntradayPoint[];
+  meta: ContractMeta & {
+    ticker?: string;
+    interval?: string;
+  };
+};
+
 export type HealthResponse = {
   status: "ok";
   service: string;
@@ -117,7 +148,12 @@ export type PortfolioResponse = {
 export type CreatePortfolioRequest = {
   name?: string;
   baseCurrency?: string;
-  seedDemo?: boolean;
+  initialHoldings?: Array<{
+    ticker: string;
+    quantity?: number;
+    averageCostCents?: number;
+    notes?: string;
+  }>;
 };
 
 export type UpdatePortfolioRequest = {
@@ -157,7 +193,7 @@ export type WatchlistResponse = {
 
 export type CreateWatchlistRequest = {
   name?: string;
-  seedDemo?: boolean;
+  initialAssets?: string[];
 };
 
 export type AddWatchlistItemRequest = {
@@ -192,6 +228,15 @@ export class FinanceApiClient {
       params.set("q", query);
     }
     return this.request<AssetSearchResponse>(`/v1/assets/search?${params}`);
+  }
+
+  async getAssetQuote(ticker: string): Promise<QuoteResponse> {
+    return this.request<QuoteResponse>(`/v1/assets/${encodeURIComponent(ticker)}/quote`);
+  }
+
+  async getAssetIntraday(ticker: string, interval = "5min"): Promise<IntradayResponse> {
+    const params = new URLSearchParams({ interval });
+    return this.request<IntradayResponse>(`/v1/assets/${encodeURIComponent(ticker)}/intraday?${params}`);
   }
 
   async currentPrincipal(): Promise<PrincipalResponse> {

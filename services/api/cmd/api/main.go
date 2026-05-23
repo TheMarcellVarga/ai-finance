@@ -13,7 +13,7 @@ import (
 	"github.com/marcellvarga/ai-finance/services/api/internal/auth"
 	"github.com/marcellvarga/ai-finance/services/api/internal/config"
 	"github.com/marcellvarga/ai-finance/services/api/internal/httpapi"
-	"github.com/marcellvarga/ai-finance/services/api/internal/store"
+	"github.com/marcellvarga/ai-finance/services/api/internal/providers"
 )
 
 func main() {
@@ -26,9 +26,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmp := providers.FMPProvider{APIKey: cfg.FMPAPIKey}
+	twelveData := providers.TwelveDataProvider{APIKey: cfg.TwelveDataAPIKey}
+	marketData := providers.FallbackMarketProvider{Primary: fmp, Secondary: twelveData}
 	handler := httpapi.NewHandler(httpapi.Options{
 		Authenticator: authenticator,
-		Assets:        store.NewSeedAssetStore(),
+		AssetProvider: marketData,
+		QuoteProvider: marketData,
+		ChartProvider: twelveData,
 		Logger:        logger,
 	})
 

@@ -2,16 +2,52 @@ package httpapi
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/marcellvarga/ai-finance/services/api/internal/auth"
-	"github.com/marcellvarga/ai-finance/services/api/internal/store"
+	"github.com/marcellvarga/ai-finance/services/api/internal/providers"
 )
+
+type fakeProvider struct{}
+
+func (fakeProvider) SearchAssets(_ context.Context, query string) ([]providers.AssetProfile, error) {
+	return []providers.AssetProfile{
+		{Ticker: "AAPL", Name: "Apple Inc.", Exchange: "NASDAQ", Type: "equity", Sector: "Technology", FreshAt: testFreshAt(), Provider: "test-provider"},
+		{Ticker: "MSFT", Name: "Microsoft Corporation", Exchange: "NASDAQ", Type: "equity", Sector: "Technology", FreshAt: testFreshAt(), Provider: "test-provider"},
+		{Ticker: "NVDA", Name: "NVIDIA Corporation", Exchange: "NASDAQ", Type: "equity", Sector: "Technology", FreshAt: testFreshAt(), Provider: "test-provider"},
+	}, nil
+}
+
+func (fakeProvider) LatestQuote(_ context.Context, ticker string) (providers.QuoteSnapshot, error) {
+	return providers.QuoteSnapshot{
+		Ticker:        ticker,
+		PriceCents:    19527,
+		DisplayPrice:  "$195.27",
+		DailyChangeBp: 42,
+		Timestamp:     testFreshAt(),
+		Provider:      "test-provider",
+		Freshness:     "provider-reported",
+	}, nil
+}
+
+func (fakeProvider) IntradayPrices(_ context.Context, ticker string, _ string, _ int) ([]providers.IntradayPoint, error) {
+	return []providers.IntradayPoint{
+		{Timestamp: testFreshAt().Add(-10 * time.Minute), CloseCents: 19400, DisplayClose: "$194.00", Volume: 1000, Provider: "test-provider"},
+		{Timestamp: testFreshAt().Add(-5 * time.Minute), CloseCents: 19500, DisplayClose: "$195.00", Volume: 1200, Provider: "test-provider"},
+		{Timestamp: testFreshAt(), CloseCents: 19527, DisplayClose: "$195.27", Volume: 1300, Provider: "test-provider"},
+	}, nil
+}
+
+func testFreshAt() time.Time {
+	return time.Date(2026, 5, 23, 12, 0, 0, 0, time.UTC)
+}
 
 func testHandler(t *testing.T) http.Handler {
 	t.Helper()
@@ -25,7 +61,9 @@ func testHandler(t *testing.T) http.Handler {
 	}
 	return NewHandler(Options{
 		Authenticator: authenticator,
-		Assets:        store.NewSeedAssetStore(),
+		AssetProvider: fakeProvider{},
+		QuoteProvider: fakeProvider{},
+		ChartProvider: fakeProvider{},
 		Logger:        slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
 }
@@ -81,7 +119,7 @@ func TestProtectedRouteAcceptsDevPrincipal(t *testing.T) {
 	}
 }
 
-func TestAssetSearchUsesSeedData(t *testing.T) {
+func TestAssetSearchUsesRealProvider(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/v1/assets/search?q=apple", nil)
 	res := httptest.NewRecorder()
 
@@ -95,10 +133,24 @@ func TestAssetSearchUsesSeedData(t *testing.T) {
 	}
 }
 
+func TestIntradayChartUsesRealProvider(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/v1/assets/AAPL/intraday?interval=5min", nil)
+	res := httptest.NewRecorder()
+
+	testHandler(t).ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", res.Code, res.Body.String())
+	}
+	if got := res.Body.String(); !contains(got, `"provider":"test-provider"`) || !contains(got, `"displayClose":"$195.27"`) {
+		t.Fatalf("expected provider chart points, got %s", got)
+	}
+}
+
 func TestPortfolioGoldenPathIsOwnerScoped(t *testing.T) {
 	handler := testHandler(t)
 
-	createReq := httptest.NewRequest(http.MethodPost, "/v1/portfolios", bytes.NewBufferString(`{"name":"Demo research portfolio","baseCurrency":"USD","seedDemo":true}`))
+	createReq := httptest.NewRequest(http.MethodPost, "/v1/portfolios", bytes.NewBufferString(`{"name":"Real research portfolio","baseCurrency":"USD","initialHoldings":[{"ticker":"AAPL","quantity":12,"averageCostCents":19000}]}`))
 	createReq.Header.Set("Authorization", "Bearer dev:user_owner")
 	createRes := httptest.NewRecorder()
 
@@ -129,7 +181,7 @@ func TestPortfolioGoldenPathIsOwnerScoped(t *testing.T) {
 		t.Fatalf("expected portfolio id in response")
 	}
 	if created.Data.Summary.HoldingCount == 0 || created.Data.Summary.DisplayTotalValue == "" {
-		t.Fatalf("expected seeded holdings and summary, got %#v", created.Data.Summary)
+		t.Fatalf("expected provider holdings and summary, got %#v", created.Data.Summary)
 	}
 
 	ownerReq := httptest.NewRequest(http.MethodGet, "/v1/portfolios/"+created.Data.ID, nil)
@@ -149,10 +201,10 @@ func TestPortfolioGoldenPathIsOwnerScoped(t *testing.T) {
 	}
 }
 
-func TestHoldingAndWatchlistMutationsUseCuratedAssets(t *testing.T) {
+func TestHoldingAndWatchlistMutationsUseProviderAssets(t *testing.T) {
 	handler := testHandler(t)
 
-	createReq := httptest.NewRequest(http.MethodPost, "/v1/portfolios", bytes.NewBufferString(`{"name":"Research","seedDemo":false}`))
+	createReq := httptest.NewRequest(http.MethodPost, "/v1/portfolios", bytes.NewBufferString(`{"name":"Research","initialHoldings":[]}`))
 	createReq.Header.Set("Authorization", "Bearer dev:user_portfolio")
 	createRes := httptest.NewRecorder()
 	handler.ServeHTTP(createRes, createReq)
@@ -179,14 +231,14 @@ func TestHoldingAndWatchlistMutationsUseCuratedAssets(t *testing.T) {
 		t.Fatalf("expected AAPL holding with market value, got %s", got)
 	}
 
-	watchlistReq := httptest.NewRequest(http.MethodPost, "/v1/watchlists", bytes.NewBufferString(`{"name":"AI infrastructure","seedDemo":true}`))
+	watchlistReq := httptest.NewRequest(http.MethodPost, "/v1/watchlists", bytes.NewBufferString(`{"name":"AI infrastructure","initialAssets":["AAPL","MSFT"]}`))
 	watchlistReq.Header.Set("Authorization", "Bearer dev:user_portfolio")
 	watchlistRes := httptest.NewRecorder()
 	handler.ServeHTTP(watchlistRes, watchlistReq)
 	if watchlistRes.Code != http.StatusCreated {
 		t.Fatalf("expected watchlist 201, got %d: %s", watchlistRes.Code, watchlistRes.Body.String())
 	}
-	if got := watchlistRes.Body.String(); !contains(got, `"freshness":"deterministic-demo-data"`) {
+	if got := watchlistRes.Body.String(); !contains(got, `"freshness":"provider-reported"`) {
 		t.Fatalf("expected freshness metadata, got %s", got)
 	}
 }

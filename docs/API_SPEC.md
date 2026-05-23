@@ -15,6 +15,8 @@ The Go service exposes versioned REST APIs under `/v1`. Next.js may wrap selecte
 | --- | --- | --- |
 | `GET` | `/v1/health` | Service health |
 | `GET` | `/v1/assets/search?q=` | Ticker and asset search |
+| `GET` | `/v1/assets/:ticker/quote` | Latest real-provider quote |
+| `GET` | `/v1/assets/:ticker/intraday?interval=5min` | Intraday real-provider price series |
 | `GET` | `/v1/assets/:ticker` | Asset profile |
 | `GET` | `/v1/assets/:ticker/prices?range=` | Cached price history |
 | `GET` | `/v1/portfolios` | List user portfolios |

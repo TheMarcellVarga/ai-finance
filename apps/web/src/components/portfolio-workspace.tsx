@@ -1,76 +1,281 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { BarChart3, Database, Plus, RefreshCw, Search, ShieldCheck, WalletCards } from "lucide-react";
+import type { MouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Activity, AlertTriangle, BarChart3, Gauge, Layers3, RefreshCw, ShieldCheck, SlidersHorizontal, WalletCards } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-type Holding = {
+type Asset = {
   ticker: string;
   name: string;
-  sector: string;
-  quantity: number;
-  price: number;
-  averageCost: number;
-  changeBps: number;
+  exchange: string;
+  type: string;
+  sector?: string;
+  capturedAt?: string;
+  freshness?: string;
+  provider?: string;
+  displayPrice?: string;
+  dailyChangeBps?: number;
 };
 
-const seedHoldings: Holding[] = [
-  { ticker: "NVDA", name: "NVIDIA Corporation", sector: "Technology", quantity: 420, price: 135.57, averageCost: 118.2, changeBps: 118 },
-  { ticker: "MSFT", name: "Microsoft Corporation", sector: "Technology", quantity: 120, price: 460.39, averageCost: 405.1, changeBps: 31 },
-  { ticker: "VTI", name: "Vanguard Total Stock Market ETF", sector: "Diversified", quantity: 185, price: 305.18, averageCost: 281.42, changeBps: 24 },
-  { ticker: "JPM", name: "JPMorgan Chase & Co.", sector: "Financial Services", quantity: 90, price: 271.12, averageCost: 238.84, changeBps: -18 },
-  { ticker: "BND", name: "Vanguard Total Bond Market ETF", sector: "Fixed Income", quantity: 320, price: 72.44, averageCost: 73.1, changeBps: -5 },
-];
+type Holding = {
+  id: string;
+  asset: Asset;
+  quantity: number;
+  displayQuantity: string;
+  displayAvgCost: string;
+  displayValue: string;
+  weightBps: number;
+  notes?: string;
+};
 
-const emptyHoldings: Holding[] = [];
+type Portfolio = {
+  id: string;
+  name: string;
+  baseCurrency: string;
+  holdings: Holding[];
+  transactions: Array<{
+    id: string;
+    assetTicker?: string;
+    type: string;
+    transactionDate: string;
+    displayQuantity?: string;
+    displayAmount: string;
+  }>;
+  summary: {
+    displayTotalValue: string;
+    topConcentrationTicker: string;
+    topConcentrationBps: number;
+    holdingCount: number;
+    reviewFlags: number;
+  };
+  allocation: Array<{ label: string; weightBps: number; status: string }>;
+  dataFreshness: { provider: string; capturedAt: string; freshness: string };
+};
 
-const watchlist = [
-  ["AAPL", "Apple Inc.", "+0.42%", "Technology"],
-  ["NVDA", "NVIDIA Corporation", "+1.18%", "Technology"],
-  ["MSFT", "Microsoft Corporation", "+0.31%", "Technology"],
-  ["VTI", "Vanguard Total Stock Market ETF", "+0.24%", "Diversified"],
-];
+type PortfolioResponse = {
+  data: Portfolio;
+  meta: { provider: string; freshness: string; capturedAt: string };
+};
 
-function money(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(value);
-}
+type IntradayChart = {
+  data: Array<{
+    timestamp: string;
+    closeCents: number;
+    displayClose: string;
+    volume?: number;
+    provider: string;
+  }>;
+  meta: {
+    provider: string;
+    freshness: string;
+    capturedAt: string;
+    ticker?: string;
+    interval?: string;
+  };
+};
 
 function percentFromBps(value: number) {
   return `${(value / 100).toFixed(1)}%`;
 }
 
-export function PortfolioWorkspace() {
-  const [created, setCreated] = useState(false);
-  const holdings = created ? seedHoldings : emptyHoldings;
+function formatTimestamp(value?: string) {
+  if (!value) {
+    return "Pending provider timestamp";
+  }
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
 
-  const summary = useMemo(() => {
-    const total = holdings.reduce((sum, holding) => sum + holding.quantity * holding.price, 0);
-    const allocation = holdings.reduce<Record<string, number>>((acc, holding) => {
-      acc[holding.sector] = (acc[holding.sector] ?? 0) + holding.quantity * holding.price;
-      return acc;
-    }, {});
-    const rows = Object.entries(allocation)
-      .map(([label, value]) => ({
-        label,
-        value,
-        weightBps: total > 0 ? Math.round((value / total) * 10000) : 0,
-      }))
-      .sort((a, b) => b.weightBps - a.weightBps);
-    const topHolding = holdings
-      .map((holding) => ({
-        ...holding,
-        value: holding.quantity * holding.price,
-        weightBps: total > 0 ? Math.round(((holding.quantity * holding.price) / total) * 10000) : 0,
-      }))
-      .sort((a, b) => b.weightBps - a.weightBps)[0];
+function compactTime(value?: string) {
+  if (!value) {
+    return "--";
+  }
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
 
-    return { total, allocation: rows, topHolding };
+function formatMoneyFromCents(cents: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
+}
+
+function moneyStringToCents(value: string) {
+  const parsed = Number(value.replace(/[$,]/g, ""));
+  if (!Number.isFinite(parsed)) {
+    return 0;
+  }
+  return Math.round(parsed * 100);
+}
+
+function holdingValueCents(holding: Holding) {
+  return moneyStringToCents(holding.displayValue);
+}
+
+function chartPath(points: IntradayChart["data"], width = 640, height = 190) {
+  if (points.length < 2) {
+    return "";
+  }
+  const values = points.map((point) => point.closeCents);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const spread = Math.max(max - min, 1);
+  return points
+    .map((point, index) => {
+      const x = (index / (points.length - 1)) * width;
+      const y = height - ((point.closeCents - min) / spread) * height;
+      return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
+    })
+    .join(" ");
+}
+
+function chartAreaPath(points: IntradayChart["data"], width = 640, height = 190) {
+  const line = chartPath(points, width, height);
+  if (!line) {
+    return "";
+  }
+  return `${line} L ${width} ${height} L 0 ${height} Z`;
+}
+
+function chartCoords(points: IntradayChart["data"], width = 640, height = 190) {
+  if (points.length < 2) {
+    return [];
+  }
+  const values = points.map((point) => point.closeCents);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const spread = Math.max(max - min, 1);
+  return points.map((point, index) => ({
+    x: (index / (points.length - 1)) * width,
+    y: height - ((point.closeCents - min) / spread) * height,
+  }));
+}
+
+type PortfolioWorkspaceProps = {
+  initialPortfolio?: Portfolio;
+  initialMeta?: PortfolioResponse["meta"];
+  initialChart?: IntradayChart;
+  initialChartError?: string;
+  initialError?: string;
+  initialInterval?: string;
+  initialSelectedTicker?: string;
+};
+
+export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart, initialChartError, initialError, initialInterval, initialSelectedTicker }: PortfolioWorkspaceProps) {
+  const [portfolio, setPortfolio] = useState<Portfolio | null>(initialPortfolio ?? null);
+  const [meta, setMeta] = useState<PortfolioResponse["meta"] | null>(initialMeta ?? null);
+  const [chart, setChart] = useState<IntradayChart | null>(initialChart ?? null);
+  const [chartError, setChartError] = useState<string | null>(initialChartError ?? null);
+  const [error, setError] = useState<string | null>(initialError ?? null);
+  const [loading, setLoading] = useState(false);
+  const [chartLoading, setChartLoading] = useState(false);
+  const [selectedTicker, setSelectedTicker] = useState(initialSelectedTicker ?? initialChart?.meta.ticker ?? initialPortfolio?.summary.topConcentrationTicker ?? "AAPL");
+  const [interval, setInterval] = useState(initialInterval ?? initialChart?.meta.interval ?? "5min");
+  const [chartMode, setChartMode] = useState<"price" | "volume">("price");
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [liveRefresh, setLiveRefresh] = useState(false);
+  const [monthlyContribution, setMonthlyContribution] = useState(1500);
+  const [riskLens, setRiskLens] = useState<"concentration" | "income" | "review">("concentration");
+  const chartWrapRef = useRef<HTMLDivElement | null>(null);
+
+  const holdings = useMemo(() => portfolio?.holdings ?? [], [portfolio]);
+  const providerLabel = portfolio?.dataFreshness.provider ?? meta?.provider ?? "market data provider";
+  const freshnessLabel = portfolio?.dataFreshness.freshness ?? meta?.freshness ?? "provider-reported";
+  const chartLine = chart ? chartPath(chart.data) : "";
+  const chartArea = chart ? chartAreaPath(chart.data) : "";
+  const chartPoints = chart ? chartCoords(chart.data) : [];
+  const chartStart = chart?.data[0];
+  const chartEnd = chart?.data[chart.data.length - 1];
+  const hoveredPoint = chart && hoverIndex !== null ? chart.data[hoverIndex] : chartEnd;
+  const hoveredCoord = hoverIndex !== null ? chartPoints[hoverIndex] : chartPoints[chartPoints.length - 1];
+  const chartMoveBps =
+    chartStart && chartEnd && chartStart.closeCents > 0
+      ? Math.round(((chartEnd.closeCents - chartStart.closeCents) / chartStart.closeCents) * 10000)
+      : 0;
+
+  const topHolding = useMemo(() => {
+    return [...holdings].sort((a, b) => b.weightBps - a.weightBps)[0];
   }, [holdings]);
+  const selectedHolding = holdings.find((holding) => holding.asset.ticker === selectedTicker) ?? topHolding;
+  const portfolioValueCents = holdings.reduce((sum, holding) => sum + holdingValueCents(holding), 0);
+  const contributionBps = portfolioValueCents > 0 ? Math.round((monthlyContribution * 100 * 10000) / portfolioValueCents) : 0;
+  const largestAfterContributionBps =
+    portfolioValueCents > 0 && topHolding
+      ? Math.round((holdingValueCents(topHolding) * 10000) / (portfolioValueCents + monthlyContribution * 100))
+      : 0;
+
+  async function loadChart(ticker: string, nextInterval = interval) {
+    setSelectedTicker(ticker);
+    setInterval(nextInterval);
+    setChartLoading(true);
+    setChartError(null);
+    try {
+      const params = new URLSearchParams({ ticker, interval: nextInterval });
+      const response = await fetch(`/api/finance/intraday?${params}`);
+      const payload = (await response.json()) as IntradayChart | { error?: { message?: string } };
+      if (!response.ok || !("data" in payload)) {
+        const errorPayload = payload as { error?: { message?: string } };
+        throw new Error(errorPayload.error?.message ?? "Intraday market data is unavailable.");
+      }
+      setChart(payload);
+      setHoverIndex(null);
+    } catch (requestError) {
+      setChartError(requestError instanceof Error ? requestError.message : "Intraday market data is unavailable.");
+    } finally {
+      setChartLoading(false);
+    }
+  }
+
+  async function loadRealPortfolio() {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/finance/portfolio", { method: "POST" });
+      const payload = (await response.json()) as PortfolioResponse | { error?: { message?: string } };
+      if (!response.ok || !("data" in payload)) {
+        const errorPayload = payload as { error?: { message?: string } };
+        throw new Error(errorPayload.error?.message ?? "The real finance API request failed.");
+      }
+      setPortfolio(payload.data);
+      setMeta(payload.meta);
+      const nextTicker = payload.data.summary.topConcentrationTicker || selectedTicker;
+      await loadChart(nextTicker, interval);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Market data is temporarily unavailable.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!liveRefresh) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      void loadRealPortfolio();
+    }, 90000);
+    return () => window.clearInterval(timer);
+  });
+
+  function handleChartPointer(event: MouseEvent<HTMLDivElement>) {
+    if (!chart || chart.data.length < 2 || !chartWrapRef.current) {
+      return;
+    }
+    const bounds = chartWrapRef.current.getBoundingClientRect();
+    const ratio = Math.min(Math.max((event.clientX - bounds.left) / bounds.width, 0), 1);
+    setHoverIndex(Math.round(ratio * (chart.data.length - 1)));
+  }
 
   return (
     <div className="space-y-6">
@@ -78,29 +283,67 @@ export function PortfolioWorkspace() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <p className="type-label inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-              Phase 4 workspace
+              Portfolio
             </p>
-            <h1 className="type-display mt-6 text-3xl text-white sm:text-5xl">
-              Portfolio decision-support cockpit
-            </h1>
+            <h1 className="type-display mt-6 text-3xl text-white sm:text-5xl">Portfolio intelligence</h1>
             <p className="mt-4 text-sm leading-6 text-zinc-400">
-              Create a deterministic demo portfolio, review holdings, inspect concentration, and track a watchlist with cached market-data freshness. Research output remains decision support, not advice.
+              Monitor live market values, concentration, allocation, and intraday movement for a research portfolio.
             </p>
           </div>
-          <Button onClick={() => setCreated(true)} disabled={created} size="lg" className="w-full sm:w-fit">
-            <Plus className="size-4" />
-            {created ? "Demo portfolio loaded" : "Create demo portfolio"}
+          <Button onClick={loadRealPortfolio} disabled={loading} size="lg" className="w-full sm:w-fit">
+            <RefreshCw className={loading ? "size-4 animate-spin" : "size-4"} />
+            {loading ? "Refreshing" : "Refresh"}
           </Button>
+        </div>
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          {["Portfolio view", "Risk lens", "Income lens"].map((label) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => setRiskLens(label === "Income lens" ? "income" : label === "Risk lens" ? "review" : "concentration")}
+              className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                (label === "Portfolio view" && riskLens === "concentration") ||
+                (label === "Risk lens" && riskLens === "review") ||
+                (label === "Income lens" && riskLens === "income")
+                  ? "border-cyan-200/50 bg-cyan-200/12 text-cyan-50"
+                  : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20 hover:text-zinc-200"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setLiveRefresh((value) => !value)}
+            className={`ml-0 rounded-full border px-3 py-1.5 text-xs transition sm:ml-2 ${
+              liveRefresh ? "border-emerald-200/50 bg-emerald-200/10 text-emerald-100" : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20"
+            }`}
+          >
+            {liveRefresh ? "Live refresh on" : "Live refresh off"}
+          </button>
         </div>
       </section>
 
-      {!created ? (
+      {error ? (
+        <section className="glass-surface rounded-[1.25rem] p-5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-1 size-4 text-amber-200" />
+            <div>
+              <p className="text-sm font-medium text-white">Market data is temporarily unavailable.</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-400">{error}</p>
+              <p className="mt-2 text-xs leading-5 text-zinc-500">Refresh again shortly. No estimated or fabricated prices are shown while the feed is unavailable.</p>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {!portfolio ? (
         <section className="glass-surface rounded-[1.25rem] p-6">
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              ["Create", "Seed an owner-scoped research portfolio with curated US equities and ETFs."],
-              ["Review", "Inspect allocation, holdings, watchlist movement, and stale-data labels."],
-              ["Protect", "Backend routes enforce Clerk identity and return 404 across owner boundaries."],
+              ["Live values", "Latest available quotes populate holdings and portfolio value."],
+              ["Risk review", "Concentration and allocation signals highlight positions that deserve attention."],
+              ["Research only", "The workspace supports analysis and scenario review, not trade execution."],
             ].map(([title, body], index) => (
               <div key={title} className="rounded-[1rem] bg-black/18 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                 <p className="font-mono text-xs text-cyan-100">0{index + 1}</p>
@@ -114,15 +357,15 @@ export function PortfolioWorkspace() {
         <>
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {[
-              ["Portfolio value", money(summary.total), "cached close"],
-              ["Top concentration", summary.topHolding ? `${summary.topHolding.ticker} ${percentFromBps(summary.topHolding.weightBps)}` : "None", "review flag"],
-              ["Holdings", String(holdings.length), "curated universe"],
-              ["Freshness", "May 22, 2026", "demo-seed"],
-            ].map(([label, value, meta]) => (
+              ["Total value", portfolio.summary.displayTotalValue, `Market data: ${providerLabel}`],
+              ["Selected", selectedHolding ? `${selectedHolding.asset.ticker} ${selectedHolding.asset.displayPrice ?? ""}` : "None", selectedHolding ? `${percentFromBps(selectedHolding.weightBps)} portfolio weight` : "Choose a holding"],
+              ["Positions", String(portfolio.summary.holdingCount), portfolio.baseCurrency],
+              ["As of", formatTimestamp(portfolio.dataFreshness.capturedAt), liveRefresh ? "Auto refresh every 90s" : freshnessLabel],
+            ].map(([label, value, detail]) => (
               <div key={label} className="glass-surface rounded-[1rem] p-5">
                 <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">{label}</p>
                 <p className="mt-3 font-mono text-2xl font-light text-white">{value}</p>
-                <p className="mt-2 text-xs text-cyan-100/70">{meta}</p>
+                <p className="mt-2 text-xs text-cyan-100/70">{detail}</p>
               </div>
             ))}
           </section>
@@ -135,11 +378,11 @@ export function PortfolioWorkspace() {
                     <WalletCards className="size-4 text-cyan-200" />
                     Holdings
                   </div>
-                  <p className="mt-1 text-xs text-zinc-500">Values use cached demo close prices.</p>
+                  <p className="mt-1 text-xs text-zinc-500">Latest available prices with source freshness.</p>
                 </div>
-                <Button variant="outline" size="sm">
-                  <Search className="size-3.5" />
-                  Asset search
+                <Button variant="outline" size="sm" onClick={loadRealPortfolio} disabled={loading}>
+                  <RefreshCw className={loading ? "size-3.5 animate-spin" : "size-3.5"} />
+                  Refresh
                 </Button>
               </div>
               <div className="mt-5 overflow-x-auto">
@@ -155,95 +398,180 @@ export function PortfolioWorkspace() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/8">
-                    {holdings.map((holding) => {
-                      const value = holding.quantity * holding.price;
-                      const weight = summary.total > 0 ? (value / summary.total) * 100 : 0;
-                      return (
-                        <tr key={holding.ticker} className="text-zinc-300">
-                          <td className="py-4">
-                            <span className="block font-mono text-white">{holding.ticker}</span>
-                            <span className="mt-1 block text-xs text-zinc-500">{holding.name}</span>
-                          </td>
-                          <td className="py-4 font-mono">{holding.quantity}</td>
-                          <td className="py-4 font-mono">{money(holding.price)}</td>
-                          <td className="py-4 font-mono text-white">{money(value)}</td>
-                          <td className="py-4">
-                            <div className="flex items-center gap-3">
-                              <span className="h-2 w-24 overflow-hidden rounded-full bg-white/10">
-                                <span className="block h-full rounded-full bg-cyan-200/80" style={{ width: `${Math.min(weight, 100)}%` }} />
-                              </span>
-                              <span className="font-mono text-xs">{weight.toFixed(1)}%</span>
-                            </div>
-                          </td>
-                          <td className={holding.changeBps >= 0 ? "py-4 font-mono text-emerald-200" : "py-4 font-mono text-amber-200"}>
-                            {holding.changeBps >= 0 ? "+" : ""}
-                            {percentFromBps(holding.changeBps)}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {holdings.map((holding) => (
+                      <tr
+                        key={holding.id}
+                        onClick={() => void loadChart(holding.asset.ticker, interval)}
+                        className={`cursor-pointer text-zinc-300 transition hover:bg-white/[0.035] ${
+                          selectedTicker === holding.asset.ticker ? "bg-cyan-200/[0.055] text-zinc-100" : ""
+                        }`}
+                      >
+                        <td className="py-4">
+                          <span className="block font-mono text-white">{holding.asset.ticker}</span>
+                          <span className="mt-1 block text-xs text-zinc-500">{holding.asset.name}</span>
+                        </td>
+                        <td className="py-4 font-mono">{holding.displayQuantity}</td>
+                        <td className="py-4 font-mono">{holding.asset.displayPrice ?? "Provider pending"}</td>
+                        <td className="py-4 font-mono text-white">{holding.displayValue}</td>
+                        <td className="py-4">
+                          <div className="flex items-center gap-3">
+                            <span className="h-2 w-24 overflow-hidden rounded-full bg-white/10">
+                              <span className="block h-full rounded-full bg-cyan-200/80" style={{ width: `${Math.min(holding.weightBps / 100, 100)}%` }} />
+                            </span>
+                            <span className="font-mono text-xs">{percentFromBps(holding.weightBps)}</span>
+                          </div>
+                        </td>
+                        <td className={(holding.asset.dailyChangeBps ?? 0) >= 0 ? "py-4 font-mono text-emerald-200" : "py-4 font-mono text-amber-200"}>
+                          {(holding.asset.dailyChangeBps ?? 0) >= 0 ? "+" : ""}
+                          {percentFromBps(holding.asset.dailyChangeBps ?? 0)}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
-              <div className="mt-6 rounded-[1rem] bg-black/18 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-sm text-white">Recent transactions</p>
-                  <span className="text-xs uppercase tracking-[0.14em] text-zinc-500">Seeded ledger</span>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {holdings.slice(0, 4).map((holding) => (
-                    <div key={`txn-${holding.ticker}`} className="flex items-center justify-between gap-3 rounded-[0.85rem] bg-white/[0.035] px-3 py-2 text-xs">
-                      <span>
-                        <span className="block font-mono text-zinc-200">{holding.ticker}</span>
-                        <span className="mt-0.5 block text-zinc-600">Buy - May 1, 2026</span>
-                      </span>
-                      <span className="font-mono text-zinc-300">{money(holding.quantity * holding.averageCost)}</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                {holdings.map((holding) => (
+                  <a
+                    key={`quick-${holding.id}`}
+                    href={`/app/portfolio?ticker=${encodeURIComponent(holding.asset.ticker)}&interval=${encodeURIComponent(interval)}`}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      void loadChart(holding.asset.ticker, interval);
+                    }}
+                    className={`rounded-[0.9rem] border px-3 py-3 text-left transition ${
+                      selectedTicker === holding.asset.ticker
+                        ? "border-cyan-200/40 bg-cyan-200/10"
+                        : "border-white/8 bg-white/[0.03] hover:border-white/20"
+                    }`}
+                  >
+                    <span className="block font-mono text-sm text-white">{holding.asset.ticker}</span>
+                    <span className="mt-1 block text-xs text-zinc-500">{holding.displayValue}</span>
+                  </a>
+                ))}
               </div>
             </div>
 
             <div className="space-y-6">
+              <div className="section-shell rounded-[1.25rem] p-5 sm:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 text-sm text-white">
+                      <Activity className="size-4 text-cyan-200" />
+                      Market pulse
+                    </div>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {selectedTicker} · {interval} bars · {chartMode}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    {hoveredPoint ? <span className="block font-mono text-sm text-white">{hoveredPoint.displayClose}</span> : null}
+                    {hoveredPoint ? <span className="mt-1 block text-xs text-zinc-500">{compactTime(hoveredPoint.timestamp)}</span> : null}
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  {["5min", "15min", "30min"].map((choice) => (
+                    <a
+                      key={choice}
+                      href={`/app/portfolio?ticker=${encodeURIComponent(selectedTicker)}&interval=${encodeURIComponent(choice)}`}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        void loadChart(selectedTicker, choice);
+                      }}
+                      className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                        interval === choice ? "border-cyan-200/50 bg-cyan-200/12 text-cyan-50" : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20"
+                      }`}
+                    >
+                      {choice}
+                    </a>
+                  ))}
+                  {(["price", "volume"] as const).map((choice) => (
+                    <button
+                      key={choice}
+                      type="button"
+                      onClick={() => setChartMode(choice)}
+                      className={`rounded-full border px-3 py-1.5 text-xs capitalize transition ${
+                        chartMode === choice ? "border-white/40 bg-white/10 text-white" : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20"
+                      }`}
+                    >
+                      {choice}
+                    </button>
+                  ))}
+                  {chartLoading ? <span className="ml-auto text-xs text-cyan-100">Loading feed</span> : null}
+                </div>
+                {chart && chart.data.length > 1 ? (
+                  <div className="mt-5">
+                    <div
+                      ref={chartWrapRef}
+                      onMouseMove={handleChartPointer}
+                      onMouseLeave={() => setHoverIndex(null)}
+                      className="relative h-[13.75rem] overflow-hidden rounded-[1rem] bg-black/18 p-3"
+                    >
+                      <svg viewBox="0 0 640 220" role="img" aria-label={`${chart.meta.ticker ?? "Asset"} intraday price chart`} className="h-full w-full">
+                        <defs>
+                          <linearGradient id="chart-fill" x1="0" x2="0" y1="0" y2="1">
+                            <stop offset="0%" stopColor="rgb(165 243 252)" stopOpacity="0.28" />
+                            <stop offset="100%" stopColor="rgb(165 243 252)" stopOpacity="0" />
+                          </linearGradient>
+                        </defs>
+                        {[0, 1, 2, 3].map((line) => (
+                          <line key={line} x1="0" x2="640" y1={20 + line * 54} y2={20 + line * 54} stroke="rgba(255,255,255,0.07)" />
+                        ))}
+                        <path d={chartArea} fill="url(#chart-fill)" transform="translate(0 15)" />
+                        <path d={chartLine} fill="none" stroke="rgb(165 243 252)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" transform="translate(0 15)" />
+                        {chartMode === "volume"
+                          ? chart.data.map((point, index) => {
+                              const maxVolume = Math.max(...chart.data.map((row) => row.volume ?? 0), 1);
+                              const barHeight = ((point.volume ?? 0) / maxVolume) * 70;
+                              const x = (index / Math.max(chart.data.length - 1, 1)) * 620 + 8;
+                              return <rect key={`${point.timestamp}-${index}`} x={x} y={205 - barHeight} width="4" height={barHeight} fill="rgba(165,243,252,0.3)" />;
+                            })
+                          : null}
+                        {hoveredCoord && hoveredPoint ? (
+                          <g transform="translate(0 15)">
+                            <line x1={hoveredCoord.x} x2={hoveredCoord.x} y1="0" y2="190" stroke="rgba(255,255,255,0.22)" strokeDasharray="4 4" />
+                            <circle cx={hoveredCoord.x} cy={hoveredCoord.y} r="5" fill="rgb(165 243 252)" stroke="rgb(8 12 14)" strokeWidth="3" />
+                          </g>
+                        ) : null}
+                      </svg>
+                      {hoveredPoint ? (
+                        <div className="pointer-events-none absolute left-4 top-4 rounded-[0.8rem] border border-white/10 bg-black/70 px-3 py-2 text-xs shadow-2xl backdrop-blur">
+                          <span className="block font-mono text-white">{hoveredPoint.displayClose}</span>
+                          <span className="mt-1 block text-zinc-400">{compactTime(hoveredPoint.timestamp)}</span>
+                          <span className="mt-1 block text-zinc-500">Vol {new Intl.NumberFormat("en-US").format(hoveredPoint.volume ?? 0)}</span>
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+                      <span className={chartMoveBps >= 0 ? "font-mono text-emerald-200" : "font-mono text-amber-200"}>
+                        {chartMoveBps >= 0 ? "+" : ""}
+                        {percentFromBps(chartMoveBps)} today
+                      </span>
+                      <span className="text-zinc-500">Updated {formatTimestamp(chart.meta.capturedAt)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-5 rounded-[1rem] bg-black/18 p-4 text-sm leading-6 text-zinc-400">
+                    {chartError ?? "Intraday chart is unavailable from the market data feed right now."}
+                  </div>
+                )}
+              </div>
+
               <div className="section-shell rounded-[1.25rem] p-5 sm:p-6">
                 <div className="flex items-center gap-2 text-sm text-white">
                   <BarChart3 className="size-4 text-cyan-200" />
                   Allocation
                 </div>
                 <div className="mt-5 space-y-4">
-                  {summary.allocation.map((row) => (
+                  {portfolio.allocation.map((row) => (
                     <div key={row.label}>
                       <div className="mb-2 flex items-center justify-between gap-3 text-xs">
                         <span className="text-zinc-400">{row.label}</span>
-                        <span className={row.weightBps >= 3500 ? "font-mono text-amber-100" : "font-mono text-zinc-300"}>
-                          {percentFromBps(row.weightBps)}
-                        </span>
+                        <span className={row.status === "review" ? "font-mono text-amber-100" : "font-mono text-zinc-300"}>{percentFromBps(row.weightBps)}</span>
                       </div>
                       <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                        <div className={row.weightBps >= 3500 ? "h-full rounded-full bg-amber-200/80" : "h-full rounded-full bg-cyan-200/80"} style={{ width: `${row.weightBps / 100}%` }} />
+                        <div className={row.status === "review" ? "h-full rounded-full bg-amber-200/80" : "h-full rounded-full bg-cyan-200/80"} style={{ width: `${row.weightBps / 100}%` }} />
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="section-shell rounded-[1.25rem] p-5 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm text-white">
-                    <RefreshCw className="size-4 text-cyan-200" />
-                    Watchlist
-                  </div>
-                  <span className="rounded-full bg-cyan-200/8 px-3 py-1 text-[0.65rem] uppercase tracking-[0.14em] text-cyan-100">Cached</span>
-                </div>
-                <div className="mt-4 space-y-2">
-                  {watchlist.map(([ticker, name, move, sector]) => (
-                    <div key={ticker} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3 rounded-[0.9rem] bg-black/18 px-3 py-3">
-                      <span className="font-mono text-sm text-white">{ticker}</span>
-                      <span className="min-w-0 text-xs text-zinc-400">
-                        <span className="block truncate">{name}</span>
-                        <span className="mt-0.5 block text-zinc-600">{sector}</span>
-                      </span>
-                      <span className="font-mono text-xs text-emerald-200">{move}</span>
                     </div>
                   ))}
                 </div>
@@ -251,12 +579,88 @@ export function PortfolioWorkspace() {
             </div>
           </section>
 
+          <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+            <div className="section-shell rounded-[1.25rem] p-5 sm:p-6">
+              <div className="flex items-center gap-2 text-sm text-white">
+                <SlidersHorizontal className="size-4 text-cyan-200" />
+                Scenario controls
+              </div>
+              <div className="mt-5 space-y-5">
+                <div>
+                  <div className="mb-2 flex items-center justify-between text-xs">
+                    <span className="text-zinc-400">Monthly contribution</span>
+                    <span className="font-mono text-white">{formatMoneyFromCents(monthlyContribution * 100)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="10000"
+                    step="250"
+                    value={monthlyContribution}
+                    onChange={(event) => setMonthlyContribution(Number(event.target.value))}
+                    className="w-full accent-cyan-200"
+                    aria-label="Monthly contribution"
+                  />
+                </div>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {[
+                    ["concentration", "Concentration"],
+                    ["income", "Cash flow"],
+                    ["review", "Review"],
+                  ].map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setRiskLens(value as typeof riskLens)}
+                      className={`rounded-[0.85rem] border px-3 py-2 text-xs transition ${
+                        riskLens === value ? "border-cyan-200/45 bg-cyan-200/10 text-cyan-50" : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="section-shell rounded-[1.25rem] p-5 sm:p-6">
+              <div className="flex items-center gap-2 text-sm text-white">
+                {riskLens === "income" ? <WalletCards className="size-4 text-cyan-200" /> : riskLens === "review" ? <Gauge className="size-4 text-cyan-200" /> : <Layers3 className="size-4 text-cyan-200" />}
+                Wealth lens
+              </div>
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                <div className="rounded-[1rem] bg-black/18 p-4">
+                  <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Contribution weight</p>
+                  <p className="mt-3 font-mono text-xl text-white">{percentFromBps(contributionBps)}</p>
+                  <p className="mt-2 text-xs leading-5 text-zinc-500">New monthly cash compared with current portfolio value.</p>
+                </div>
+                <div className="rounded-[1rem] bg-black/18 p-4">
+                  <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Largest after cash</p>
+                  <p className="mt-3 font-mono text-xl text-white">{percentFromBps(largestAfterContributionBps)}</p>
+                  <p className="mt-2 text-xs leading-5 text-zinc-500">Concentration if new cash is left unallocated for review.</p>
+                </div>
+                <div className="rounded-[1rem] bg-black/18 p-4">
+                  <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Review queue</p>
+                  <p className="mt-3 font-mono text-xl text-white">{portfolio.summary.reviewFlags}</p>
+                  <p className="mt-2 text-xs leading-5 text-zinc-500">Flags are risk prompts, not recommendations.</p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-zinc-400">
+                {riskLens === "income"
+                  ? "Use the cash-flow lens to understand how new savings compare with the current account before making any allocation decision."
+                  : riskLens === "review"
+                    ? "The review lens highlights concentration and data freshness so research starts with the highest-impact questions."
+                    : "The concentration lens shows whether portfolio weight is dominated by one holding before any new contribution is allocated."}
+              </p>
+            </div>
+          </section>
+
           <section className="grid gap-4 md:grid-cols-2">
             <div className="glass-surface rounded-[1rem] p-5">
               <div className="flex items-start gap-3">
-                <Database className="mt-1 size-4 text-cyan-200" />
+                <BarChart3 className="mt-1 size-4 text-cyan-200" />
                 <p className="text-sm leading-6 text-zinc-400">
-                  Market values use deterministic cached demo data from <span className="font-mono text-zinc-200">demo-seed</span>, captured May 22, 2026 at 21:00 UTC. Provider failures should keep this display usable with stale-data disclosure.
+                  Market values are source-backed and time-stamped. If a feed fails, the workspace shows the outage instead of substituting estimates.
                 </p>
               </div>
             </div>

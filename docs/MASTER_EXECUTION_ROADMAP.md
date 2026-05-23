@@ -39,8 +39,8 @@ Assume a focused solo/AI-assisted build. Compress or expand based on available t
 | 0. Control Plane | 1-2 days | Repo docs, AI skills, task rules, roadmap, and source of truth ready. |
 | 1. Product And Brand Lock | 2-4 days | Name, positioning, product spec, pricing limits, brand/media direction, demo flow. |
 | 2. App Scaffold And Design System | 3-5 days | Next.js app, routes, shell, theme, responsive layout, initial landing/product/pricing pages. |
-| 3. Backend And Data Foundation | 4-7 days | Go API scaffold, Supabase migrations, auth mapping, OpenAPI, seed data, provider skeletons. |
-| 4. Portfolio Workspace MVP | 5-8 days | Authenticated dashboard, portfolios, holdings, watchlist, charts, cached demo market data. |
+| 3. Backend And Data Foundation | 4-7 days | Go API scaffold, Supabase migrations, auth mapping, OpenAPI, provider skeletons. |
+| 4. Portfolio Workspace MVP | 5-8 days | Authenticated dashboard, portfolios, holdings, watchlist, charts, real provider market data. |
 | 5. Real AI Foundation | 5-8 days | AI Gateway, streaming route, tool registry, AI persistence, first evals, portfolio brief. |
 | 6. Research And Goal Intelligence | 5-8 days | Filing summaries, RAG chunks, goal planner, risk explainer, safe gamification. |
 | 7. Billing, Security, And Observability | 4-7 days | Stripe plans, entitlements, usage limits, Sentry, PostHog, audit logs, security checks. |
@@ -117,11 +117,11 @@ Deliverables:
 - `pgx`/`sqlc` setup
 - OpenAPI 3.1 contract
 - generated TypeScript client placeholder flow
-- seed data for curated assets
+- provider configuration for real asset and quote data
 - provider interfaces for market data and filings
 
 Completed artifacts:
-- `services/api` Go module with health, seed asset search, request IDs, structured errors, Clerk/JWKS auth middleware, local dev auth mode, provider interfaces, `pgx` connection setup, `sqlc.yaml`, and handler/auth tests.
+- `services/api` Go module with health, real provider asset search, request IDs, structured errors, Clerk/JWKS auth middleware, local dev auth mode, provider interfaces, `pgx` connection setup, `sqlc.yaml`, and handler/auth tests.
 - `packages/contracts/openapi/finance-api.yaml` plus `packages/contracts/src/generated/client.ts`.
 - `supabase/migrations/202605230001_phase3_foundation.sql` and `202605230002_seed_demo_assets.sql`.
 - `scripts/generate-openapi-client` and `scripts/validate-supabase-migrations` now perform deterministic validation instead of returning placeholder success.
@@ -131,7 +131,7 @@ Acceptance gate:
 - Database migrations apply locally.
 - Authenticated request path is defined.
 - OpenAPI contract can generate or validate client types.
-- Seed data supports a polished offline demo.
+- Real provider keys support a local portfolio demo without mock market prices.
 
 ## Phase 4: Portfolio Workspace MVP
 Status: complete.
@@ -146,21 +146,21 @@ Deliverables:
 - asset search
 - dashboard summary cards
 - allocation and price charts
-- cached market data display
-- demo account or deterministic seed flow
+- real provider market data display
+- provider-backed portfolio flow
 
 Completed artifacts:
-- Owner-scoped Go portfolio endpoints for list, create, read, update, delete, and add holding using deterministic demo market data.
+- Owner-scoped Go portfolio endpoints for list, create, read, update, delete, and add holding using real provider quote data.
 - Owner-scoped Go watchlist endpoints for list, create, and add item.
 - OpenAPI 3.1 contract and generated TypeScript client expanded for portfolio and watchlist flows.
-- Portfolio workspace UI with demo portfolio creation, holdings table, allocation bars, watchlist, cached data freshness, and decision-support disclaimer.
-- Handler tests covering the portfolio golden path, owner isolation, holding mutation, watchlist creation, and cached data metadata.
+- Portfolio workspace UI with real provider portfolio creation, holdings table, allocation bars, provider freshness, and decision-support disclaimer.
+- Handler tests covering the portfolio golden path, owner isolation, holding mutation, watchlist creation, and provider data metadata.
 
 Acceptance gate:
 - User can complete the golden path through portfolio creation.
 - User cannot access another user's portfolio.
 - Charts fit mobile and desktop containers.
-- Provider failures degrade to cached/demo data gracefully.
+- Provider failures are visible and block fabricated market values.
 
 ## Phase 5: Real AI Foundation
 Primary skills: `ai-research-features`, `security-review-fintech`.

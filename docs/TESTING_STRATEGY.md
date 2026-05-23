@@ -55,7 +55,7 @@ Golden path:
 2. Pricing and security pages load.
 3. User signs in.
 4. User completes onboarding.
-5. User creates or loads demo portfolio.
+5. User creates or loads a provider-backed portfolio.
 6. User adds a holding.
 7. User generates a real AI portfolio brief.
 8. User saves the brief.

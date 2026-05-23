@@ -94,8 +94,9 @@ Go REST request/response payloads are defined in OpenAPI and validated server-si
 
 ## Data Providers
 - SEC EDGAR: server-side filings, company facts, CIK/ticker mapping, filing links.
-- Alpha Vantage: market data and indicators, cached aggressively because free usage is limited.
-- Demo data: seeded curated tickers and static snapshots so the portfolio looks polished even when external APIs are unavailable.
+- Financial Modeling Prep: current Phase 4 asset search and quote provider, called only from server-side Go APIs.
+- Twelve Data and Finnhub: configured as follow-on market-data alternatives for provider fallback and enrichment work.
+- SEC EDGAR: server-side filings, company facts, CIK/ticker mapping, filing links, using a compliant user-agent contact.
 - Provider layer: define `MarketDataProvider`, `FilingsProvider`, and `NewsProvider` interfaces so Finnhub/Twelve Data/FMP can be added later without rewriting app code.
 
 ## AI Behavior
@@ -134,7 +135,7 @@ Go REST request/response payloads are defined in OpenAPI and validated server-si
 Use `docs/MASTER_EXECUTION_ROADMAP.md` as the detailed timeline and orchestration plan. The summary phases are:
 
 1. Define brand direction, generate logo concepts, collect licensed stock image/video candidates, then scaffold Next.js app, design system, landing page, pricing, security page, footer/header, responsive shell.
-2. Add Clerk auth, onboarding, protected app layout, Supabase setup, SQL migrations, seed data.
+2. Add Clerk auth, onboarding, protected app layout, Supabase setup, SQL migrations, and real provider configuration.
 3. Scaffold the Go API service with health checks, Clerk JWT middleware, Postgres connection, OpenAPI, and CI test commands.
 4. Build portfolio, watchlist, charts, asset search, cached market-data provider, SEC filings provider.
 5. Add AI foundation: Gateway configuration, streaming chat route, tool registry, structured output schemas, citation persistence, AI quota tracking, and eval fixtures.
@@ -164,4 +165,4 @@ Use `docs/MASTER_EXECUTION_ROADMAP.md` as the detailed timeline and orchestratio
 - Real AI integration is mandatory for v1: no fake “AI” cards, static summaries, or hard-coded assistant outputs in the recruiter demo.
 - Brand/logo generation and licensed stock image/video selection are part of the product polish plan, but stock assets must be license-safe and performance-optimized.
 - Product is decision-support only, not brokerage, trade execution, or regulated investment advice.
-- Current source checks: Supabase billing/docs, Clerk pricing, Stripe Billing, SEC EDGAR APIs, Alpha Vantage support/rate limits, Upstash pricing, Pinecone pricing, Vercel AI SDK docs, OpenAI structured output/tool-calling docs, and local Vercel Next.js/AI SDK/shadcn guidance.
+- Current source checks: Supabase billing/docs, Clerk pricing, Stripe Billing, SEC EDGAR APIs, FMP/Twelve Data/Finnhub support and rate limits, Upstash pricing, Pinecone pricing, Vercel AI SDK docs, OpenAI structured output/tool-calling docs, and local Vercel Next.js/AI SDK/shadcn guidance.

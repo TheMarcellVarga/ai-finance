@@ -61,5 +61,5 @@ Use Supabase `pgvector` for v1:
 
 - All schema changes live in `supabase/migrations`.
 - Migrations must be reversible in intent, even if Supabase SQL files are forward-only.
-- Keep seed/demo data deterministic and clearly separated from user data.
+- Keep provider-fetched market data clearly attributed and separated from user-owned portfolio data.
 - Validate migrations with `scripts/validate-supabase-migrations` once wired.

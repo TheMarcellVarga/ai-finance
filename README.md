@@ -16,10 +16,10 @@ Phase 0 control-plane assets, Phase 1 product/brand direction, Phase 2 app scaff
 - [Repo-local AI skills](ai-dev/skills)
 - Go API scaffold in [services/api](services/api)
 - OpenAPI contract and generated TypeScript client in [packages/contracts](packages/contracts)
-- Supabase migrations and deterministic seed data in [supabase/migrations](supabase/migrations)
+- Supabase migrations in [supabase/migrations](supabase/migrations)
 - Deterministic workflow scripts in [scripts](scripts)
-- Owner-scoped portfolio/watchlist API flows with deterministic cached market-data metadata
-- Portfolio workspace UI with demo portfolio creation, holdings, transactions, allocation review, watchlist, and decision-support disclaimers
+- Owner-scoped portfolio/watchlist API flows with real provider market-data metadata
+- Portfolio workspace UI with provider-backed portfolio creation, holdings, transactions, allocation review, and decision-support disclaimers
 
 ## Product Direction
 

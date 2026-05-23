@@ -9,10 +9,15 @@ import (
 )
 
 type Config struct {
-	Host     string
-	Port     string
-	LogLevel slog.Level
-	Auth     auth.Config
+	Host                 string
+	Port                 string
+	LogLevel             slog.Level
+	Auth                 auth.Config
+	FMPAPIKey            string
+	TwelveDataAPIKey     string
+	FinnhubAPIKey        string
+	FinnhubWebhookSecret string
+	SECUserAgent         string
 }
 
 func FromEnv() Config {
@@ -37,6 +42,11 @@ func FromEnv() Config {
 			JWKSURL:   os.Getenv("CLERK_JWKS_URL"),
 			DevPrefix: getenv("API_DEV_AUTH_PREFIX", "dev:"),
 		},
+		FMPAPIKey:            os.Getenv("FMP_API_KEY"),
+		TwelveDataAPIKey:     os.Getenv("TWELVE_DATA_API_KEY"),
+		FinnhubAPIKey:        os.Getenv("FINNHUB_API_KEY"),
+		FinnhubWebhookSecret: os.Getenv("FINNHUB_WEBHOOK_SECRET"),
+		SECUserAgent:         os.Getenv("SEC_USER_AGENT"),
 	}
 }
 

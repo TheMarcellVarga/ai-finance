@@ -36,11 +36,9 @@ for table in profiles portfolios holdings watchlists ai_threads ai_messages usag
   fi
 done
 
-for ticker in AAPL MSFT NVDA JPM VTI BND; do
-  if ! grep -Rqi "'$ticker'" "$MIGRATIONS_DIR"; then
-    echo "Seed data is missing demo ticker: $ticker" >&2
-    exit 1
-  fi
-done
+if grep -RniE 'demo-seed|deterministic-demo-data|demo_universe' "$MIGRATIONS_DIR"; then
+  echo "Migrations must not seed mock market prices or demo freshness states." >&2
+  exit 1
+fi
 
 echo "Supabase migration static validation passed."

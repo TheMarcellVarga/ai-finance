@@ -31,11 +31,51 @@ paths:
           required: false
       responses:
         "200":
-          description: Matching curated assets
+          description: Matching real-provider assets
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/AssetSearchResponse"
+  /v1/assets/{ticker}/quote:
+    get:
+      operationId: getAssetQuote
+      security: []
+      parameters:
+        - in: path
+          name: ticker
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Latest real-provider quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteResponse"
+  /v1/assets/{ticker}/intraday:
+    get:
+      operationId: getAssetIntraday
+      security: []
+      parameters:
+        - in: path
+          name: ticker
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: interval
+          required: false
+          schema:
+            type: string
+            enum: [1min, 5min, 15min, 30min, 45min, 1h]
+      responses:
+        "200":
+          description: Intraday real-provider price series
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntradayResponse"
   /v1/me:
     get:
       operationId: getCurrentPrincipal
@@ -296,6 +336,65 @@ components:
               type: string
             freshness:
               type: string
+    QuoteSnapshot:
+      type: object
+      required: [ticker, priceCents, displayPrice, timestamp, provider, freshness]
+      properties:
+        ticker:
+          type: string
+        priceCents:
+          type: integer
+        displayPrice:
+          type: string
+        dailyChangeBps:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        provider:
+          type: string
+        freshness:
+          type: string
+    QuoteResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/QuoteSnapshot"
+        meta:
+          $ref: "#/components/schemas/ContractMeta"
+    IntradayPoint:
+      type: object
+      required: [timestamp, closeCents, displayClose, provider]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        closeCents:
+          type: integer
+        displayClose:
+          type: string
+        volume:
+          type: integer
+        provider:
+          type: string
+    IntradayResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/IntradayPoint"
+        meta:
+          allOf:
+            - $ref: "#/components/schemas/ContractMeta"
+            - type: object
+              properties:
+                ticker:
+                  type: string
+                interval:
+                  type: string
     PrincipalResponse:
       type: object
       required: [data]
@@ -478,8 +577,20 @@ components:
           type: string
         baseCurrency:
           type: string
-        seedDemo:
-          type: boolean
+        initialHoldings:
+          type: array
+          items:
+            type: object
+            required: [ticker]
+            properties:
+              ticker:
+                type: string
+              quantity:
+                type: integer
+              averageCostCents:
+                type: integer
+              notes:
+                type: string
     UpdatePortfolioRequest:
       type: object
       properties:
@@ -546,8 +657,10 @@ components:
       properties:
         name:
           type: string
-        seedDemo:
-          type: boolean
+        initialAssets:
+          type: array
+          items:
+            type: string
     AddWatchlistItemRequest:
       type: object
       required: [ticker]
