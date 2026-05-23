@@ -4,7 +4,6 @@ This file lists planned local and production configuration. Exact variable names
 
 ## Local Services
 
-Planned:
 - Next.js app in `apps/web`
 - Go API in `services/api`
 - Supabase local Postgres
@@ -22,12 +21,15 @@ Never expose service-role keys, provider keys, webhook secrets, raw JWTs, or pri
 
 ## Server Variables
 
-Planned:
 - `DATABASE_URL`
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `CLERK_SECRET_KEY`
 - `CLERK_JWT_ISSUER`
+- `CLERK_JWT_AUDIENCE`
+- `CLERK_JWKS_URL`
+- `API_AUTH_MODE`
+- `API_DEV_AUTH_PREFIX`
 - `CLERK_WEBHOOK_SECRET`
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
@@ -59,12 +61,18 @@ AI runtime should track:
 
 ## Setup Order
 
-1. Scaffold app and API.
-2. Add local env examples without real secrets.
-3. Add Supabase migrations.
+1. Scaffold app and API. Done for Phase 3.
+2. Add local env examples without real secrets. `services/api/.env.example` exists.
+3. Add Supabase migrations. Done for Phase 3.
 4. Wire Clerk and Stripe dev webhooks.
 5. Add AI Gateway configuration.
 6. Add provider keys only after server-side boundaries exist.
+
+## Go API Local Auth
+
+The Go API supports `API_AUTH_MODE=dev` only outside production. It accepts `Authorization: Bearer dev:<clerk_user_id>` so the local authenticated path can be tested before Clerk is wired.
+
+Production must use `API_AUTH_MODE=clerk`, `CLERK_JWT_ISSUER`, and `CLERK_JWKS_URL` so the API validates Clerk JWTs with RS256 JWKS keys. `CLERK_JWT_AUDIENCE` is optional but should be set when Clerk token templates include an audience.
 
 ## Deployment Notes
 

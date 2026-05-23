@@ -1,6 +1,46 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "Supabase migration validation is not wired yet."
-echo "Planned behavior: validate SQL migrations, RLS expectations, vector setup, and schema drift."
-exit 0
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+MIGRATIONS_DIR="$ROOT_DIR/supabase/migrations"
+
+if [[ ! -d "$MIGRATIONS_DIR" ]]; then
+  echo "Missing migrations directory: $MIGRATIONS_DIR" >&2
+  exit 1
+fi
+
+if ! find "$MIGRATIONS_DIR" -name '*.sql' -print -quit | grep -q .; then
+  echo "No SQL migrations found in $MIGRATIONS_DIR" >&2
+  exit 1
+fi
+
+if grep -RniE '\b(real|double precision|float[48]?)\b' "$MIGRATIONS_DIR"; then
+  echo "Financial schema must not use floating point types." >&2
+  exit 1
+fi
+
+if ! grep -Rqi 'enable row level security' "$MIGRATIONS_DIR"; then
+  echo "Migrations must enable RLS for user-owned tables." >&2
+  exit 1
+fi
+
+if ! grep -Rqi 'create extension if not exists vector' "$MIGRATIONS_DIR"; then
+  echo "Migrations must enable pgvector for v1 research retrieval." >&2
+  exit 1
+fi
+
+for table in profiles portfolios holdings watchlists ai_threads ai_messages usage_events audit_logs; do
+  if ! grep -Rqi "create table if not exists public.$table" "$MIGRATIONS_DIR"; then
+    echo "Missing required table: $table" >&2
+    exit 1
+  fi
+done
+
+for ticker in AAPL MSFT NVDA JPM VTI BND; do
+  if ! grep -Rqi "'$ticker'" "$MIGRATIONS_DIR"; then
+    echo "Seed data is missing demo ticker: $ticker" >&2
+    exit 1
+  fi
+done
+
+echo "Supabase migration static validation passed."

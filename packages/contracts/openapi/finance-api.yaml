@@ -1,0 +1,178 @@
+openapi: 3.1.0
+info:
+  title: Aperture Finance API
+  version: 0.1.0
+  description: Go finance/data API for the AI financial intelligence workspace.
+servers:
+  - url: http://127.0.0.1:8080
+security:
+  - ClerkBearer: []
+paths:
+  /v1/health:
+    get:
+      operationId: getHealth
+      security: []
+      responses:
+        "200":
+          description: Service health
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /v1/assets/search:
+    get:
+      operationId: searchAssets
+      security: []
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          required: false
+      responses:
+        "200":
+          description: Matching curated assets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetSearchResponse"
+  /v1/me:
+    get:
+      operationId: getCurrentPrincipal
+      responses:
+        "200":
+          description: Authenticated principal context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrincipalResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/usage:
+    get:
+      operationId: getUsage
+      responses:
+        "200":
+          description: Current usage shell
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+components:
+  securitySchemes:
+    ClerkBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Clerk session JWT validated by the Go API.
+  responses:
+    Unauthorized:
+      description: Authentication failed or is missing
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, service, timestamp]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    Asset:
+      type: object
+      required: [ticker, name, exchange, type]
+      properties:
+        ticker:
+          type: string
+        name:
+          type: string
+        exchange:
+          type: string
+        type:
+          type: string
+          enum: [equity, etf]
+        sector:
+          type: string
+        cik:
+          type: string
+    AssetSearchResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Asset"
+        meta:
+          type: object
+          required: [provider, freshness]
+          properties:
+            query:
+              type: string
+            provider:
+              type: string
+            freshness:
+              type: string
+    PrincipalResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [clerkUserId, issuer]
+          properties:
+            clerkUserId:
+              type: string
+            email:
+              type: string
+            issuer:
+              type: string
+    UsageResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [clerkUserId, period, features]
+          properties:
+            clerkUserId:
+              type: string
+            period:
+              type: string
+            features:
+              type: array
+              items:
+                type: object
+                required: [feature, used, limit, status]
+                properties:
+                  feature:
+                    type: string
+                  used:
+                    type: integer
+                  limit:
+                    type: integer
+                  status:
+                    type: string
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            requestId:
+              type: string

@@ -105,6 +105,8 @@ Acceptance gate:
 - Lighthouse/Core Web Vitals are not obviously damaged by media.
 
 ## Phase 3: Backend And Data Foundation
+Status: complete.
+
 Primary skills: `go-finance-api`, `supabase-finance-schema`.
 
 Deliverables:
@@ -117,6 +119,12 @@ Deliverables:
 - generated TypeScript client placeholder flow
 - seed data for curated assets
 - provider interfaces for market data and filings
+
+Completed artifacts:
+- `services/api` Go module with health, seed asset search, request IDs, structured errors, Clerk/JWKS auth middleware, local dev auth mode, provider interfaces, `pgx` connection setup, `sqlc.yaml`, and handler/auth tests.
+- `packages/contracts/openapi/finance-api.yaml` plus `packages/contracts/src/generated/client.ts`.
+- `supabase/migrations/202605230001_phase3_foundation.sql` and `202605230002_seed_demo_assets.sql`.
+- `scripts/generate-openapi-client` and `scripts/validate-supabase-migrations` now perform deterministic validation instead of returning placeholder success.
 
 Acceptance gate:
 - Go API starts locally.

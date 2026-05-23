@@ -36,7 +36,7 @@ Gate:
 
 ## Phase 2: App Scaffold And Design System
 
-Status: in progress.
+Status: complete.
 
 Work:
 - Create `apps/web`.
@@ -47,6 +47,8 @@ Gate:
 - Landing, product, pricing, security, and app shell render responsively.
 
 ## Phase 3: Backend And Data Foundation
+
+Status: complete.
 
 Work:
 - Create `services/api`.

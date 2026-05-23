@@ -6,15 +6,18 @@ This project is not a trading bot, brokerage product, robo-advisor, return-predi
 
 ## Current Status
 
-Roadmap phase: Phase 2, App Scaffold And Design System.
+Roadmap phase: Phase 3, Backend And Data Foundation, complete.
 
-Phase 0 control-plane assets are in place, and Phase 1 product/brand direction is drafted in [Product spec](docs/PRODUCT_SPEC.md):
+Phase 0 control-plane assets, Phase 1 product/brand direction, Phase 2 app scaffold/design system, and the Phase 3 backend/data foundation are in place:
 - [Agent instructions](AGENTS.md)
 - [Master execution roadmap](docs/MASTER_EXECUTION_ROADMAP.md)
 - [AI integration and development setup](docs/AI_INTEGRATION_AND_DEV_SETUP.md)
 - [Backend decision](docs/BACKEND_DECISION.md)
 - [Repo-local AI skills](ai-dev/skills)
-- Placeholder workflow scripts in [scripts](scripts)
+- Go API scaffold in [services/api](services/api)
+- OpenAPI contract and generated TypeScript client in [packages/contracts](packages/contracts)
+- Supabase migrations and deterministic seed data in [supabase/migrations](supabase/migrations)
+- Deterministic workflow scripts in [scripts](scripts)
 
 ## Product Direction
 
@@ -57,9 +60,7 @@ Read these before implementation:
 - [Testing strategy](docs/TESTING_STRATEGY.md)
 - [Environment](docs/ENVIRONMENT.md)
 
-## Placeholder Scripts
-
-These scripts intentionally return success until the app, API, and database scaffolds exist:
+## Workflow Scripts
 
 ```bash
 scripts/generate-openapi-client
@@ -75,4 +76,13 @@ The initial Next.js scaffold lives in `apps/web`.
 ```bash
 cd apps/web
 npm run dev -- -p 3100
+```
+
+The Phase 3 Go API scaffold lives in `services/api`.
+
+```bash
+cd services/api
+API_AUTH_MODE=dev go run ./cmd/api
+curl http://127.0.0.1:8080/v1/health
+curl -H "Authorization: Bearer dev:user_demo" http://127.0.0.1:8080/v1/me
 ```

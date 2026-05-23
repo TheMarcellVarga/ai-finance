@@ -63,3 +63,10 @@ Do not expose whether another user's resource exists.
 2. Implement Go handler and validation.
 3. Generate or validate TypeScript client through `scripts/generate-openapi-client`.
 4. Add tests for auth, ownership, validation, and error shape.
+
+## Phase 3 Contract Artifacts
+
+- OpenAPI source: `packages/contracts/openapi/finance-api.yaml`
+- Generated TypeScript client placeholder: `packages/contracts/src/generated/client.ts`
+- Go handlers: `services/api/internal/httpapi`
+- Local verification: `scripts/generate-openapi-client`
