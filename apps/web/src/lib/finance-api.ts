@@ -72,8 +72,30 @@ const starterHoldings = [
   { ticker: "NVDA", quantity: 6, averageCostCents: 0, notes: "Semiconductor exposure for risk review." },
 ];
 
+async function financeFetch(input: string, init?: RequestInit) {
+  try {
+    return await fetch(input, init);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "network request failed";
+    throw new Error(
+      `Finance API is not reachable at ${financeApiBaseUrl}. Start local services with scripts/dev-local. Cause: ${reason}`,
+    );
+  }
+}
+
+function parseFinancePayload(text: string) {
+  if (!text) {
+    return null;
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error("Finance API returned a non-JSON response.");
+  }
+}
+
 export async function loadRealProviderPortfolio(): Promise<FinancePortfolioResponse> {
-  const response = await fetch(`${financeApiBaseUrl}/v1/portfolios`, {
+  const response = await financeFetch(`${financeApiBaseUrl}/v1/portfolios`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -89,7 +111,7 @@ export async function loadRealProviderPortfolio(): Promise<FinancePortfolioRespo
   });
 
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : null;
+  const payload = parseFinancePayload(text);
   if (!response.ok) {
     throw new Error(payload?.error?.message ?? `Finance API returned ${response.status}.`);
   }
@@ -98,7 +120,7 @@ export async function loadRealProviderPortfolio(): Promise<FinancePortfolioRespo
 
 export async function loadIntradayChart(ticker: string, interval = "5min"): Promise<IntradayChartResponse> {
   const params = new URLSearchParams({ interval });
-  const response = await fetch(`${financeApiBaseUrl}/v1/assets/${encodeURIComponent(ticker)}/intraday?${params}`, {
+  const response = await financeFetch(`${financeApiBaseUrl}/v1/assets/${encodeURIComponent(ticker)}/intraday?${params}`, {
     headers: {
       Accept: "application/json",
     },
@@ -106,7 +128,7 @@ export async function loadIntradayChart(ticker: string, interval = "5min"): Prom
   });
 
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : null;
+  const payload = parseFinancePayload(text);
   if (!response.ok) {
     throw new Error(payload?.error?.message ?? `Finance API returned ${response.status}.`);
   }

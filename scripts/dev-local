@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+API_URL="${FINANCE_API_BASE_URL:-http://127.0.0.1:8080}"
+WEB_PORT="${WEB_PORT:-3000}"
+API_PID=""
+WEB_PID=""
+
+cleanup() {
+  if [[ -n "${WEB_PID}" ]]; then
+    kill "${WEB_PID}" 2>/dev/null || true
+  fi
+  if [[ -n "${API_PID}" ]]; then
+    kill "${API_PID}" 2>/dev/null || true
+  fi
+}
+
+trap cleanup EXIT INT TERM
+
+health_ok() {
+  curl -fsS --max-time 2 "${API_URL}/v1/health" >/dev/null 2>&1
+}
+
+wait_for_api() {
+  for _ in $(seq 1 30); do
+    if health_ok; then
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
+
+port_is_listening() {
+  local port="$1"
+  lsof -nP -iTCP:"${port}" -sTCP:LISTEN >/dev/null 2>&1
+}
+
+if health_ok; then
+  echo "Finance API already healthy at ${API_URL}"
+else
+  if [[ ! -f "${ROOT_DIR}/services/api/.env" ]]; then
+    echo "Missing services/api/.env. Create it from services/api/.env.example and add provider keys." >&2
+    exit 1
+  fi
+
+  echo "Starting Finance API at ${API_URL}"
+  (
+    cd "${ROOT_DIR}/services/api"
+    set -a
+    source .env
+    set +a
+    go run ./cmd/api
+  ) &
+  API_PID="$!"
+
+  if ! wait_for_api; then
+    echo "Finance API did not become healthy at ${API_URL}" >&2
+    exit 1
+  fi
+fi
+
+if port_is_listening "${WEB_PORT}"; then
+  echo "Next.js already appears to be listening on http://127.0.0.1:${WEB_PORT}"
+  echo "Local services ready."
+  wait
+else
+  echo "Starting Next.js at http://127.0.0.1:${WEB_PORT}"
+  (
+    cd "${ROOT_DIR}/apps/web"
+    FINANCE_API_BASE_URL="${API_URL}" npm run dev -- -p "${WEB_PORT}"
+  ) &
+  WEB_PID="$!"
+
+  echo "Local services ready:"
+  echo "- Web: http://127.0.0.1:${WEB_PORT}"
+  echo "- Finance API: ${API_URL}"
+  wait "${WEB_PID}"
+fi

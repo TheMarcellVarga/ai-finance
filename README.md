@@ -6,9 +6,9 @@ This project is not a trading bot, brokerage product, robo-advisor, return-predi
 
 ## Current Status
 
-Roadmap phase: Phase 4, Portfolio Workspace MVP, complete.
+Roadmap phase: Phase 5, Real AI Foundation, implementation complete with live credential verification pending.
 
-Phase 0 control-plane assets, Phase 1 product/brand direction, Phase 2 app scaffold/design system, Phase 3 backend/data foundation, and Phase 4 portfolio workspace MVP are in place:
+Phase 0 control-plane assets, Phase 1 product/brand direction, Phase 2 app scaffold/design system, Phase 3 backend/data foundation, Phase 4 portfolio workspace MVP, and Phase 5 real AI foundation are in place:
 - [Agent instructions](AGENTS.md)
 - [Master execution roadmap](docs/MASTER_EXECUTION_ROADMAP.md)
 - [AI integration and development setup](docs/AI_INTEGRATION_AND_DEV_SETUP.md)
@@ -20,6 +20,11 @@ Phase 0 control-plane assets, Phase 1 product/brand direction, Phase 2 app scaff
 - Deterministic workflow scripts in [scripts](scripts)
 - Owner-scoped portfolio/watchlist API flows with real provider market-data metadata
 - Portfolio workspace UI with provider-backed portfolio creation, holdings, transactions, allocation review, and decision-support disclaimers
+- AI SDK portfolio brief route with AI Gateway model configuration, owner-scoped `getPortfolioSnapshot` tool wrapper, structured output schema, citations/freshness contract, Supabase persistence path, usage tracking, and deterministic AI eval/safety scripts
+
+Remaining Phase 5 verification:
+- Run a real AI Gateway portfolio brief request.
+- Confirm Supabase persistence rows for the AI thread, messages, tool run, brief, citations, and usage event.
 
 ## Product Direction
 
@@ -65,6 +70,7 @@ Read these before implementation:
 ## Workflow Scripts
 
 ```bash
+scripts/dev-local
 scripts/generate-openapi-client
 scripts/validate-supabase-migrations
 scripts/run-ai-evals
@@ -73,18 +79,25 @@ scripts/check-ai-safety-fixtures
 
 ## Local Development
 
-The initial Next.js scaffold lives in `apps/web`.
+Use the combined local runner for portfolio and AI work. It starts the Go finance API with `services/api/.env`, waits for `/v1/health`, then starts or reuses the Next.js dev server.
+
+```bash
+scripts/dev-local
+```
+
+Manual web-only startup is still available for static marketing routes that do not need finance data.
 
 ```bash
 cd apps/web
-npm run dev -- -p 3100
+npm run dev
 ```
 
-The Phase 3 Go API scaffold lives in `services/api`.
+The Phase 5 portfolio brief route lives in `apps/web` and calls the Go API for owner-scoped portfolio context.
 
 ```bash
-cd services/api
-API_AUTH_MODE=dev go run ./cmd/api
-curl http://127.0.0.1:8080/v1/health
-curl -H "Authorization: Bearer dev:user_demo" http://127.0.0.1:8080/v1/me
+scripts/dev-local
+curl -X POST http://127.0.0.1:3000/api/ai/portfolio-brief \
+  -H "Authorization: Bearer dev:user_demo" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"Summarize concentration risk and data freshness as research."}'
 ```

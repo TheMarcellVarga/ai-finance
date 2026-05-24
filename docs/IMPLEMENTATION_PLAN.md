@@ -74,11 +74,24 @@ Gate:
 
 ## Phase 5: Real AI Foundation
 
+Status: implementation complete; live credential verification pending.
+
 Work:
 - Add Vercel AI Gateway, streaming route, tool registry, AI persistence, usage tracking, portfolio snapshot tool, structured portfolio brief schema, citations, and eval fixtures.
 
+Artifacts:
+- AI SDK portfolio brief route at `/api/ai/portfolio-brief`.
+- Structured portfolio brief schema, safety precheck, and refusal output.
+- Owner-scoped `getPortfolioSnapshot` AI tool wrapper around the finance API.
+- Supabase REST persistence adapter for AI threads, messages, tool runs, briefs, citations, usage events, model, token usage, and latency.
+- Deterministic AI eval and safety fixture scripts.
+
 Gate:
 - At least one real model call is persisted, schema-valid, cited where possible, and advice-boundary safe.
+
+Pending:
+- Verify the portfolio brief route against real AI Gateway credentials.
+- Verify Supabase persistence with server-side Supabase credentials.
 
 ## Phase 6: Research And Goal Intelligence
 

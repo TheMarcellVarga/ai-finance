@@ -9,6 +9,8 @@ This file lists planned local and production configuration. Exact variable names
 - Supabase local Postgres
 - optional Redis-compatible local cache or Upstash dev credentials
 
+Use `scripts/dev-local` for local portfolio and AI development. It starts the Go API with `services/api/.env`, verifies `/v1/health`, then starts or reuses the Next.js dev server with `FINANCE_API_BASE_URL` pointed at the local API.
+
 ## Public Client Variables
 
 Only values safe for browser exposure:
@@ -39,12 +41,14 @@ Never expose service-role keys, provider keys, webhook secrets, raw JWTs, or pri
 - `SENTRY_DSN`
 - `POSTHOG_PERSONAL_API_KEY` if needed server-side
 - `VERCEL_AI_GATEWAY_API_KEY` or Vercel-managed AI Gateway credentials
+- `AI_GATEWAY_MODEL`, optional, defaults locally to `openai/gpt-5.1-instant` for the Phase 5 portfolio brief route
 - `FMP_API_KEY`
 - `TWELVE_DATA_API_KEY`
 - `FINNHUB_API_KEY`
 - `FINNHUB_WEBHOOK_SECRET`
 - `SEC_USER_AGENT`
 - `FINANCE_API_BASE_URL` for the Next.js server-side BFF route when it calls the Go API
+- `WEB_PORT`, optional local override for `scripts/dev-local`; defaults to `3000`
 
 ## AI Configuration
 
@@ -71,7 +75,7 @@ AI runtime should track:
 2. Add local env examples without real secrets. `services/api/.env.example` exists.
 3. Add Supabase migrations. Done for Phase 3.
 4. Wire Clerk and Stripe dev webhooks.
-5. Add AI Gateway configuration.
+5. Add AI Gateway configuration. Done for Phase 5 through the AI SDK portfolio brief route.
 6. Add provider keys only after server-side boundaries exist.
 
 ## Go API Local Auth

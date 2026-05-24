@@ -163,6 +163,8 @@ Acceptance gate:
 - Provider failures are visible and block fabricated market values.
 
 ## Phase 5: Real AI Foundation
+Status: implementation complete; live credential verification pending.
+
 Primary skills: `ai-research-features`, `security-review-fintech`.
 
 Deliverables:
@@ -175,6 +177,17 @@ Deliverables:
 - citations/data freshness fields
 - usage tracking and quota counters
 - first AI eval fixture set
+
+Completed artifacts:
+- `apps/web/src/app/api/ai/portfolio-brief/route.ts` uses Vercel AI SDK structured output through AI Gateway with a configurable `AI_GATEWAY_MODEL`, plus an optional streaming mode for the portfolio brief route.
+- `apps/web/src/lib/ai/portfolio-brief.ts` defines the portfolio brief schema, citations/freshness contract, prompt builder, and advice-boundary safety precheck.
+- `apps/web/src/lib/ai/tool-registry.ts` and `portfolio-tools.ts` provide an owner-scoped `getPortfolioSnapshot` AI tool wrapper that calls the application finance API instead of raw database access.
+- `apps/web/src/lib/ai/persistence.ts` persists AI threads, messages, tool runs, briefs, citations, usage events, latency, model, and token usage when `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are configured server-side.
+- `scripts/run-ai-evals` and `scripts/check-ai-safety-fixtures` now run deterministic schema, citation/freshness, advice-boundary, ownership-isolation, prompt-injection, and safety fixture checks.
+
+Pending live verification:
+- Run `/api/ai/portfolio-brief` with AI Gateway credentials and a configured finance API to prove the demo includes a real model call.
+- Configure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, then verify AI thread, message, tool run, brief, citation, and usage rows are persisted.
 
 Acceptance gate:
 - Demo includes at least one real model call.

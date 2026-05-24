@@ -36,6 +36,12 @@ Initial tools:
 
 Each tool must validate input, enforce ownership, apply rate limits, and return compact source-aware data.
 
+Phase 5 implementation:
+- `/api/ai/portfolio-brief` uses Vercel AI SDK structured output through AI Gateway.
+- `getPortfolioSnapshot` calls the application finance API with the request/server auth token and does not expose raw database credentials to the model.
+- Supabase persistence records threads, messages, tool runs, briefs, citations, usage events, model, token usage, and latency when server-side Supabase credentials are configured.
+- The route includes a deterministic safety precheck for direct trading, guaranteed returns, prompt extraction, secret exposure, and cross-user portfolio prompts.
+
 Forbidden tools:
 - Brokerage order placement.
 - Buy/sell/hold recommendation generation.
