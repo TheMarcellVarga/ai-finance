@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import {
   buildPortfolioBriefPrompt,
   classifyPromptSafety,
+  createDeterministicPortfolioBrief,
   createRefusalBrief,
   portfolioBriefRequestSchema,
   portfolioBriefSchema,
@@ -18,6 +19,24 @@ export const dynamic = "force-dynamic";
 const model = process.env.AI_GATEWAY_MODEL ?? "openai/gpt-5.1-instant";
 const fallbackDevToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
 
+if (!process.env.VERCEL_AI_GATEWAY_API_KEY && process.env.AI_GATEWAY_API_KEY) {
+  process.env.VERCEL_AI_GATEWAY_API_KEY = process.env.AI_GATEWAY_API_KEY;
+}
+
+function aiGatewayConfigured() {
+  return Boolean(process.env.VERCEL_AI_GATEWAY_API_KEY);
+}
+
+function shouldUseDeterministicFixtureMode() {
+  if (process.env.AI_PORTFOLIO_BRIEF_MODE === "fixture") {
+    return true;
+  }
+  if (process.env.AI_PORTFOLIO_BRIEF_MODE === "live") {
+    return false;
+  }
+  return process.env.NODE_ENV !== "production" && !aiGatewayConfigured();
+}
+
 function bearerTokenFromRequest(request: Request) {
   const authorization = request.headers.get("authorization");
   if (authorization?.startsWith("Bearer ")) {
@@ -31,7 +50,7 @@ function requestAuthorization(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const startedAt = Date.now();
+  const startedAt = performance.now();
 
   let parsedBody: unknown;
   try {
@@ -76,6 +95,43 @@ export async function POST(request: Request) {
       requestAuthorization: authorization,
     });
 
+    if (shouldUseDeterministicFixtureMode()) {
+      const brief = createDeterministicPortfolioBrief(snapshot, prompt);
+      const latencyMs = Math.round(performance.now() - startedAt);
+      const persistence = await persistPortfolioBrief({
+        authToken,
+        prompt,
+        model: "deterministic-fixture",
+        snapshot,
+        brief,
+        latencyMs,
+        tokenUsage: { mode: "fixture", totalTokens: 0 },
+      });
+
+      return NextResponse.json({
+        data: brief,
+        meta: {
+          model: "deterministic-fixture",
+          mode: "fixture",
+          liveAiGatewayCall: false,
+          latencyMs,
+          persistence,
+          todo:
+            "Set VERCEL_AI_GATEWAY_API_KEY and AI_PORTFOLIO_BRIEF_MODE=live, then verify Supabase persistence before closing the Phase 5 live gate.",
+          toolRuns: [
+            {
+              name: "getPortfolioSnapshot",
+              status: "success",
+              provider: snapshot.dataFreshness.provider,
+              capturedAt: snapshot.dataFreshness.capturedAt,
+              freshness: snapshot.dataFreshness.freshness,
+            },
+          ],
+          usage: { mode: "fixture", totalTokens: 0 },
+        },
+      });
+    }
+
     const generationPrompt = buildPortfolioBriefPrompt(snapshot, prompt);
 
     if (parsedRequest.data.stream) {
@@ -109,7 +165,7 @@ export async function POST(request: Request) {
     });
 
     const brief = portfolioBriefSchema.parse(result.output);
-    const latencyMs = Date.now() - startedAt;
+    const latencyMs = Math.round(performance.now() - startedAt);
     const usage = (result as { usage?: unknown; totalUsage?: unknown }).usage ?? (result as { totalUsage?: unknown }).totalUsage;
     const persistence = await persistPortfolioBrief({
       authToken,

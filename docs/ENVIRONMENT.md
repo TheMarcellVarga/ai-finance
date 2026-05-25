@@ -42,6 +42,8 @@ Never expose service-role keys, provider keys, webhook secrets, raw JWTs, or pri
 - `POSTHOG_PERSONAL_API_KEY` if needed server-side
 - `VERCEL_AI_GATEWAY_API_KEY` or Vercel-managed AI Gateway credentials
 - `AI_GATEWAY_MODEL`, optional, defaults locally to `openai/gpt-5.1-instant` for the Phase 5 portfolio brief route
+- `AI_GATEWAY_API_KEY`, optional local alias for `VERCEL_AI_GATEWAY_API_KEY`
+- `AI_PORTFOLIO_BRIEF_MODE`, optional; use `fixture` to avoid model calls during local development or `live` to force AI Gateway
 - `FMP_API_KEY`
 - `TWELVE_DATA_API_KEY`
 - `FINNHUB_API_KEY`
@@ -61,6 +63,8 @@ AI runtime should track:
 - latency
 - cache hit/miss
 - safety label
+
+For cost-controlled development, `/api/ai/portfolio-brief` supports deterministic fixture mode. In non-production, the route falls back to fixture mode when no AI Gateway credential is configured. Fixture mode still reads the owner-scoped finance API snapshot, applies prompt safety checks, returns the required structured fields, and attempts Supabase persistence if server credentials are configured. It does not make a model call and does not satisfy the final Phase 5 live AI acceptance gate.
 
 ## Provider Notes
 

@@ -125,6 +125,64 @@ export function createRefusalBrief(prompt: string): PortfolioBrief {
   };
 }
 
+export function createDeterministicPortfolioBrief(snapshot: PortfolioSnapshot, userPrompt?: string): PortfolioBrief {
+  const capturedAt = snapshot.dataFreshness.capturedAt || new Date().toISOString();
+  const topHolding = snapshot.holdings[0];
+  const topTicker = snapshot.summary.topConcentrationTicker || topHolding?.ticker || "the largest holding";
+  const topWeight = Math.round(snapshot.summary.topConcentrationBps / 100);
+  const provider = snapshot.dataFreshness.provider || "finance-api";
+  const prompt = userPrompt?.trim() || "Generate a portfolio brief focused on allocation, concentration, data freshness, and research follow-ups.";
+
+  return {
+    summary:
+      `${snapshot.name} has ${snapshot.summary.holdingCount} holdings with ${topTicker} as the largest visible concentration. ` +
+      "This deterministic development brief is for local workflow testing only; run live AI Gateway verification before treating Phase 5 as fully complete.",
+    keyFacts: [
+      `Portfolio value is reported as ${snapshot.summary.displayTotalValue} in ${snapshot.baseCurrency}.`,
+      `${topTicker} represents about ${topWeight}% of the current portfolio snapshot.`,
+      `Market data freshness is labeled ${snapshot.dataFreshness.freshness} by ${provider}.`,
+    ],
+    riskFactors: [
+      "Concentration should be reviewed as a research signal because a single holding or sector can drive portfolio movement.",
+      "Provider-reported data can be stale or incomplete, so conclusions should be checked against the captured timestamp.",
+    ],
+    citations: [
+      {
+        label: "Owner-scoped portfolio snapshot",
+        sourceType: "portfolio_snapshot",
+        sourceId: snapshot.id,
+        capturedAt,
+        freshness: snapshot.dataFreshness.freshness,
+      },
+      {
+        label: "Market data freshness",
+        sourceType: "market_data",
+        sourceId: provider,
+        capturedAt,
+        freshness: snapshot.dataFreshness.freshness,
+      },
+    ],
+    assumptions: [
+      "This brief uses only the current owner-scoped portfolio snapshot returned by the finance API.",
+      `User research prompt: ${prompt.slice(0, 180)}`,
+      "No model call was made because local deterministic fixture mode is active.",
+    ],
+    dataFreshness: {
+      provider,
+      capturedAt,
+      freshness: snapshot.dataFreshness.freshness,
+    },
+    confidence: "medium",
+    safetyLabel: "research_only",
+    disclaimer:
+      "This is not financial advice. Use the workspace for research, scenario analysis, and risk review, not trade execution or personalized investment instructions.",
+    followUpQuestions: [
+      "Which concentration or sector exposure should be reviewed first?",
+      "Should the next brief compare allocation changes after fresh market data is captured?",
+    ],
+  };
+}
+
 export function buildPortfolioBriefPrompt(snapshot: PortfolioSnapshot, userPrompt?: string) {
   return [
     "Create a concise, schema-valid portfolio research brief.",

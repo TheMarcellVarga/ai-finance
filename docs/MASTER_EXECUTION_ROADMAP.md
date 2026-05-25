@@ -163,7 +163,7 @@ Acceptance gate:
 - Provider failures are visible and block fabricated market values.
 
 ## Phase 5: Real AI Foundation
-Status: implementation complete; live credential verification pending.
+Status: implementation complete; live credential verification cost-deferred.
 
 Primary skills: `ai-research-features`, `security-review-fintech`.
 
@@ -180,14 +180,23 @@ Deliverables:
 
 Completed artifacts:
 - `apps/web/src/app/api/ai/portfolio-brief/route.ts` uses Vercel AI SDK structured output through AI Gateway with a configurable `AI_GATEWAY_MODEL`, plus an optional streaming mode for the portfolio brief route.
+- Local development can use deterministic fixture mode for `/api/ai/portfolio-brief` when AI Gateway credentials are absent, returning a schema-valid, cited brief from the owner-scoped portfolio snapshot without model spend. This mode is a temporary workflow unblocker and does not satisfy the live AI acceptance gate.
 - `apps/web/src/lib/ai/portfolio-brief.ts` defines the portfolio brief schema, citations/freshness contract, prompt builder, and advice-boundary safety precheck.
 - `apps/web/src/lib/ai/tool-registry.ts` and `portfolio-tools.ts` provide an owner-scoped `getPortfolioSnapshot` AI tool wrapper that calls the application finance API instead of raw database access.
 - `apps/web/src/lib/ai/persistence.ts` persists AI threads, messages, tool runs, briefs, citations, usage events, latency, model, and token usage when `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are configured server-side.
 - `scripts/run-ai-evals` and `scripts/check-ai-safety-fixtures` now run deterministic schema, citation/freshness, advice-boundary, ownership-isolation, prompt-injection, and safety fixture checks.
 
 Pending live verification:
+- TODO: Add `VERCEL_AI_GATEWAY_API_KEY` or Vercel-managed AI Gateway credentials before final demo verification.
+- TODO: Optionally set `AI_GATEWAY_MODEL` to the intended final demo model; otherwise the route defaults to `openai/gpt-5.1-instant`.
+- TODO: Point Next.js at the finance API with `FINANCE_API_BASE_URL` and, for local dev auth, `FINANCE_API_DEV_TOKEN`.
+- TODO: Apply Supabase migrations to the configured remote project so `public.profiles` and AI persistence tables exist.
 - Run `/api/ai/portfolio-brief` with AI Gateway credentials and a configured finance API to prove the demo includes a real model call.
 - Configure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, then verify AI thread, message, tool run, brief, citation, and usage rows are persisted.
+
+Temporary Phase 6 unblock:
+- Phase 6 implementation may proceed behind deterministic AI fixture mode to avoid early model spend, provided all AI-facing UI and docs continue to label fixture output as non-live.
+- Before Phase 8 recruiter-demo polish, Phase 5 must be re-opened and the full live acceptance gate must pass with a real model call and persisted rows.
 
 Acceptance gate:
 - Demo includes at least one real model call.
