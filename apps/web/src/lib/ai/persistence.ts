@@ -8,13 +8,17 @@ type PersistenceResult = {
   status: "persisted" | "not_configured" | "failed";
   threadId?: string;
   briefId?: string;
+  toolRunId?: string;
+  messageIds?: string[];
+  usageEventId?: string;
+  citationCount?: number;
   message?: string;
 };
 
 const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-function isConfigured() {
+export function aiPersistenceConfigured() {
   return Boolean(supabaseUrl && supabaseServiceRoleKey);
 }
 
@@ -85,7 +89,7 @@ export async function persistPortfolioBrief(input: {
   latencyMs: number;
   tokenUsage?: unknown;
 }): Promise<PersistenceResult> {
-  if (!isConfigured()) {
+  if (!aiPersistenceConfigured()) {
     return {
       status: "not_configured",
       message: "Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to persist AI threads, messages, briefs, tool runs, and usage.",
@@ -114,7 +118,7 @@ export async function persistPortfolioBrief(input: {
     });
 
     const citations = input.brief.citations;
-    await supabaseFetch("ai_tool_runs", {
+    const [toolRun] = await supabaseFetch<Array<{ id: string }>>("ai_tool_runs", {
       method: "POST",
       body: JSON.stringify([
         {
@@ -133,7 +137,7 @@ export async function persistPortfolioBrief(input: {
       ]),
     });
 
-    await supabaseFetch("ai_messages", {
+    const messages = await supabaseFetch<Array<{ id: string }>>("ai_messages", {
       method: "POST",
       body: JSON.stringify([
         {
@@ -170,7 +174,7 @@ export async function persistPortfolioBrief(input: {
       ]),
     });
 
-    await supabaseFetch("usage_events", {
+    const [usageEvent] = await supabaseFetch<Array<{ id: string }>>("usage_events", {
       method: "POST",
       body: JSON.stringify([
         {
@@ -187,7 +191,15 @@ export async function persistPortfolioBrief(input: {
       ]),
     });
 
-    return { status: "persisted", threadId: thread.id, briefId: brief.id };
+    return {
+      status: "persisted",
+      threadId: thread.id,
+      briefId: brief.id,
+      toolRunId: toolRun.id,
+      messageIds: messages.map((message) => message.id),
+      usageEventId: usageEvent.id,
+      citationCount: citations.length,
+    };
   } catch (error) {
     return {
       status: "failed",

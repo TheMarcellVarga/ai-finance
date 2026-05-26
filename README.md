@@ -75,6 +75,7 @@ scripts/generate-openapi-client
 scripts/validate-supabase-migrations
 scripts/run-ai-evals
 scripts/check-ai-safety-fixtures
+scripts/verify-phase5-live
 ```
 
 ## Local Development
@@ -100,4 +101,11 @@ curl -X POST http://127.0.0.1:3000/api/ai/portfolio-brief \
   -H "Authorization: Bearer dev:user_demo" \
   -H "Content-Type: application/json" \
   -d '{"prompt":"Summarize concentration risk and data freshness as research."}'
+```
+
+To close the Phase 5 live gate, configure `VERCEL_AI_GATEWAY_API_KEY` or
+`AI_GATEWAY_API_KEY`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY`, then run:
+
+```bash
+scripts/verify-phase5-live
 ```

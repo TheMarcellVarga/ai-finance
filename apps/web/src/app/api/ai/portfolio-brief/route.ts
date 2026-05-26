@@ -9,7 +9,7 @@ import {
   portfolioBriefRequestSchema,
   portfolioBriefSchema,
 } from "@/lib/ai/portfolio-brief";
-import { persistPortfolioBrief } from "@/lib/ai/persistence";
+import { aiPersistenceConfigured, persistPortfolioBrief } from "@/lib/ai/persistence";
 import { getPortfolioSnapshot } from "@/lib/ai/portfolio-tools";
 import { createFinanceAiTools } from "@/lib/ai/tool-registry";
 
@@ -35,6 +35,10 @@ function shouldUseDeterministicFixtureMode() {
     return false;
   }
   return process.env.NODE_ENV !== "production" && !aiGatewayConfigured();
+}
+
+function liveModeRequested() {
+  return process.env.AI_PORTFOLIO_BRIEF_MODE === "live";
 }
 
 function bearerTokenFromRequest(request: Request) {
@@ -74,6 +78,7 @@ export async function POST(request: Request) {
     parsedRequest.data.prompt ??
     "Generate a portfolio brief focused on allocation, concentration, data freshness, and research follow-ups.";
   const safety = classifyPromptSafety(prompt);
+  const fixtureMode = shouldUseDeterministicFixtureMode();
 
   if (!safety.safe) {
     const brief = createRefusalBrief(prompt);
@@ -87,6 +92,42 @@ export async function POST(request: Request) {
     });
   }
 
+  if (!fixtureMode && !aiGatewayConfigured()) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "ai_gateway_not_configured",
+          message: "Set VERCEL_AI_GATEWAY_API_KEY or AI_GATEWAY_API_KEY before running a live portfolio brief.",
+        },
+      },
+      { status: 503 },
+    );
+  }
+
+  if (liveModeRequested() && !aiPersistenceConfigured()) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "ai_persistence_not_configured",
+          message: "Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY before closing the Phase 5 live AI gate.",
+        },
+      },
+      { status: 503 },
+    );
+  }
+
+  if (liveModeRequested() && parsedRequest.data.stream) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "streaming_live_gate_not_supported",
+          message: "Use non-streaming mode for Phase 5 live verification so the structured brief and persistence can be validated.",
+        },
+      },
+      { status: 400 },
+    );
+  }
+
   try {
     const authorization = requestAuthorization(request);
     const authToken = bearerTokenFromRequest(request);
@@ -95,7 +136,7 @@ export async function POST(request: Request) {
       requestAuthorization: authorization,
     });
 
-    if (shouldUseDeterministicFixtureMode()) {
+    if (fixtureMode) {
       const brief = createDeterministicPortfolioBrief(snapshot, prompt);
       const latencyMs = Math.round(performance.now() - startedAt);
       const persistence = await persistPortfolioBrief({
@@ -177,10 +218,29 @@ export async function POST(request: Request) {
       tokenUsage: usage,
     });
 
+    if (liveModeRequested() && persistence.status !== "persisted") {
+      return NextResponse.json(
+        {
+          error: {
+            code: "ai_persistence_failed",
+            message: persistence.message ?? "The live AI brief generated, but persistence did not complete.",
+          },
+          meta: {
+            model,
+            liveAiGatewayCall: true,
+            persistence,
+          },
+        },
+        { status: 502 },
+      );
+    }
+
     return NextResponse.json({
       data: brief,
       meta: {
         model,
+        mode: liveModeRequested() ? "live" : "configured",
+        liveAiGatewayCall: true,
         latencyMs,
         persistence,
         toolRuns: [
