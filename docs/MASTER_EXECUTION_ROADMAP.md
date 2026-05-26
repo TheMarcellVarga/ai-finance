@@ -189,7 +189,7 @@ Completed artifacts:
 
 Pending live verification:
 - TODO: Add `VERCEL_AI_GATEWAY_API_KEY` or Vercel-managed AI Gateway credentials before final demo verification.
-- TODO: Optionally set `AI_GATEWAY_MODEL` to the intended final demo model; otherwise the route defaults to `openai/gpt-5.1-instant`.
+- TODO: Optionally set `AI_GATEWAY_MODEL` to the intended final demo model; otherwise the route defaults to the low-cost `amazon/nova-micro`.
 - TODO: Point Next.js at the finance API with `FINANCE_API_BASE_URL` and, for local dev auth, `FINANCE_API_DEV_TOKEN`.
 - TODO: Apply Supabase migrations to the configured remote project so `public.profiles` and AI persistence tables exist.
 - Run `scripts/verify-phase5-live` with AI Gateway credentials and a configured finance API to prove the demo includes a real model call.

@@ -109,3 +109,8 @@ To close the Phase 5 live gate, configure `VERCEL_AI_GATEWAY_API_KEY` or
 ```bash
 scripts/verify-phase5-live
 ```
+
+Local development defaults to deterministic fixture mode even when an AI Gateway
+key is present. Set `AI_PORTFOLIO_BRIEF_MODE=live` only for intentional live
+checks. The live verifier defaults to `amazon/nova-micro` to keep model spend
+low; override with `AI_GATEWAY_MODEL` only when needed.

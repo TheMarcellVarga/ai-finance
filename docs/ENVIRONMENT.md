@@ -41,7 +41,7 @@ Never expose service-role keys, provider keys, webhook secrets, raw JWTs, or pri
 - `SENTRY_DSN`
 - `POSTHOG_PERSONAL_API_KEY` if needed server-side
 - `VERCEL_AI_GATEWAY_API_KEY` or Vercel-managed AI Gateway credentials
-- `AI_GATEWAY_MODEL`, optional, defaults locally to `openai/gpt-5.1-instant` for the Phase 5 portfolio brief route
+- `AI_GATEWAY_MODEL`, optional, defaults to `amazon/nova-micro` for the Phase 5 portfolio brief route
 - `AI_GATEWAY_API_KEY`, optional local alias for `VERCEL_AI_GATEWAY_API_KEY`
 - `AI_PORTFOLIO_BRIEF_MODE`, optional; use `fixture` to avoid model calls during local development or `live` to force AI Gateway
 - `FINANCE_API_DEV_TOKEN`, optional local token for Next.js server routes when the Go API runs in dev auth mode
@@ -65,13 +65,17 @@ AI runtime should track:
 - cache hit/miss
 - safety label
 
-For cost-controlled development, `/api/ai/portfolio-brief` supports deterministic fixture mode. In non-production, the route falls back to fixture mode when no AI Gateway credential is configured. Fixture mode still reads the owner-scoped finance API snapshot, applies prompt safety checks, returns the required structured fields, and attempts Supabase persistence if server credentials are configured. It does not make a model call and does not satisfy the final Phase 5 live AI acceptance gate.
+For cost-controlled development, `/api/ai/portfolio-brief` supports deterministic fixture mode. In non-production, the route defaults to fixture mode even when an AI Gateway credential is configured, unless `AI_PORTFOLIO_BRIEF_MODE=live` is explicitly set. Fixture mode still reads the owner-scoped finance API snapshot, applies prompt safety checks, returns the required structured fields, and attempts Supabase persistence if server credentials are configured. It does not make a model call and does not satisfy the final Phase 5 live AI acceptance gate.
 
 Live Phase 5 verification is intentionally stricter than fixture mode. With
 `AI_PORTFOLIO_BRIEF_MODE=live`, the route fails fast unless AI Gateway and
 Supabase persistence are configured, and non-streaming responses must persist
 thread, message, tool run, brief, citation, and usage metadata. Run
 `scripts/verify-phase5-live` after configuring live credentials.
+
+Vercel AI Gateway may require a valid card on file before it unlocks the
+included free credits. If `scripts/verify-phase5-live` returns a credit-card
+requirement, keep using fixture mode until the Vercel billing gate is resolved.
 
 ## Provider Notes
 

@@ -16,15 +16,18 @@ import { createFinanceAiTools } from "@/lib/ai/tool-registry";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const model = process.env.AI_GATEWAY_MODEL ?? "openai/gpt-5.1-instant";
+const model = process.env.AI_GATEWAY_MODEL ?? "amazon/nova-micro";
 const fallbackDevToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
 
 if (!process.env.VERCEL_AI_GATEWAY_API_KEY && process.env.AI_GATEWAY_API_KEY) {
   process.env.VERCEL_AI_GATEWAY_API_KEY = process.env.AI_GATEWAY_API_KEY;
 }
+if (!process.env.AI_GATEWAY_API_KEY && process.env.VERCEL_AI_GATEWAY_API_KEY) {
+  process.env.AI_GATEWAY_API_KEY = process.env.VERCEL_AI_GATEWAY_API_KEY;
+}
 
 function aiGatewayConfigured() {
-  return Boolean(process.env.VERCEL_AI_GATEWAY_API_KEY);
+  return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_AI_GATEWAY_API_KEY);
 }
 
 function shouldUseDeterministicFixtureMode() {
@@ -34,7 +37,7 @@ function shouldUseDeterministicFixtureMode() {
   if (process.env.AI_PORTFOLIO_BRIEF_MODE === "live") {
     return false;
   }
-  return process.env.NODE_ENV !== "production" && !aiGatewayConfigured();
+  return process.env.NODE_ENV !== "production";
 }
 
 function liveModeRequested() {
