@@ -163,7 +163,7 @@ Acceptance gate:
 - Provider failures are visible and block fabricated market values.
 
 ## Phase 5: Real AI Foundation
-Status: implementation complete; live credential verification cost-deferred.
+Status: implementation complete; fixture mode is the active working path and live credential verification is deferred.
 
 Primary skills: `ai-research-features`, `security-review-fintech`.
 
@@ -180,24 +180,24 @@ Deliverables:
 
 Completed artifacts:
 - `apps/web/src/app/api/ai/portfolio-brief/route.ts` uses Vercel AI SDK structured output through AI Gateway with a configurable `AI_GATEWAY_MODEL`, plus an optional streaming mode for the portfolio brief route.
-- Local development can use deterministic fixture mode for `/api/ai/portfolio-brief` when AI Gateway credentials are absent, returning a schema-valid, cited brief from the owner-scoped portfolio snapshot without model spend. This mode is a temporary workflow unblocker and does not satisfy the live AI acceptance gate.
+- Local development uses deterministic fixture mode for `/api/ai/portfolio-brief` by default, returning a schema-valid, cited brief from the owner-scoped portfolio snapshot without model spend. This is the current working mode and does not require live AI credentials.
 - `apps/web/src/lib/ai/portfolio-brief.ts` defines the portfolio brief schema, citations/freshness contract, prompt builder, and advice-boundary safety precheck.
 - `apps/web/src/lib/ai/tool-registry.ts` and `portfolio-tools.ts` provide an owner-scoped `getPortfolioSnapshot` AI tool wrapper that calls the application finance API instead of raw database access.
 - `apps/web/src/lib/ai/persistence.ts` persists AI threads, messages, tool runs, briefs, citations, usage events, latency, model, and token usage when `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are configured server-side.
 - `scripts/run-ai-evals` and `scripts/check-ai-safety-fixtures` now run deterministic schema, citation/freshness, advice-boundary, ownership-isolation, prompt-injection, and safety fixture checks.
 - `scripts/verify-phase5-live` runs the credential-dependent acceptance gate: live AI Gateway call, owner-scoped portfolio snapshot, schema/citation checks, and Supabase persistence IDs for thread, messages, tool run, brief, citations, and usage.
 
-Pending live verification:
-- TODO: Add `VERCEL_AI_GATEWAY_API_KEY` or Vercel-managed AI Gateway credentials before final demo verification.
-- TODO: Optionally set `AI_GATEWAY_MODEL` to the intended final demo model; otherwise the route defaults to the low-cost `amazon/nova-micro`.
-- TODO: Point Next.js at the finance API with `FINANCE_API_BASE_URL` and, for local dev auth, `FINANCE_API_DEV_TOKEN`.
-- TODO: Apply Supabase migrations to the configured remote project so `public.profiles` and AI persistence tables exist.
-- Run `scripts/verify-phase5-live` with AI Gateway credentials and a configured finance API to prove the demo includes a real model call.
-- Configure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, then verify AI thread, messages, tool run, brief, citation metadata, and usage rows are persisted.
+Deferred live verification:
+- If the team later chooses to re-open live AI verification, add Vercel AI Gateway credentials via `vercel link` and `vercel env pull apps/web/.env.local`, or set `VERCEL_AI_GATEWAY_API_KEY` / `AI_GATEWAY_API_KEY`.
+- Optionally set `AI_GATEWAY_MODEL` to the intended final demo model; otherwise the route defaults to the low-cost `amazon/nova-micro`.
+- Point Next.js at the finance API with `FINANCE_API_BASE_URL` and, for local dev auth, `FINANCE_API_DEV_TOKEN`.
+- Apply Supabase migrations to the configured remote project so `public.profiles` and AI persistence tables exist.
+- If live verification is re-opened, run `scripts/verify-phase5-live` with AI Gateway credentials and a configured finance API to prove the demo includes a real model call.
+- Configure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` if you want live AI persistence verification later.
 
 Temporary Phase 6 unblock:
 - Phase 6 implementation may proceed behind deterministic AI fixture mode to avoid early model spend, provided all AI-facing UI and docs continue to label fixture output as non-live.
-- Before Phase 8 recruiter-demo polish, Phase 5 must be re-opened and the full live acceptance gate must pass with a real model call and persisted rows.
+- Before Phase 8 recruiter-demo polish, Phase 5 only needs to be re-opened if the live AI path is being finalized for a public demo.
 
 Acceptance gate:
 - Demo includes at least one real model call.

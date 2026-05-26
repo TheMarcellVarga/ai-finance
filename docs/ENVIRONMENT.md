@@ -40,7 +40,7 @@ Never expose service-role keys, provider keys, webhook secrets, raw JWTs, or pri
 - `RESEND_API_KEY`
 - `SENTRY_DSN`
 - `POSTHOG_PERSONAL_API_KEY` if needed server-side
-- `VERCEL_AI_GATEWAY_API_KEY` or Vercel-managed AI Gateway credentials
+- `VERCEL_OIDC_TOKEN`, `VERCEL_AI_GATEWAY_API_KEY`, or Vercel-managed AI Gateway credentials
 - `AI_GATEWAY_MODEL`, optional, defaults to `amazon/nova-micro` for the Phase 5 portfolio brief route
 - `AI_GATEWAY_API_KEY`, optional local alias for `VERCEL_AI_GATEWAY_API_KEY`
 - `AI_PORTFOLIO_BRIEF_MODE`, optional; use `fixture` to avoid model calls during local development or `live` to force AI Gateway
@@ -67,15 +67,17 @@ AI runtime should track:
 
 For cost-controlled development, `/api/ai/portfolio-brief` supports deterministic fixture mode. In non-production, the route defaults to fixture mode even when an AI Gateway credential is configured, unless `AI_PORTFOLIO_BRIEF_MODE=live` is explicitly set. Fixture mode still reads the owner-scoped finance API snapshot, applies prompt safety checks, returns the required structured fields, and attempts Supabase persistence if server credentials are configured. It does not make a model call and does not satisfy the final Phase 5 live AI acceptance gate.
 
-Live Phase 5 verification is intentionally stricter than fixture mode. With
+Fixture mode is the active working mode for this repo. It is the recommended
+path while live AI credentials are being deferred for privacy or account setup
+reasons.
+
+Live Phase 5 verification remains available later as an opt-in check. With
 `AI_PORTFOLIO_BRIEF_MODE=live`, the route fails fast unless AI Gateway and
 Supabase persistence are configured, and non-streaming responses must persist
-thread, message, tool run, brief, citation, and usage metadata. Run
-`scripts/verify-phase5-live` after configuring live credentials.
-
-Vercel AI Gateway may require a valid card on file before it unlocks the
-included free credits. If `scripts/verify-phase5-live` returns a credit-card
-requirement, keep using fixture mode until the Vercel billing gate is resolved.
+thread, message, tool run, brief, citation, and usage metadata. For the Vercel
+AI Gateway free tier, prefer project-scoped OIDC credentials from `vercel link`
+and `vercel env pull apps/web/.env.local`; the verifier also accepts
+`AI_GATEWAY_API_KEY` or `VERCEL_AI_GATEWAY_API_KEY`.
 
 ## Provider Notes
 
@@ -90,7 +92,7 @@ requirement, keep using fixture mode until the Vercel billing gate is resolved.
 2. Add local env examples without real secrets. `services/api/.env.example` exists.
 3. Add Supabase migrations. Done for Phase 3.
 4. Wire Clerk and Stripe dev webhooks.
-5. Add AI Gateway configuration. Done for Phase 5 through the AI SDK portfolio brief route.
+5. Add AI Gateway configuration. Done for Phase 5 through the AI SDK portfolio brief route, with fixture mode as the current default.
 6. Add provider keys only after server-side boundaries exist.
 
 ## Go API Local Auth

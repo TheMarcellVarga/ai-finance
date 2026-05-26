@@ -27,7 +27,7 @@ if (!process.env.AI_GATEWAY_API_KEY && process.env.VERCEL_AI_GATEWAY_API_KEY) {
 }
 
 function aiGatewayConfigured() {
-  return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_AI_GATEWAY_API_KEY);
+  return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
 }
 
 function shouldUseDeterministicFixtureMode() {
@@ -100,7 +100,8 @@ export async function POST(request: Request) {
       {
         error: {
           code: "ai_gateway_not_configured",
-          message: "Set VERCEL_AI_GATEWAY_API_KEY or AI_GATEWAY_API_KEY before running a live portfolio brief.",
+          message:
+            "Set VERCEL_OIDC_TOKEN, VERCEL_AI_GATEWAY_API_KEY, or AI_GATEWAY_API_KEY before running a live portfolio brief.",
         },
       },
       { status: 503 },
@@ -160,8 +161,7 @@ export async function POST(request: Request) {
           liveAiGatewayCall: false,
           latencyMs,
           persistence,
-          todo:
-            "Set VERCEL_AI_GATEWAY_API_KEY and AI_PORTFOLIO_BRIEF_MODE=live, then verify Supabase persistence before closing the Phase 5 live gate.",
+          todo: "Fixture mode is active for local development and review; live verification is deferred.",
           toolRuns: [
             {
               name: "getPortfolioSnapshot",

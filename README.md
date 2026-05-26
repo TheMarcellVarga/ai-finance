@@ -6,7 +6,7 @@ This project is not a trading bot, brokerage product, robo-advisor, return-predi
 
 ## Current Status
 
-Roadmap phase: Phase 5, Real AI Foundation, implementation complete with live credential verification pending.
+Roadmap phase: Phase 5, Real AI Foundation, with deterministic fixture mode active and live credential verification deferred.
 
 Phase 0 control-plane assets, Phase 1 product/brand direction, Phase 2 app scaffold/design system, Phase 3 backend/data foundation, Phase 4 portfolio workspace MVP, and Phase 5 real AI foundation are in place:
 - [Agent instructions](AGENTS.md)
@@ -22,9 +22,9 @@ Phase 0 control-plane assets, Phase 1 product/brand direction, Phase 2 app scaff
 - Portfolio workspace UI with provider-backed portfolio creation, holdings, transactions, allocation review, and decision-support disclaimers
 - AI SDK portfolio brief route with AI Gateway model configuration, owner-scoped `getPortfolioSnapshot` tool wrapper, structured output schema, citations/freshness contract, Supabase persistence path, usage tracking, and deterministic AI eval/safety scripts
 
-Remaining Phase 5 verification:
-- Run a real AI Gateway portfolio brief request.
-- Confirm Supabase persistence rows for the AI thread, messages, tool run, brief, citations, and usage event.
+Current AI working mode:
+- Deterministic fixture mode is the default for local development and review.
+- The live AI Gateway verification path remains available as an opt-in check later.
 
 ## Product Direction
 
@@ -103,8 +103,16 @@ curl -X POST http://127.0.0.1:3000/api/ai/portfolio-brief \
   -d '{"prompt":"Summarize concentration risk and data freshness as research."}'
 ```
 
-To close the Phase 5 live gate, configure `VERCEL_AI_GATEWAY_API_KEY` or
-`AI_GATEWAY_API_KEY`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY`, then run:
+If you later want to re-enable live AI verification, use Vercel OIDC
+credentials or an AI Gateway API key, plus Supabase persistence credentials:
+
+```bash
+vercel link
+vercel env pull apps/web/.env.local
+```
+
+Then make sure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are available and
+run:
 
 ```bash
 scripts/verify-phase5-live

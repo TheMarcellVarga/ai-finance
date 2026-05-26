@@ -74,7 +74,7 @@ Gate:
 
 ## Phase 5: Real AI Foundation
 
-Status: implementation complete; live credential verification pending.
+Status: implementation complete; fixture mode is the active working path and live credential verification is deferred.
 
 Work:
 - Add Vercel AI Gateway, streaming route, tool registry, AI persistence, usage tracking, portfolio snapshot tool, structured portfolio brief schema, citations, and eval fixtures.
@@ -89,7 +89,7 @@ Artifacts:
 Gate:
 - At least one real model call is persisted, schema-valid, cited where possible, and advice-boundary safe.
 
-Pending:
+Deferred:
 - Verify the portfolio brief route against real AI Gateway credentials.
 - Verify Supabase persistence with server-side Supabase credentials.
 
