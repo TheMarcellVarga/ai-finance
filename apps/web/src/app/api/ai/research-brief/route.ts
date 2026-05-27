@@ -5,9 +5,14 @@ import {
   filingSummaryRequestSchema,
   filingSummarySchema,
 } from "@/lib/ai/research-intelligence";
+import { checkUsageLimit, recordUsageEvent } from "@/lib/billing/usage";
+import { checkRateLimit } from "@/lib/security/rate-limit";
+import { bearerTokenFromRequest } from "@/lib/server/identity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const fallbackDevToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
 
 export async function POST(request: Request) {
   let parsedBody: unknown;
@@ -28,7 +33,36 @@ export async function POST(request: Request) {
     );
   }
 
+  const authToken = bearerTokenFromRequest(request, fallbackDevToken);
+  const rateLimit = await checkRateLimit({ key: `ai:filing_summary:${authToken}`, windowSeconds: 60, max: 12 });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: { code: "rate_limited", message: "Research brief requests are temporarily rate-limited.", resetAt: rateLimit.resetAt } },
+      { status: 429 },
+    );
+  }
+  const usageGate = await checkUsageLimit({ authToken, feature: "filing_summary" });
+  if (!usageGate.allowed) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "entitlement_limit_reached",
+          message: usageGate.message,
+          plan: usageGate.plan,
+          used: usageGate.used,
+          limit: usageGate.limit,
+        },
+      },
+      { status: 402 },
+    );
+  }
+
   const summary = filingSummarySchema.parse(createDeterministicFilingSummary(parsedRequest.data));
+  const usage = await recordUsageEvent({
+    authToken,
+    feature: "filing_summary",
+    metadata: { ticker: parsedRequest.data.ticker, mode: "deterministic-fixture" },
+  });
 
   return NextResponse.json({
     data: summary,
@@ -45,10 +79,11 @@ export async function POST(request: Request) {
         },
         {
           name: "saveResearchBrief",
-          status: "deferred",
-          reason: "Supabase persistence remains optional in deterministic local mode.",
+          status: usage.status,
+          reason: usage.status === "not_configured" ? "Supabase persistence remains optional in deterministic local mode." : undefined,
         },
       ],
+      usage: { entitlement: usageGate, persistence: usage },
     },
   });
 }

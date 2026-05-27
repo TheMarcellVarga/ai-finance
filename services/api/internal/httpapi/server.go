@@ -29,6 +29,7 @@ type server struct {
 	chartProvider providers.IntradayProvider
 	workspace     *store.WorkspaceStore
 	logger        *slog.Logger
+	rateLimiter   *rateLimiter
 }
 
 func NewHandler(opts Options) http.Handler {
@@ -46,6 +47,7 @@ func NewHandler(opts Options) http.Handler {
 		chartProvider: opts.ChartProvider,
 		workspace:     opts.Workspace,
 		logger:        opts.Logger,
+		rateLimiter:   newRateLimiter(30, time.Minute),
 	}
 
 	mux := http.NewServeMux()
@@ -166,8 +168,12 @@ func (s *server) usage(w http.ResponseWriter, r *http.Request) {
 		"data": map[string]any{
 			"clerkUserId": principal.ClerkUserID,
 			"period":      time.Now().UTC().Format("2006-01"),
+			"plan":        freeEntitlements.Plan,
 			"features": []map[string]any{
-				{"feature": "portfolio_brief", "used": 0, "limit": 0, "status": "not_configured"},
+				{"feature": "portfolio", "used": s.workspace.CountPortfolios(principal.ClerkUserID), "limit": freeEntitlements.Portfolios, "status": "enforced"},
+				{"feature": "holding", "used": s.workspace.CountHoldings(principal.ClerkUserID), "limit": freeEntitlements.Holdings, "status": "enforced"},
+				{"feature": "watchlist", "used": s.workspace.CountWatchlists(principal.ClerkUserID), "limit": freeEntitlements.Watchlists, "status": "enforced"},
+				{"feature": "portfolio_brief", "used": 0, "limit": freeEntitlements.AIBriefs, "status": "nextjs_metered"},
 			},
 		},
 	})
@@ -183,6 +189,10 @@ func (s *server) listPortfolios(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) createPortfolio(w http.ResponseWriter, r *http.Request) {
 	principal, _ := auth.PrincipalFromContext(r.Context())
+	if s.workspace.CountPortfolios(principal.ClerkUserID) >= freeEntitlements.Portfolios {
+		writeError(w, r, http.StatusPaymentRequired, "entitlement_limit_reached", "The current plan portfolio limit has been reached.")
+		return
+	}
 	var body struct {
 		Name            string `json:"name"`
 		BaseCurrency    string `json:"baseCurrency"`
@@ -217,6 +227,7 @@ func (s *server) createPortfolio(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, err)
 		return
 	}
+	s.writeAudit(r, principal, "portfolio.created", "portfolio", portfolio.ID, map[string]any{"plan": freeEntitlements.Plan})
 	writeJSON(w, http.StatusCreated, map[string]any{"data": portfolio, "meta": phase4Meta()})
 }
 
@@ -245,6 +256,7 @@ func (s *server) updatePortfolio(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, err)
 		return
 	}
+	s.writeAudit(r, principal, "portfolio.updated", "portfolio", portfolio.ID, map[string]any{"plan": freeEntitlements.Plan})
 	writeJSON(w, http.StatusOK, map[string]any{"data": portfolio, "meta": phase4Meta()})
 }
 
@@ -254,6 +266,7 @@ func (s *server) deletePortfolio(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, err)
 		return
 	}
+	s.writeAudit(r, principal, "portfolio.deleted", "portfolio", r.PathValue("id"), map[string]any{"plan": freeEntitlements.Plan})
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -269,6 +282,10 @@ func (s *server) addHolding(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, http.StatusBadRequest, "invalid_json", "Request body must be valid JSON.")
 		return
 	}
+	if !s.workspace.HasHolding(principal.ClerkUserID, r.PathValue("id"), body.Ticker) && s.workspace.CountHoldings(principal.ClerkUserID) >= freeEntitlements.Holdings {
+		writeError(w, r, http.StatusPaymentRequired, "entitlement_limit_reached", "The current plan holding limit has been reached.")
+		return
+	}
 	asset, err := s.realAsset(r, body.Ticker)
 	if err != nil {
 		s.logger.Warn("real asset lookup failed", "ticker", body.Ticker, "error", err)
@@ -280,6 +297,7 @@ func (s *server) addHolding(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, err)
 		return
 	}
+	s.writeAudit(r, principal, "holding.upserted", "portfolio", portfolio.ID, map[string]any{"ticker": asset.Ticker, "plan": freeEntitlements.Plan})
 	writeJSON(w, http.StatusOK, map[string]any{"data": portfolio, "meta": phase4Meta()})
 }
 
@@ -293,6 +311,10 @@ func (s *server) listWatchlists(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) createWatchlist(w http.ResponseWriter, r *http.Request) {
 	principal, _ := auth.PrincipalFromContext(r.Context())
+	if s.workspace.CountWatchlists(principal.ClerkUserID) >= freeEntitlements.Watchlists {
+		writeError(w, r, http.StatusPaymentRequired, "entitlement_limit_reached", "The current plan watchlist limit has been reached.")
+		return
+	}
 	var body struct {
 		Name          string   `json:"name"`
 		InitialAssets []string `json:"initialAssets"`
@@ -316,6 +338,7 @@ func (s *server) createWatchlist(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, err)
 		return
 	}
+	s.writeAudit(r, principal, "watchlist.created", "watchlist", watchlist.ID, map[string]any{"plan": freeEntitlements.Plan})
 	writeJSON(w, http.StatusCreated, map[string]any{"data": watchlist, "meta": phase4Meta()})
 }
 
@@ -340,6 +363,7 @@ func (s *server) addWatchlistItem(w http.ResponseWriter, r *http.Request) {
 		writeStoreError(w, r, err)
 		return
 	}
+	s.writeAudit(r, principal, "watchlist_item.added", "watchlist", watchlist.ID, map[string]any{"ticker": asset.Ticker, "plan": freeEntitlements.Plan})
 	writeJSON(w, http.StatusOK, map[string]any{"data": watchlist, "meta": phase4Meta()})
 }
 

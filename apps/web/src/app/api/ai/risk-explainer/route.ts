@@ -6,6 +6,9 @@ import {
   riskExplainerRequestSchema,
   riskExplainerSchema,
 } from "@/lib/ai/research-intelligence";
+import { checkUsageLimit, recordUsageEvent } from "@/lib/billing/usage";
+import { checkRateLimit } from "@/lib/security/rate-limit";
+import { bearerTokenFromRequest } from "@/lib/server/identity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,6 +38,30 @@ export async function POST(request: Request) {
     );
   }
 
+  const authToken = bearerTokenFromRequest(request, fallbackDevToken);
+  const rateLimit = await checkRateLimit({ key: `ai:risk_explainer:${authToken}`, windowSeconds: 60, max: 12 });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: { code: "rate_limited", message: "Risk explainer requests are temporarily rate-limited.", resetAt: rateLimit.resetAt } },
+      { status: 429 },
+    );
+  }
+  const usageGate = await checkUsageLimit({ authToken, feature: "risk_explainer" });
+  if (!usageGate.allowed) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "entitlement_limit_reached",
+          message: usageGate.message,
+          plan: usageGate.plan,
+          used: usageGate.used,
+          limit: usageGate.limit,
+        },
+      },
+      { status: 402 },
+    );
+  }
+
   try {
     const snapshot = await getPortfolioSnapshot({
       portfolioId: parsedRequest.data.portfolioId,
@@ -42,6 +69,11 @@ export async function POST(request: Request) {
     });
     const explanation = createDeterministicRiskExplainer(snapshot, parsedRequest.data.prompt);
     const parsedExplanation = "concentrationSignals" in explanation ? riskExplainerSchema.parse(explanation) : explanation;
+    const usage = await recordUsageEvent({
+      authToken,
+      feature: "risk_explainer",
+      metadata: { mode: "deterministic-fixture", portfolioId: parsedRequest.data.portfolioId },
+    });
 
     return NextResponse.json({
       data: parsedExplanation,
@@ -57,6 +89,7 @@ export async function POST(request: Request) {
             freshness: snapshot.dataFreshness.freshness,
           },
         ],
+        usage: { entitlement: usageGate, persistence: usage },
       },
     });
   } catch (error) {

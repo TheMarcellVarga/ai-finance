@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+required_files=(
+  "$ROOT_DIR/apps/web/src/app/api/webhooks/stripe/route.ts"
+  "$ROOT_DIR/apps/web/src/app/api/webhooks/clerk/route.ts"
+  "$ROOT_DIR/apps/web/src/app/api/research/saves/route.ts"
+  "$ROOT_DIR/apps/web/src/lib/billing/entitlements.ts"
+  "$ROOT_DIR/apps/web/src/lib/billing/usage.ts"
+  "$ROOT_DIR/apps/web/src/lib/security/audit.ts"
+  "$ROOT_DIR/apps/web/src/lib/security/observability.ts"
+  "$ROOT_DIR/apps/web/src/lib/security/rate-limit.ts"
+  "$ROOT_DIR/apps/web/src/lib/security/webhook-signatures.ts"
+  "$ROOT_DIR/services/api/internal/httpapi/phase7.go"
+  "$ROOT_DIR/supabase/migrations/202605270002_phase7_billing_security_observability.sql"
+)
+
+for file in "${required_files[@]}"; do
+  if [[ ! -f "$file" ]]; then
+    echo "Missing Phase 7 artifact: $file" >&2
+    exit 1
+  fi
+done
+
+checks=(
+  "STRIPE_WEBHOOK_SECRET:$ROOT_DIR/apps/web/src/app/api/webhooks/stripe/route.ts"
+  "CLERK_WEBHOOK_SECRET:$ROOT_DIR/apps/web/src/app/api/webhooks/clerk/route.ts"
+  "verifyStripeSignature:$ROOT_DIR/apps/web/src/lib/security/webhook-signatures.ts"
+  "verifyClerkSignature:$ROOT_DIR/apps/web/src/lib/security/webhook-signatures.ts"
+  "PLAN_ENTITLEMENTS:$ROOT_DIR/apps/web/src/lib/billing/entitlements.ts"
+  "checkUsageLimit:$ROOT_DIR/apps/web/src/app/api/ai/portfolio-brief/route.ts"
+  "research_save:$ROOT_DIR/apps/web/src/app/api/research/saves/route.ts"
+  "checkRateLimit:$ROOT_DIR/apps/web/src/app/api/ai/portfolio-brief/route.ts"
+  "scrubForTelemetry:$ROOT_DIR/apps/web/src/lib/security/observability.ts"
+  "audit_logs:$ROOT_DIR/apps/web/src/lib/security/audit.ts"
+  "webhook_events:$ROOT_DIR/supabase/migrations/202605270002_phase7_billing_security_observability.sql"
+  "entitlement_limit_reached:$ROOT_DIR/services/api/internal/httpapi/server.go"
+  "rate_limited:$ROOT_DIR/services/api/internal/httpapi/phase7.go"
+)
+
+for check in "${checks[@]}"; do
+  needle="${check%%:*}"
+  file="${check#*:}"
+  if ! grep -q "$needle" "$file"; then
+    echo "Phase 7 verification failed: expected '$needle' in $file" >&2
+    exit 1
+  fi
+done
+
+echo "Phase 7 billing, security, and observability static verification passed."

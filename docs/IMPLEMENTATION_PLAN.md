@@ -102,9 +102,11 @@ Gate:
 - Filing and goal outputs cite sources or assumptions and avoid return promises.
 
 ## Phase 7: Billing, Security, And Observability
+Status: complete in local/server-enforced mode; live webhook delivery requires configured Stripe, Clerk, and Supabase secrets.
 
 Work:
 - Add Stripe products, entitlements, usage limits, webhook verification, Sentry, PostHog privacy rules, audit logs, and rate limits.
+- Completed with entitlement catalog, billing dashboard, AI usage gates, signed Stripe/Clerk webhooks, webhook idempotency migration, privacy-scrubbed observability helpers, audit logging, and Go API local Free-plan limits.
 
 Gate:
 - Entitlements are server-enforced and sensitive data is scrubbed from analytics/errors.

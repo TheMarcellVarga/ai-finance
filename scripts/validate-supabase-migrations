@@ -29,9 +29,16 @@ if ! grep -Rqi 'create extension if not exists vector' "$MIGRATIONS_DIR"; then
   exit 1
 fi
 
-for table in profiles portfolios holdings watchlists ai_threads ai_messages usage_events audit_logs; do
+for table in profiles portfolios holdings watchlists ai_threads ai_messages usage_events audit_logs webhook_events; do
   if ! grep -Rqi "create table if not exists public.$table" "$MIGRATIONS_DIR"; then
     echo "Missing required table: $table" >&2
+    exit 1
+  fi
+done
+
+for column in stripe_price_id cancel_at_period_end entitlements last_webhook_event_id; do
+  if ! grep -Rqi "$column" "$MIGRATIONS_DIR"; then
+    echo "Missing Phase 7 subscription column in migrations: $column" >&2
     exit 1
   fi
 done

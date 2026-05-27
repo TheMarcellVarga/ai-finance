@@ -243,6 +243,52 @@ func TestHoldingAndWatchlistMutationsUseProviderAssets(t *testing.T) {
 	}
 }
 
+func TestFreePlanPortfolioLimitIsEnforced(t *testing.T) {
+	handler := testHandler(t)
+
+	firstReq := httptest.NewRequest(http.MethodPost, "/v1/portfolios", bytes.NewBufferString(`{"name":"First","initialHoldings":[]}`))
+	firstReq.Header.Set("Authorization", "Bearer dev:user_limit")
+	firstRes := httptest.NewRecorder()
+	handler.ServeHTTP(firstRes, firstReq)
+	if firstRes.Code != http.StatusCreated {
+		t.Fatalf("expected first portfolio 201, got %d: %s", firstRes.Code, firstRes.Body.String())
+	}
+
+	secondReq := httptest.NewRequest(http.MethodPost, "/v1/portfolios", bytes.NewBufferString(`{"name":"Second","initialHoldings":[]}`))
+	secondReq.Header.Set("Authorization", "Bearer dev:user_limit")
+	secondRes := httptest.NewRecorder()
+	handler.ServeHTTP(secondRes, secondReq)
+	if secondRes.Code != http.StatusPaymentRequired {
+		t.Fatalf("expected portfolio limit 402, got %d: %s", secondRes.Code, secondRes.Body.String())
+	}
+	if got := secondRes.Body.String(); !contains(got, "entitlement_limit_reached") {
+		t.Fatalf("expected entitlement error, got %s", got)
+	}
+}
+
+func TestUsageReportsServerSideLimits(t *testing.T) {
+	handler := testHandler(t)
+
+	createReq := httptest.NewRequest(http.MethodPost, "/v1/watchlists", bytes.NewBufferString(`{"name":"Research","initialAssets":["AAPL"]}`))
+	createReq.Header.Set("Authorization", "Bearer dev:user_usage")
+	createRes := httptest.NewRecorder()
+	handler.ServeHTTP(createRes, createReq)
+	if createRes.Code != http.StatusCreated {
+		t.Fatalf("expected watchlist 201, got %d: %s", createRes.Code, createRes.Body.String())
+	}
+
+	usageReq := httptest.NewRequest(http.MethodGet, "/v1/usage", nil)
+	usageReq.Header.Set("Authorization", "Bearer dev:user_usage")
+	usageRes := httptest.NewRecorder()
+	handler.ServeHTTP(usageRes, usageReq)
+	if usageRes.Code != http.StatusOK {
+		t.Fatalf("expected usage 200, got %d: %s", usageRes.Code, usageRes.Body.String())
+	}
+	if got := usageRes.Body.String(); !contains(got, `"feature":"watchlist"`) || !contains(got, `"used":1`) || !contains(got, `"limit":1`) {
+		t.Fatalf("expected usage limits in response, got %s", got)
+	}
+}
+
 func contains(value string, needle string) bool {
 	for i := 0; i+len(needle) <= len(value); i++ {
 		if value[i:i+len(needle)] == needle {

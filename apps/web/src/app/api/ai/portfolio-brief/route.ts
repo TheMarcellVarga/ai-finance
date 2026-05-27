@@ -17,6 +17,9 @@ import {
   resolveLivePortfolioBriefModel,
   selectedLiveAiProvider,
 } from "@/lib/ai/model-provider";
+import { checkUsageLimit } from "@/lib/billing/usage";
+import { checkRateLimit } from "@/lib/security/rate-limit";
+import { bearerTokenFromRequest } from "@/lib/server/identity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,14 +38,6 @@ function shouldUseDeterministicFixtureMode() {
 
 function liveModeRequested() {
   return process.env.AI_PORTFOLIO_BRIEF_MODE === "live";
-}
-
-function bearerTokenFromRequest(request: Request) {
-  const authorization = request.headers.get("authorization");
-  if (authorization?.startsWith("Bearer ")) {
-    return authorization.slice("Bearer ".length).trim();
-  }
-  return fallbackDevToken;
 }
 
 function requestAuthorization(request: Request) {
@@ -75,6 +70,25 @@ export async function POST(request: Request) {
     "Generate a portfolio brief focused on allocation, concentration, data freshness, and research follow-ups.";
   const safety = classifyPromptSafety(prompt);
   const fixtureMode = shouldUseDeterministicFixtureMode();
+  const authToken = bearerTokenFromRequest(request, fallbackDevToken);
+
+  const rateLimit = await checkRateLimit({
+    key: `ai:portfolio_brief:${authToken}`,
+    windowSeconds: 60,
+    max: 12,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "rate_limited",
+          message: "Portfolio brief requests are temporarily rate-limited.",
+          resetAt: rateLimit.resetAt,
+        },
+      },
+      { status: 429 },
+    );
+  }
 
   if (!safety.safe) {
     const brief = createRefusalBrief(prompt);
@@ -86,6 +100,22 @@ export async function POST(request: Request) {
         persistence: { status: "not_attempted" },
       },
     });
+  }
+
+  const usageGate = await checkUsageLimit({ authToken, feature: "portfolio_brief" });
+  if (!usageGate.allowed) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "entitlement_limit_reached",
+          message: usageGate.message,
+          plan: usageGate.plan,
+          used: usageGate.used,
+          limit: usageGate.limit,
+        },
+      },
+      { status: 402 },
+    );
   }
 
   const liveProvider = selectedLiveAiProvider();
@@ -130,7 +160,6 @@ export async function POST(request: Request) {
 
   try {
     const authorization = requestAuthorization(request);
-    const authToken = bearerTokenFromRequest(request);
     const snapshot = await getPortfolioSnapshot({
       portfolioId: parsedRequest.data.portfolioId,
       requestAuthorization: authorization,
@@ -168,7 +197,7 @@ export async function POST(request: Request) {
               freshness: snapshot.dataFreshness.freshness,
             },
           ],
-          usage: { mode: "fixture", totalTokens: 0 },
+          usage: { mode: "fixture", totalTokens: 0, entitlement: usageGate },
         },
       });
     }
@@ -258,7 +287,7 @@ export async function POST(request: Request) {
             freshness: snapshot.dataFreshness.freshness,
           },
         ],
-        usage,
+        usage: { tokenUsage: usage, entitlement: usageGate },
       },
     });
   } catch (error) {

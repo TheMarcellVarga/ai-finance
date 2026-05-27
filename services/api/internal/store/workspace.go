@@ -116,6 +116,19 @@ func (s *WorkspaceStore) ListPortfolios(userID string) []Portfolio {
 	return portfolios
 }
 
+func (s *WorkspaceStore) CountPortfolios(userID string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	count := 0
+	for _, portfolio := range s.portfolios {
+		if portfolio.UserID == userID {
+			count++
+		}
+	}
+	return count
+}
+
 func (s *WorkspaceStore) CreatePortfolio(userID, name, baseCurrency string, initialHoldings []Holding) (Portfolio, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -239,6 +252,36 @@ func (s *WorkspaceStore) AddHolding(userID, portfolioID string, asset Asset, qua
 	return clonePortfolio(portfolio), nil
 }
 
+func (s *WorkspaceStore) CountHoldings(userID string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	count := 0
+	for _, portfolio := range s.portfolios {
+		if portfolio.UserID == userID {
+			count += len(portfolio.Holdings)
+		}
+	}
+	return count
+}
+
+func (s *WorkspaceStore) HasHolding(userID, portfolioID, ticker string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	portfolio, ok := s.portfolios[portfolioID]
+	if !ok || portfolio.UserID != userID {
+		return false
+	}
+	ticker = strings.ToUpper(strings.TrimSpace(ticker))
+	for _, holding := range portfolio.Holdings {
+		if holding.Asset.Ticker == ticker {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *WorkspaceStore) ListWatchlists(userID string) []Watchlist {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -251,6 +294,19 @@ func (s *WorkspaceStore) ListWatchlists(userID string) []Watchlist {
 	}
 	sort.Slice(watchlists, func(i, j int) bool { return watchlists[i].Name < watchlists[j].Name })
 	return watchlists
+}
+
+func (s *WorkspaceStore) CountWatchlists(userID string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	count := 0
+	for _, watchlist := range s.watchlists {
+		if watchlist.UserID == userID {
+			count++
+		}
+	}
+	return count
 }
 
 func (s *WorkspaceStore) CreateWatchlist(userID, name string, initialAssets []Asset) (Watchlist, error) {

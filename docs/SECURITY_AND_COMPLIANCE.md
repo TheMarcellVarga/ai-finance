@@ -66,12 +66,15 @@ PostHog and Sentry payloads must scrub:
 
 Only safe metadata should be sent by default, such as feature name, route, plan tier, redacted error class, request ID, and aggregate usage counters.
 
+Phase 7 server observability routes analytics and error payloads through `scrubForTelemetry`, which redacts prompts, AI outputs, holdings, financial amounts, billing fields, raw JWTs, API keys, and secrets before PostHog or Sentry-compatible reporting.
+
 ## Webhooks
 
 - Stripe webhooks require signature verification.
 - Clerk webhooks require signature verification.
 - Webhook handlers must be idempotent.
 - Billing state changes should create audit events.
+- Phase 7 webhook handlers verify signatures before business processing, use `webhook_events` for duplicate suppression when Supabase is configured, and never trust client-supplied billing state.
 
 ## Audit Logs
 

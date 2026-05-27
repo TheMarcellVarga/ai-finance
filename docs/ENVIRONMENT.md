@@ -35,10 +35,14 @@ Never expose service-role keys, provider keys, webhook secrets, raw JWTs, or pri
 - `CLERK_WEBHOOK_SECRET`
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRICE_PRO`
+- `STRIPE_PRICE_RESEARCH_PRO`
+- `STRIPE_PRICE_TEAM`
 - `UPSTASH_REDIS_REST_URL`
 - `UPSTASH_REDIS_REST_TOKEN`
 - `RESEND_API_KEY`
 - `SENTRY_DSN`
+- `POSTHOG_SERVER_API_KEY`
 - `POSTHOG_PERSONAL_API_KEY` if needed server-side
 - `VERCEL_OIDC_TOKEN`, `VERCEL_AI_GATEWAY_API_KEY`, or Vercel-managed AI Gateway credentials
 - `AI_GATEWAY_MODEL`, optional, defaults to `amazon/nova-micro` for the Phase 5 portfolio brief route
@@ -105,9 +109,10 @@ approves enabling spend.
 1. Scaffold app and API. Done for Phase 3.
 2. Add local env examples without real secrets. `services/api/.env.example` exists.
 3. Add Supabase migrations. Done for Phase 3.
-4. Wire Clerk and Stripe dev webhooks.
+4. Wire Clerk and Stripe dev webhooks. Phase 7 handlers exist and require configured secrets for live delivery tests.
 5. Add disabled-by-default external AI provider configuration. Done for Phase 5 through the AI SDK portfolio brief route, with fixture mode as the current default.
-6. Add provider keys only after server-side boundaries exist.
+6. Add billing, webhook, usage, audit, rate-limit, and observability server boundaries. Done for Phase 7 with local verification and environment-dependent live webhook delivery.
+7. Add provider keys only after server-side boundaries exist.
 
 ## Go API Local Auth
 

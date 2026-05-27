@@ -25,6 +25,10 @@ func (s *server) requireAuth(next http.Handler) http.Handler {
 			return
 		}
 
+		if !s.enforceMutationRateLimit(w, r, principal) {
+			return
+		}
+
 		next.ServeHTTP(w, r.WithContext(auth.WithPrincipal(r.Context(), principal)))
 	})
 }

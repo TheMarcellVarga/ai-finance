@@ -415,11 +415,13 @@ components:
       properties:
         data:
           type: object
-          required: [clerkUserId, period, features]
+          required: [clerkUserId, period, plan, features]
           properties:
             clerkUserId:
               type: string
             period:
+              type: string
+            plan:
               type: string
             features:
               type: array

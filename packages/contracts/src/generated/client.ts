@@ -70,6 +70,7 @@ export type UsageResponse = {
   data: {
     clerkUserId: string;
     period: string;
+    plan: string;
     features: Array<{
       feature: string;
       used: number;

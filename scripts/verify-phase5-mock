@@ -22,9 +22,16 @@ load_env_file() {
 
 cleanup() {
   if [[ -n "${WEB_PID}" ]]; then
+    pkill -P "${WEB_PID}" 2>/dev/null || true
     kill "${WEB_PID}" 2>/dev/null || true
   fi
+  if [[ -n "${WEB_PORT}" ]]; then
+    while IFS= read -r pid; do
+      kill "${pid}" 2>/dev/null || true
+    done < <(lsof -tiTCP:"${WEB_PORT}" -sTCP:LISTEN 2>/dev/null || true)
+  fi
   if [[ -n "${API_PID}" ]]; then
+    pkill -P "${API_PID}" 2>/dev/null || true
     kill "${API_PID}" 2>/dev/null || true
   fi
 }

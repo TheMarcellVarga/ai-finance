@@ -242,6 +242,8 @@ Acceptance gate:
 - Prompt-injection fixture cannot override assistant rules.
 
 ## Phase 7: Billing, Security, And Observability
+Status: complete in server-enforced local mode; live Stripe/Clerk/Supabase webhook verification remains environment-dependent.
+
 Primary skills: `security-review-fintech`, `finance-product-guardrails`.
 
 Deliverables:
@@ -255,6 +257,24 @@ Deliverables:
 - audit logs
 - rate limits
 - security checklist doc
+
+Completed artifacts:
+- Concrete Free, Pro, Research Pro, and Team/Advisor entitlement definitions in `apps/web/src/lib/billing/entitlements.ts`, matching the product-spec limits.
+- Server-side usage and entitlement gate helpers in `apps/web/src/lib/billing/usage.ts`, applied to portfolio brief, filing summary, goal planner, and risk explainer routes.
+- Signed Stripe and Clerk webhook route handlers at `/api/webhooks/stripe` and `/api/webhooks/clerk`, with deterministic signature verification, idempotent `webhook_events` handling, profile/subscription sync, and audit logging.
+- Privacy-safe observability helpers in `apps/web/src/lib/security/observability.ts` for PostHog and Sentry-compatible server reporting with sensitive payload scrubbing.
+- Audit logging helper in `apps/web/src/lib/security/audit.ts` that hashes request IP/user-agent values and avoids raw prompts, holdings, amounts, and secrets.
+- Rate-limit helpers in `apps/web/src/lib/security/rate-limit.ts`, with Upstash REST support when configured and in-memory fallback for local development.
+- Billing dashboard at `/app/billing` showing plan state, entitlement limits, and current usage period.
+- Phase 7 Supabase migration `202605270002_phase7_billing_security_observability.sql` adds Stripe price/status metadata, entitlement snapshots, webhook idempotency records, and billing/usage indexes.
+- Go finance API now reports default Free plan usage limits, enforces local portfolio/holding/watchlist limits, rate-limits finance mutations, and emits structured audit logs for sensitive mutations.
+- `scripts/verify-phase7-security` verifies Phase 7 security artifacts and route enforcement wiring.
+
+Deferred live hardening:
+- Configure real Stripe products/prices and set `STRIPE_PRICE_*` environment variables in the deployment environment.
+- Run Stripe and Clerk webhook delivery tests against configured secrets and Supabase service-role credentials.
+- Replace local/in-memory rate-limit fallback with Upstash in production.
+- Add hosted checkout/customer-portal flows once the public pricing CTA is connected to real Stripe products.
 
 Acceptance gate:
 - Entitlements are enforced server-side.
