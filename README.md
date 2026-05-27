@@ -20,11 +20,12 @@ Phase 0 control-plane assets, Phase 1 product/brand direction, Phase 2 app scaff
 - Deterministic workflow scripts in [scripts](scripts)
 - Owner-scoped portfolio/watchlist API flows with real provider market-data metadata
 - Portfolio workspace UI with provider-backed portfolio creation, holdings, transactions, allocation review, and decision-support disclaimers
-- AI SDK portfolio brief route with AI Gateway model configuration, owner-scoped `getPortfolioSnapshot` tool wrapper, structured output schema, citations/freshness contract, Supabase persistence path, usage tracking, and deterministic AI eval/safety scripts
+- AI SDK portfolio brief route with disabled-by-default external provider configuration, owner-scoped `getPortfolioSnapshot` tool wrapper, structured output schema, citations/freshness contract, Supabase persistence path, usage tracking, and deterministic AI eval/safety scripts
 
 Current AI working mode:
 - Deterministic fixture mode is the default for local development and review.
 - Vercel AI Gateway calls are intentionally skipped by the local Phase 5 verifier so development is not blocked by account billing or credit-card requirements.
+- Direct OpenAI is wired as the dormant live-provider path, but all external model calls stay disabled unless `AI_EXTERNAL_CALLS_ENABLED=true` is explicitly set.
 
 ## Product Direction
 
@@ -38,7 +39,8 @@ The product is a premium AI finance workspace for portfolio-aware research, SEC 
 - Clerk for auth
 - Supabase Postgres, SQL migrations, `pgvector`
 - Go service for finance/data APIs, `pgx`, `sqlc`, OpenAPI
-- Vercel AI SDK and Vercel AI Gateway
+- Vercel AI SDK with optional Vercel AI Gateway only after paid API usage is explicitly enabled
+- Optional direct OpenAI provider through `@ai-sdk/openai`
 - Stripe Billing
 - Upstash Redis
 - Resend
@@ -111,5 +113,6 @@ scripts/verify-phase5-live
 ```
 
 Local development defaults to deterministic fixture mode even when an AI Gateway
-key is present. Set `AI_PORTFOLIO_BRIEF_MODE=live` only when manually testing the
-route outside the verifier with explicit AI Gateway and Supabase credentials.
+or OpenAI key is present. Set `AI_EXTERNAL_CALLS_ENABLED=true` and
+`AI_PORTFOLIO_BRIEF_MODE=live` only when manually testing the route outside the
+verifier with an explicit live provider.

@@ -41,7 +41,7 @@ Assume a focused solo/AI-assisted build. Compress or expand based on available t
 | 2. App Scaffold And Design System | 3-5 days | Next.js app, routes, shell, theme, responsive layout, initial landing/product/pricing pages. |
 | 3. Backend And Data Foundation | 4-7 days | Go API scaffold, Supabase migrations, auth mapping, OpenAPI, provider skeletons. |
 | 4. Portfolio Workspace MVP | 5-8 days | Authenticated dashboard, portfolios, holdings, watchlist, charts, real provider market data. |
-| 5. Real AI Foundation | 5-8 days | AI Gateway, streaming route, tool registry, AI persistence, first evals, portfolio brief. |
+| 5. Real AI Foundation | 5-8 days | Disabled-by-default external provider support, streaming route, tool registry, AI persistence, first evals, portfolio brief. |
 | 6. Research And Goal Intelligence | 5-8 days | Filing summaries, RAG chunks, goal planner, risk explainer, safe gamification. |
 | 7. Billing, Security, And Observability | 4-7 days | Stripe plans, entitlements, usage limits, Sentry, PostHog, audit logs, security checks. |
 | 8. Polish And Portfolio Case Study | 5-10 days | Brand assets, stock media, mobile pass, screenshots, README, architecture diagram, demo video. |
@@ -168,7 +168,7 @@ Status: implementation complete; fixture mode is the active working path and liv
 Primary skills: `ai-research-features`, `security-review-fintech`.
 
 Deliverables:
-- Vercel AI Gateway configuration
+- disabled-by-default external AI provider configuration
 - streaming AI route
 - AI thread/message persistence
 - tool registry wrapper layer
@@ -179,7 +179,7 @@ Deliverables:
 - first AI eval fixture set
 
 Completed artifacts:
-- `apps/web/src/app/api/ai/portfolio-brief/route.ts` uses Vercel AI SDK structured output through AI Gateway with a configurable `AI_GATEWAY_MODEL`, plus an optional streaming mode for the portfolio brief route.
+- `apps/web/src/app/api/ai/portfolio-brief/route.ts` uses Vercel AI SDK structured output with fixture mode by default, optional direct OpenAI as the dormant live-provider path, later optional AI Gateway, and an optional streaming mode for the portfolio brief route.
 - Local development uses deterministic fixture mode for `/api/ai/portfolio-brief` by default, returning a schema-valid, cited brief from the owner-scoped portfolio snapshot without model spend. This is the current working mode and does not require live AI credentials.
 - `apps/web/src/lib/ai/portfolio-brief.ts` defines the portfolio brief schema, citations/freshness contract, prompt builder, and advice-boundary safety precheck.
 - `apps/web/src/lib/ai/tool-registry.ts` and `portfolio-tools.ts` provide an owner-scoped `getPortfolioSnapshot` AI tool wrapper that calls the application finance API instead of raw database access.
@@ -189,7 +189,8 @@ Completed artifacts:
 
 Deferred live verification:
 - Vercel AI Gateway live calls are skipped by policy in local verification to avoid requiring a valid credit card or live model spend.
-- If the team later chooses to re-open live AI verification, add a separate script instead of changing the no-Gateway verifier. That future script should use Vercel AI Gateway credentials via `vercel link` and `vercel env pull apps/web/.env.local`, or `VERCEL_AI_GATEWAY_API_KEY` / `AI_GATEWAY_API_KEY`.
+- Direct OpenAI through `@ai-sdk/openai` is available as the dormant live-provider path, but it remains off until `AI_EXTERNAL_CALLS_ENABLED=true`, `AI_PORTFOLIO_BRIEF_MODE=live`, `AI_MODEL_PROVIDER=openai`, and an OpenAI API key are configured.
+- If the team later chooses to re-open paid live verification, add a separate script instead of changing the no-Gateway verifier. That future script can use Vercel AI Gateway credentials via `vercel link` and `vercel env pull apps/web/.env.local`, `VERCEL_AI_GATEWAY_API_KEY` / `AI_GATEWAY_API_KEY`, or direct OpenAI.
 - Optionally set `AI_GATEWAY_MODEL` to the intended final demo model; otherwise the route defaults to the low-cost `amazon/nova-micro`.
 - Point Next.js at the finance API with `FINANCE_API_BASE_URL` and, for local dev auth, `FINANCE_API_DEV_TOKEN`.
 - Apply Supabase migrations to the configured remote project so `public.profiles` and AI persistence tables exist.
@@ -231,7 +232,7 @@ Completed artifacts:
 
 Deferred live hardening:
 - Replace deterministic SEC-style chunks with real SEC EDGAR ingestion, chunking, embeddings, and retrieval over `research_chunks`.
-- Connect Phase 6 generation to live AI Gateway once the Vercel AI Gateway account issue is resolved.
+- Connect Phase 6 generation to direct OpenAI only if paid API usage is explicitly approved; otherwise keep the no-Gateway deterministic path.
 - Persist saved research-room artifacts to Supabase in configured environments.
 
 Acceptance gate:

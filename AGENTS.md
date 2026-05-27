@@ -33,8 +33,11 @@ Use `ai-dev/skills` as the repo-local skill source for future AI-assisted implem
 
 ## AI Engineering Rules
 - Real AI integration is mandatory for v1. Do not hard-code fake AI results for the final demo.
-- Use Vercel AI SDK and Vercel AI Gateway for chat, streaming, tool calling, and structured outputs.
-- Use direct provider SDKs only where needed, especially embeddings if Gateway does not support the capability.
+- Use Vercel AI SDK for chat, streaming, tool calling, and structured outputs.
+- Vercel AI Gateway is optional and should remain disabled until paid API usage is explicitly approved.
+- Use direct provider SDKs only where needed, especially no-credit-card live provider testing and embeddings if Gateway does not support the capability.
+- Local and CI verification must keep external model calls disabled by default. Do not connect money-consuming AI APIs until the product is otherwise complete and the user explicitly enables them.
+- Prefer the optional direct OpenAI provider as the dormant live path; keep it disabled until paid API usage is explicitly approved.
 - AI tools must call application-owned APIs. Never let model calls directly access raw database credentials or unrestricted data.
 - Persist AI threads, messages, tool runs, citations, retrieved context metadata, safety labels, usage, latency, model, and cost information.
 - Add evals for schema validity, citations, advice boundaries, prompt injection, stale data disclosure, ownership isolation, and goal-planner safety.

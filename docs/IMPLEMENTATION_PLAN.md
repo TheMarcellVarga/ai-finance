@@ -77,7 +77,7 @@ Gate:
 Status: implementation complete; fixture mode is the active working path and live credential verification is deferred.
 
 Work:
-- Add Vercel AI Gateway, streaming route, tool registry, AI persistence, usage tracking, portfolio snapshot tool, structured portfolio brief schema, citations, and eval fixtures.
+- Add AI SDK streaming route, tool registry, AI persistence, usage tracking, portfolio snapshot tool, structured portfolio brief schema, citations, eval fixtures, and disabled-by-default live provider configuration.
 
 Artifacts:
 - AI SDK portfolio brief route at `/api/ai/portfolio-brief`.

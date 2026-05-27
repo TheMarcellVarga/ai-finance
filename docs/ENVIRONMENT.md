@@ -43,7 +43,11 @@ Never expose service-role keys, provider keys, webhook secrets, raw JWTs, or pri
 - `VERCEL_OIDC_TOKEN`, `VERCEL_AI_GATEWAY_API_KEY`, or Vercel-managed AI Gateway credentials
 - `AI_GATEWAY_MODEL`, optional, defaults to `amazon/nova-micro` for the Phase 5 portfolio brief route
 - `AI_GATEWAY_API_KEY`, optional local alias for `VERCEL_AI_GATEWAY_API_KEY`
-- `AI_PORTFOLIO_BRIEF_MODE`, optional; use `fixture` to avoid model calls during local development or `live` to force AI Gateway
+- `AI_PORTFOLIO_BRIEF_MODE`, optional; use `fixture` to avoid model calls during local development or `live` to request the selected external provider
+- `AI_EXTERNAL_CALLS_ENABLED`, optional kill switch; must be exactly `true` before any live external AI provider is called
+- `AI_MODEL_PROVIDER`, optional; use `openai` for direct OpenAI or `gateway` for Vercel AI Gateway. Defaults to `openai` only when live calls are explicitly enabled.
+- `OPENAI_API_KEY`, optional for direct OpenAI testing
+- `OPENAI_MODEL`, optional for direct OpenAI testing; defaults to `gpt-5-mini`
 - `FINANCE_API_DEV_TOKEN`, optional local token for Next.js server routes when the Go API runs in dev auth mode
 - `FMP_API_KEY`
 - `TWELVE_DATA_API_KEY`
@@ -65,22 +69,29 @@ AI runtime should track:
 - cache hit/miss
 - safety label
 
-For cost-controlled development, `/api/ai/portfolio-brief` supports deterministic fixture mode. In non-production, the route defaults to fixture mode even when an AI Gateway credential is configured, unless `AI_PORTFOLIO_BRIEF_MODE=live` is explicitly set. Fixture mode still reads the owner-scoped finance API snapshot, applies prompt safety checks, returns the required structured fields, and attempts Supabase persistence if server credentials are configured. It does not make a model call.
+For cost-controlled development, `/api/ai/portfolio-brief` supports deterministic fixture mode. In non-production, the route defaults to fixture mode even when a live provider credential is configured, unless `AI_PORTFOLIO_BRIEF_MODE=live` is explicitly set. Fixture mode still reads the owner-scoped finance API snapshot, applies prompt safety checks, returns the required structured fields, and attempts Supabase persistence if server credentials are configured. It does not make a model call.
 
 Fixture mode is the active working mode for this repo. It is the recommended
 path while live AI credentials are being deferred for privacy, billing, or
 account setup reasons.
 
 `scripts/verify-phase5-live` intentionally skips Vercel AI Gateway and clears
-Gateway/Supabase credentials for the spawned web process. The script validates
-the approved no-Gateway path: owner-scoped finance API context, schema-valid
-portfolio brief output, citations, safety labels, assumptions, and explicit
-`liveAiGatewayCall: false` metadata.
+Gateway, OpenAI, and Supabase credentials for the spawned web process. The
+script validates the approved no-Gateway path: owner-scoped finance API context,
+schema-valid portfolio brief output, citations, safety labels, assumptions, and
+explicit `liveAiGatewayCall: false` metadata.
+
+The dormant live provider path is direct OpenAI via `@ai-sdk/openai`. It
+remains off until `AI_EXTERNAL_CALLS_ENABLED=true`,
+`AI_PORTFOLIO_BRIEF_MODE=live`, `AI_MODEL_PROVIDER=openai`, and an OpenAI API
+key are configured.
 
 Manual live route testing remains possible outside the verifier. With
-`AI_PORTFOLIO_BRIEF_MODE=live`, the route fails fast unless AI Gateway and
-Supabase persistence are configured, and non-streaming responses must persist
-thread, message, tool run, brief, citation, and usage metadata.
+`AI_PORTFOLIO_BRIEF_MODE=live`, the route fails fast unless
+`AI_EXTERNAL_CALLS_ENABLED=true` and the selected provider is configured. Paid
+or billing-gated providers such as Vercel AI Gateway and direct OpenAI should
+stay disabled until the product is otherwise complete and the user explicitly
+approves enabling spend.
 
 ## Provider Notes
 
@@ -95,7 +106,7 @@ thread, message, tool run, brief, citation, and usage metadata.
 2. Add local env examples without real secrets. `services/api/.env.example` exists.
 3. Add Supabase migrations. Done for Phase 3.
 4. Wire Clerk and Stripe dev webhooks.
-5. Add AI Gateway configuration. Done for Phase 5 through the AI SDK portfolio brief route, with fixture mode as the current default.
+5. Add disabled-by-default external AI provider configuration. Done for Phase 5 through the AI SDK portfolio brief route, with fixture mode as the current default.
 6. Add provider keys only after server-side boundaries exist.
 
 ## Go API Local Auth

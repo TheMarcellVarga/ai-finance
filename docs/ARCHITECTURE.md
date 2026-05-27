@@ -14,7 +14,7 @@ Aperture Financial Intelligence is a research and portfolio decision-support pro
 | Clerk | Authentication, user sessions, future organizations |
 | Stripe | Billing, subscriptions, entitlements |
 | Upstash Redis | Rate limits, provider cache, AI quota counters, idempotency keys |
-| Vercel AI SDK/Gateway | Streaming chat, tool calling, structured outputs, model routing |
+| Vercel AI SDK | Streaming chat, tool calling, structured outputs, and disabled-by-default provider routing |
 | PostHog/Sentry | Privacy-scrubbed product analytics and error monitoring |
 | Cloudflare | DNS, WAF, security headers, bot controls |
 

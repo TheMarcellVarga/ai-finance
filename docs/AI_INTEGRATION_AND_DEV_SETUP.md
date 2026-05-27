@@ -17,8 +17,9 @@ The same repo should also be comfortable for future AI agents to work in. That m
 ## Runtime Architecture
 - Next.js owns AI UX: streaming chat, assistant panels, structured result rendering, AI loading states, and user-facing disclaimers.
 - Vercel AI SDK is the application AI orchestration layer for chat, streaming text, structured output, and tool calling.
-- Vercel AI Gateway is the default model gateway for text/chat models so the app has provider routing, cost visibility, and simpler key management.
-- Direct provider SDKs are allowed only where Gateway does not cover the feature, especially embeddings.
+- Vercel AI Gateway remains a supported later provider for text/chat models, but local verification does not call it because the account requires billing setup.
+- Direct OpenAI through `@ai-sdk/openai` is the dormant live-provider path. It stays disabled unless `AI_EXTERNAL_CALLS_ENABLED=true` and `AI_MODEL_PROVIDER=openai` are set.
+- Direct provider SDKs are allowed when they avoid Gateway billing blockers or support capabilities Gateway does not cover, especially embeddings.
 - Go owns authoritative finance data and calculations. AI tools call Go API endpoints or server-side wrappers, never direct model-to-database access.
 - Supabase Postgres stores AI threads, messages, tool runs, citations, retrieved context metadata, usage counters, and eval results.
 - Supabase `pgvector` stores research/document embeddings for v1. Pinecone remains deferred until retrieval scale, latency, or operational needs justify it.
@@ -150,7 +151,7 @@ Additional scripts to add after the app scaffold exists:
 
 ## Implementation Milestones
 1. Add AI schemas, storage tables, and usage counters.
-2. Build AI Gateway configuration and a minimal streaming assistant route.
+2. Build disabled-by-default external provider configuration and a minimal streaming assistant route.
 3. Add tool registry wrappers around Go API data.
 4. Implement portfolio brief with citations and evals.
 5. Implement filing summarizer with chunk retrieval and `pgvector`.
@@ -159,7 +160,7 @@ Additional scripts to add after the app scaffold exists:
 8. Expand the existing `AGENTS.md`, project-specific skills, and deterministic placeholder scripts as the real app scaffold appears.
 
 ## Acceptance Criteria
-- Local verification uses the approved no-Gateway deterministic path unless a separate live-provider verifier is added later.
+- Local verification uses the approved no-Gateway deterministic path. Live external model calls require the explicit `AI_EXTERNAL_CALLS_ENABLED=true` kill switch.
 - AI outputs are schema-validated and persistence-ready; persistence runs when server-side Supabase credentials are configured.
 - AI answers cite actual stored or fetched sources when presenting research claims.
 - AI refuses trading-bot and direct buy/sell prompts.

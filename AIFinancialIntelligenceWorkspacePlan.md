@@ -3,7 +3,7 @@
 ## Summary
 Build a greenfield recruiter-grade fintech product: a cinematic public SaaS site plus an authenticated AI financial research and portfolio decision-support workspace. The product must never present itself as an AI trading bot, automated advisor, broker, or return-guarantee system.
 
-Core stack: Next.js App Router, TypeScript, Tailwind, shadcn/ui, Clerk, Supabase Postgres, Go backend service, `pgx`/`sqlc`, Stripe Billing, Vercel, Cloudflare, Upstash Redis, Resend, PostHog, Sentry, Vercel AI SDK, Vercel AI Gateway, Supabase `pgvector`, `lightweight-charts`, and Recharts. Use US equities/ETFs for v1.
+Core stack: Next.js App Router, TypeScript, Tailwind, shadcn/ui, Clerk, Supabase Postgres, Go backend service, `pgx`/`sqlc`, Stripe Billing, Vercel, Cloudflare, Upstash Redis, Resend, PostHog, Sentry, Vercel AI SDK, dormant direct OpenAI provider support, later Vercel AI Gateway only if needed, Supabase `pgvector`, `lightweight-charts`, and Recharts. Use US equities/ETFs for v1.
 
 Backend decision: use Go for the dedicated finance/data backend. Keep Next.js as the web app, server-rendered product surface, authenticated BFF, AI streaming surface, and webhook entrypoint. Use Go for portfolio calculations, market-data ingestion, provider normalization, REST APIs, rate-limited finance endpoints, audit logging, and future background jobs. Python is optional later for notebooks, offline research, or specialized quant/ML experiments, but it should not be the primary backend for v1.
 
@@ -100,7 +100,7 @@ Go REST request/response payloads are defined in OpenAPI and validated server-si
 - Provider layer: define `MarketDataProvider`, `FilingsProvider`, and `NewsProvider` interfaces so Finnhub/Twelve Data/FMP can be added later without rewriting app code.
 
 ## AI Behavior
-- Use Vercel AI SDK through Vercel AI Gateway for real chat, structured outputs, tool calling, and streaming UI. Direct provider SDKs are only used where Gateway does not cover the capability, such as embeddings.
+- Use Vercel AI SDK for real chat, structured outputs, tool calling, and streaming UI. Keep external model calls disabled by default. Keep direct OpenAI wired but disabled until the product is otherwise complete and paid API usage is explicitly approved.
 - AI product features: portfolio copilot, asset research brief, SEC filing summarizer, watchlist digest, goal planner, risk explainer, and research-room assistant.
 - AI tools call application-owned data, never raw database connections from the model: `getPortfolioSnapshot`, `getAssetProfile`, `getPriceHistory`, `getFilingChunks`, `getWatchlistMovers`, `getGoalState`, and `createGoalDraft`.
 - Structured AI outputs must include: summary, cited facts, risk factors, assumptions, confidence label, data freshness, refusal/safety state, and “not financial advice” notice.
@@ -138,7 +138,7 @@ Use `docs/MASTER_EXECUTION_ROADMAP.md` as the detailed timeline and orchestratio
 2. Add Clerk auth, onboarding, protected app layout, Supabase setup, SQL migrations, and real provider configuration.
 3. Scaffold the Go API service with health checks, Clerk JWT middleware, Postgres connection, OpenAPI, and CI test commands.
 4. Build portfolio, watchlist, charts, asset search, cached market-data provider, SEC filings provider.
-5. Add AI foundation: Gateway configuration, streaming chat route, tool registry, structured output schemas, citation persistence, AI quota tracking, and eval fixtures.
+5. Add AI foundation: disabled-by-default external provider configuration, streaming chat route, tool registry, structured output schemas, citation persistence, AI quota tracking, and eval fixtures.
 6. Add AI research briefs, goal planner, gamification, usage limits, and entitlement checks.
 7. Expand project AI dev setup as implementation starts: AI feature docs, real eval scripts, skill references, and agent guardrails.
 8. Add Stripe Billing, Resend emails, PostHog events, Sentry, Cloudflare security notes, docs.

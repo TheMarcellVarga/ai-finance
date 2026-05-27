@@ -12,23 +12,16 @@ import {
 import { aiPersistenceConfigured, persistPortfolioBrief } from "@/lib/ai/persistence";
 import { getPortfolioSnapshot } from "@/lib/ai/portfolio-tools";
 import { createFinanceAiTools } from "@/lib/ai/tool-registry";
+import {
+  missingLiveAiConfigurationMessage,
+  resolveLivePortfolioBriefModel,
+  selectedLiveAiProvider,
+} from "@/lib/ai/model-provider";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const model = process.env.AI_GATEWAY_MODEL ?? "amazon/nova-micro";
 const fallbackDevToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
-
-if (!process.env.VERCEL_AI_GATEWAY_API_KEY && process.env.AI_GATEWAY_API_KEY) {
-  process.env.VERCEL_AI_GATEWAY_API_KEY = process.env.AI_GATEWAY_API_KEY;
-}
-if (!process.env.AI_GATEWAY_API_KEY && process.env.VERCEL_AI_GATEWAY_API_KEY) {
-  process.env.AI_GATEWAY_API_KEY = process.env.VERCEL_AI_GATEWAY_API_KEY;
-}
-
-function aiGatewayConfigured() {
-  return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
-}
 
 function shouldUseDeterministicFixtureMode() {
   if (process.env.AI_PORTFOLIO_BRIEF_MODE === "fixture") {
@@ -95,13 +88,16 @@ export async function POST(request: Request) {
     });
   }
 
-  if (!fixtureMode && !aiGatewayConfigured()) {
+  const liveProvider = selectedLiveAiProvider();
+  const liveConfigurationError = !fixtureMode ? missingLiveAiConfigurationMessage(liveProvider) : null;
+
+  if (liveConfigurationError) {
     return NextResponse.json(
       {
         error: {
-          code: "ai_gateway_not_configured",
-          message:
-            "Set VERCEL_OIDC_TOKEN, VERCEL_AI_GATEWAY_API_KEY, or AI_GATEWAY_API_KEY before running a live portfolio brief.",
+          code: "live_ai_not_configured",
+          message: liveConfigurationError,
+          provider: liveProvider,
         },
       },
       { status: 503 },
@@ -159,6 +155,7 @@ export async function POST(request: Request) {
           model: "deterministic-fixture",
           mode: "fixture",
           liveAiGatewayCall: false,
+          liveExternalAiCall: false,
           latencyMs,
           persistence,
           todo: "Fixture mode is active for local development and review; live verification is deferred.",
@@ -177,10 +174,11 @@ export async function POST(request: Request) {
     }
 
     const generationPrompt = buildPortfolioBriefPrompt(snapshot, prompt);
+    const liveModel = resolveLivePortfolioBriefModel();
 
     if (parsedRequest.data.stream) {
       const result = streamText({
-        model,
+        model: liveModel.model,
         system:
           "You are a financial research assistant. Stream a concise research-only portfolio brief. Do not provide buy, sell, hold, trading, suitability, or guaranteed-return advice.",
         prompt: generationPrompt,
@@ -189,14 +187,15 @@ export async function POST(request: Request) {
 
       return result.toUIMessageStreamResponse({
         headers: {
-          "x-ai-model": model,
+          "x-ai-model": liveModel.modelId,
+          "x-ai-provider": liveModel.provider,
           "x-ai-safety-label": "research_only",
         },
       });
     }
 
     const result = await generateText({
-      model,
+      model: liveModel.model,
       output: Output.object({
         schema: portfolioBriefSchema,
         name: "PortfolioBrief",
@@ -214,7 +213,7 @@ export async function POST(request: Request) {
     const persistence = await persistPortfolioBrief({
       authToken,
       prompt,
-      model,
+      model: liveModel.modelId,
       snapshot,
       brief,
       latencyMs,
@@ -229,8 +228,10 @@ export async function POST(request: Request) {
             message: persistence.message ?? "The live AI brief generated, but persistence did not complete.",
           },
           meta: {
-            model,
-            liveAiGatewayCall: true,
+            model: liveModel.modelId,
+            provider: liveModel.provider,
+            liveAiGatewayCall: liveModel.usesGateway,
+            liveExternalAiCall: true,
             persistence,
           },
         },
@@ -241,9 +242,11 @@ export async function POST(request: Request) {
     return NextResponse.json({
       data: brief,
       meta: {
-        model,
+        model: liveModel.modelId,
+        provider: liveModel.provider,
         mode: liveModeRequested() ? "live" : "configured",
-        liveAiGatewayCall: true,
+        liveAiGatewayCall: liveModel.usesGateway,
+        liveExternalAiCall: true,
         latencyMs,
         persistence,
         toolRuns: [

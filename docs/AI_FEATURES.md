@@ -4,7 +4,7 @@
 
 ## Required Runtime Behavior
 
-- Use Vercel AI SDK and Vercel AI Gateway for chat, streaming, tool calling, and structured outputs.
+- Use Vercel AI SDK for chat, streaming, tool calling, and structured outputs. External providers are disabled by default; direct OpenAI is the dormant live-provider path.
 - AI tools call application-owned API wrappers.
 - Models never receive raw database credentials, service-role keys, raw JWTs, or unrestricted user data.
 - AI outputs must be persisted with messages, tool runs, citations, safety labels, model, usage, cost, latency, assumptions, and data freshness.
@@ -37,7 +37,7 @@ Initial tools:
 Each tool must validate input, enforce ownership, apply rate limits, and return compact source-aware data.
 
 Phase 5 implementation:
-- `/api/ai/portfolio-brief` uses Vercel AI SDK structured output through AI Gateway.
+- `/api/ai/portfolio-brief` uses Vercel AI SDK structured output through fixture mode by default, with optional direct OpenAI or later Vercel AI Gateway only when external calls are explicitly enabled.
 - `getPortfolioSnapshot` calls the application finance API with the request/server auth token and does not expose raw database credentials to the model.
 - Supabase persistence records threads, messages, tool runs, briefs, citations, usage events, model, token usage, and latency when server-side Supabase credentials are configured.
 - The route includes a deterministic safety precheck for direct trading, guaranteed returns, prompt extraction, secret exposure, and cross-user portfolio prompts.

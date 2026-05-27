@@ -138,7 +138,7 @@ export function createDeterministicPortfolioBrief(snapshot: PortfolioSnapshot, u
   return {
     summary:
       `${snapshot.name} has ${snapshot.summary.holdingCount} holdings with ${topTicker} as the largest visible concentration. ` +
-      "This deterministic development brief is for local workflow testing only; run live AI Gateway verification before treating Phase 5 as fully complete.",
+      "This deterministic development brief is for local workflow testing only; enable an explicit live provider before treating external model behavior as verified.",
     keyFacts: [
       `Portfolio value is reported as ${snapshot.summary.displayTotalValue} in ${snapshot.baseCurrency}.`,
       `${topTicker} represents about ${topWeight}% of the current portfolio snapshot.`,
@@ -167,7 +167,7 @@ export function createDeterministicPortfolioBrief(snapshot: PortfolioSnapshot, u
     assumptions: [
       "This brief uses only the current owner-scoped portfolio snapshot returned by the finance API.",
       `User research prompt: ${prompt.slice(0, 180)}`,
-      "No model call was made because local deterministic fixture mode is active.",
+      "No model call was made because local deterministic fixture mode is active and external AI calls are disabled by default.",
     ],
     dataFreshness: {
       provider,

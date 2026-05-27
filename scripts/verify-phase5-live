@@ -93,12 +93,16 @@ echo "Starting Next.js Phase 5 verifier at http://127.0.0.1:${WEB_PORT}"
 echo "Skipping Vercel AI Gateway by policy; this check uses deterministic fixture mode and does not require AI Gateway billing or credentials."
 (
   cd "${ROOT_DIR}/apps/web"
-  FINANCE_API_BASE_URL="${API_URL}" \
+    FINANCE_API_BASE_URL="${API_URL}" \
     FINANCE_API_DEV_TOKEN="${AUTH_TOKEN}" \
     AI_PORTFOLIO_BRIEF_MODE=fixture \
+    AI_EXTERNAL_CALLS_ENABLED=false \
+    AI_MODEL_PROVIDER=openai \
     AI_GATEWAY_API_KEY="" \
     VERCEL_AI_GATEWAY_API_KEY="" \
     VERCEL_OIDC_TOKEN="" \
+    OPENAI_API_KEY="" \
+    OPENAI_MODEL="gpt-5-mini" \
     SUPABASE_URL="" \
     SUPABASE_SERVICE_ROLE_KEY="" \
     npm run dev -- -p "${WEB_PORT}"
@@ -138,6 +142,7 @@ const payload = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 const failures = [];
 
 if (payload.meta?.liveAiGatewayCall !== false) failures.push("liveAiGatewayCall was not false");
+if (payload.meta?.liveExternalAiCall === true) failures.push("liveExternalAiCall was true");
 if (payload.meta?.mode !== "fixture") failures.push("mode was not fixture");
 if (payload.meta?.model !== "deterministic-fixture") failures.push("model was not deterministic fixture");
 if (!Array.isArray(payload.data?.citations) || payload.data.citations.length < 1) failures.push("citations missing");
@@ -157,6 +162,7 @@ console.log(JSON.stringify({
   model: payload.meta.model,
   mode: payload.meta.mode,
   liveAiGatewayCall: payload.meta.liveAiGatewayCall,
+  liveExternalAiCall: payload.meta.liveExternalAiCall,
   persistence: payload.meta.persistence?.status,
   citationCount: payload.data.citations.length,
 }, null, 2));
