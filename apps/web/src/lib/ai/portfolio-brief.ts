@@ -69,6 +69,8 @@ const forbiddenPromptPatterns = [
   /\btrading bot\b/i,
   /\bautomated trading\b/i,
   /\bplace (an )?order\b/i,
+  /\bprofit streaks?\b/i,
+  /\brisky trades?\b/i,
   /\binsider trading\b/i,
   /\bignore (previous|all) instructions\b/i,
   /\breveal (the )?(system prompt|developer message|secret|api key|jwt)\b/i,

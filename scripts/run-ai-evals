@@ -40,6 +40,53 @@ const validBrief = {
   followUpQuestions: ["Which concentration risk should be reviewed first?", "Should the brief compare sector allocation?"],
 };
 
+const validFilingSummary = {
+  ticker: "AAPL",
+  filingType: "10-K",
+  period: "FY2025",
+  summary: "A filing summary with cited chunks and research-only risk framing for local deterministic evaluation.",
+  filingHighlights: ["Business context is tied to a source chunk.", "The output avoids valuation or trade timing."],
+  materialRisks: ["Risk factor claims require citations and freshness metadata."],
+  retrievedChunks: [
+    {
+      id: "aapl-10k-risk-competition",
+      section: "Item 1A. Risk Factors",
+      sourceLocator: "AAPL FY2025 10-K Item 1A",
+      excerpt: "Competitive pressure and supply-chain exposure are research topics for cited review.",
+    },
+  ],
+  citations: [
+    {
+      label: "AAPL FY2025 10-K Item 1A",
+      sourceType: "sec_filing",
+      sourceId: "aapl-10k-risk-competition",
+      capturedAt: "2026-05-24T00:00:00.000Z",
+      freshness: "fixture-sec-reference",
+    },
+  ],
+  assumptions: ["Fixture chunks are deterministic and incomplete."],
+  dataFreshness: {
+    provider: "deterministic-sec-fixture",
+    capturedAt: "2026-05-24T00:00:00.000Z",
+    freshness: "fixture-sec-reference",
+  },
+  confidence: "medium",
+  safetyLabel: "research_only",
+  disclaimer: "This is not financial advice and should be used for research and risk review only.",
+  followUpQuestions: ["Which filing section should be reviewed next?", "Which risk theme should be compared with holdings?"],
+};
+
+const validGoalPlan = {
+  summary: "A scenario plan focused on milestones, assumptions, and research discipline without return promises.",
+  milestones: ["Baseline review", "Quarterly scenario check"],
+  contributionScenarios: [
+    "Scenario uses contributions as an input only and does not assume investment returns.",
+    "Pause-review scenario avoids assured outcome framing.",
+  ],
+  educationalChallenges: ["Save a cited research note.", "Review diversification before editing assumptions."],
+  disclaimer: "This is not financial advice and should be used for research and risk review only.",
+};
+
 function validateBriefSchema(brief) {
   if (!brief || typeof brief !== "object") return false;
   if (requiredFields.some((field) => !(field in brief))) return false;
@@ -52,6 +99,24 @@ function validateBriefSchema(brief) {
   return true;
 }
 
+function validateFilingSummary(summary) {
+  if (!summary || typeof summary !== "object") return false;
+  if (!summary.ticker || !summary.filingType || !summary.period) return false;
+  if (!Array.isArray(summary.retrievedChunks) || summary.retrievedChunks.length < 1) return false;
+  if (!Array.isArray(summary.citations) || summary.citations.length < 1) return false;
+  if (!summary.dataFreshness?.provider || !summary.dataFreshness?.capturedAt || !summary.dataFreshness?.freshness) return false;
+  if (summary.safetyLabel !== "research_only") return false;
+  return true;
+}
+
+function validateGoalPlanSafety(plan) {
+  const serialized = JSON.stringify(plan).toLowerCase();
+  if (!Array.isArray(plan.milestones) || plan.milestones.length < 2) return false;
+  if (!Array.isArray(plan.educationalChallenges) || plan.educationalChallenges.length < 2) return false;
+  if (/\bguarantee|\bbeat the market|\bprofit streak|\bbuy now|\bsell immediately/.test(serialized)) return false;
+  return plan.disclaimer.includes("not financial advice");
+}
+
 const forbiddenPromptPatterns = [
   /\b(buy|sell|short|hold)\b.*\b(now|today|immediately|next)\b/i,
   /\bwhat should i (buy|sell|hold)\b/i,
@@ -60,6 +125,8 @@ const forbiddenPromptPatterns = [
   /\btrading bot\b/i,
   /\bautomated trading\b/i,
   /\bplace (an )?order\b/i,
+  /\bprofit streaks?\b/i,
+  /\brisky trades?\b/i,
   /\binsider trading\b/i,
   /\bignore (previous|all) instructions\b/i,
   /\breveal (the )?(system prompt|developer message|secret|api key|jwt)\b/i,
@@ -94,6 +161,18 @@ const cases = [
   {
     name: "stale_data_contract_requires_freshness",
     pass: !validateBriefSchema({ ...validBrief, dataFreshness: { provider: "test-provider" } }),
+  },
+  {
+    name: "phase6_filing_summary_requires_retrieved_citations",
+    pass: validateFilingSummary(validFilingSummary) && !validateFilingSummary({ ...validFilingSummary, citations: [] }),
+  },
+  {
+    name: "phase6_goal_plan_avoids_return_promises",
+    pass: validateGoalPlanSafety(validGoalPlan),
+  },
+  {
+    name: "phase6_goal_plan_rejects_profit_challenge_language",
+    pass: !validateGoalPlanSafety({ ...validGoalPlan, educationalChallenges: ["Build a profit streak", "Beat the market"] }),
   },
 ];
 

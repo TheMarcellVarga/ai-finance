@@ -65,6 +65,8 @@ export type IntradayChartResponse = {
 
 const financeApiBaseUrl = process.env.FINANCE_API_BASE_URL ?? "http://127.0.0.1:8080";
 const devToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
+const financeApiUnavailableMessage =
+  "Market data is temporarily unavailable. Start local services with scripts/dev-local and refresh again shortly.";
 
 const starterHoldings = [
   { ticker: "AAPL", quantity: 10, averageCostCents: 0, notes: "Core technology holding for concentration review." },
@@ -72,13 +74,21 @@ const starterHoldings = [
   { ticker: "NVDA", quantity: 6, averageCostCents: 0, notes: "Semiconductor exposure for risk review." },
 ];
 
+export class FinanceApiUnavailableError extends Error {
+  readonly code = "finance_api_unavailable";
+
+  constructor(cause?: unknown) {
+    super(financeApiUnavailableMessage, { cause });
+    this.name = "FinanceApiUnavailableError";
+  }
+}
+
 async function financeFetch(input: string, init?: RequestInit) {
   try {
     return await fetch(input, init);
   } catch (error) {
-    const reason = error instanceof Error ? error.message : "network request failed";
-    throw new Error(
-      `Finance API is not reachable at ${financeApiBaseUrl}. Start local services with scripts/dev-local. Cause: ${reason}`,
+    throw new FinanceApiUnavailableError(
+      error instanceof Error ? new Error(`${financeApiBaseUrl} fetch failed: ${error.message}`) : new Error(`${financeApiBaseUrl} fetch failed`),
     );
   }
 }

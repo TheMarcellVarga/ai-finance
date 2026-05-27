@@ -207,6 +207,8 @@ Acceptance gate:
 - Eval runner catches at least schema and advice-boundary failures.
 
 ## Phase 6: Research And Goal Intelligence
+Status: complete in deterministic fixture mode; live SEC ingestion and model-backed generation remain follow-on hardening work.
+
 Primary skills: `ai-research-features`, `finance-product-guardrails`, `supabase-finance-schema`.
 
 Deliverables:
@@ -218,6 +220,19 @@ Deliverables:
 - risk explainer
 - safe challenges and achievements
 - cited research-room saves
+
+Completed artifacts:
+- Deterministic Phase 6 AI schemas and generators in `apps/web/src/lib/ai/research-intelligence.ts` for SEC filing summaries, goal plans, and portfolio risk explanations.
+- Next.js API routes for `/api/ai/research-brief`, `/api/ai/goal-plan`, and `/api/ai/risk-explainer`, all returning citation/freshness metadata, assumptions, safety labels, and not-financial-advice disclaimers.
+- Research, goals, and risk app pages now render concrete Phase 6 outputs instead of skeleton placeholders.
+- `supabase/migrations/202605270001_phase6_research_goal_intelligence.sql` seeds safe educational challenges, achievements, and deterministic research document chunks without mock market prices.
+- AI eval and safety fixture scripts now cover filing citations, goal-planner safety, prompt injection, ownership-boundary language, and unsafe gamification language.
+- `scripts/verify-phase5-mock` provides the approved deterministic workaround for the external Vercel AI Gateway account/billing blocker while keeping `scripts/verify-phase5-live` as the true live-model gate.
+
+Deferred live hardening:
+- Replace deterministic SEC-style chunks with real SEC EDGAR ingestion, chunking, embeddings, and retrieval over `research_chunks`.
+- Connect Phase 6 generation to live AI Gateway once the Vercel AI Gateway account issue is resolved.
+- Persist saved research-room artifacts to Supabase in configured environments.
 
 Acceptance gate:
 - Filing summary includes valid source references.
