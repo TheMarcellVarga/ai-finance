@@ -24,7 +24,7 @@ Phase 0 control-plane assets, Phase 1 product/brand direction, Phase 2 app scaff
 
 Current AI working mode:
 - Deterministic fixture mode is the default for local development and review.
-- The live AI Gateway verification path remains available as an opt-in check later.
+- Vercel AI Gateway calls are intentionally skipped by the local Phase 5 verifier so development is not blocked by account billing or credit-card requirements.
 
 ## Product Direction
 
@@ -103,22 +103,13 @@ curl -X POST http://127.0.0.1:3000/api/ai/portfolio-brief \
   -d '{"prompt":"Summarize concentration risk and data freshness as research."}'
 ```
 
-If you later want to re-enable live AI verification, use Vercel OIDC
-credentials or an AI Gateway API key, plus Supabase persistence credentials:
-
-```bash
-vercel link
-vercel env pull apps/web/.env.local
-```
-
-Then make sure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are available and
-run:
+The Phase 5 verifier intentionally skips Vercel AI Gateway and runs the
+deterministic fixture path against an owner-scoped finance API snapshot:
 
 ```bash
 scripts/verify-phase5-live
 ```
 
 Local development defaults to deterministic fixture mode even when an AI Gateway
-key is present. Set `AI_PORTFOLIO_BRIEF_MODE=live` only for intentional live
-checks. The live verifier defaults to `amazon/nova-micro` to keep model spend
-low; override with `AI_GATEWAY_MODEL` only when needed.
+key is present. Set `AI_PORTFOLIO_BRIEF_MODE=live` only when manually testing the
+route outside the verifier with explicit AI Gateway and Supabase credentials.

@@ -159,8 +159,8 @@ Additional scripts to add after the app scaffold exists:
 8. Expand the existing `AGENTS.md`, project-specific skills, and deterministic placeholder scripts as the real app scaffold appears.
 
 ## Acceptance Criteria
-- The demo includes at least one real model call, not static AI copy.
-- AI outputs are schema-validated and persisted.
+- Local verification uses the approved no-Gateway deterministic path unless a separate live-provider verifier is added later.
+- AI outputs are schema-validated and persistence-ready; persistence runs when server-side Supabase credentials are configured.
 - AI answers cite actual stored or fetched sources when presenting research claims.
 - AI refuses trading-bot and direct buy/sell prompts.
 - A user cannot force the AI to access another user's data.

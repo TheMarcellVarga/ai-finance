@@ -87,10 +87,10 @@ Artifacts:
 - Deterministic AI eval and safety fixture scripts.
 
 Gate:
-- At least one real model call is persisted, schema-valid, cited where possible, and advice-boundary safe.
+- The no-Gateway verifier passes with an owner-scoped finance API snapshot, schema-valid output, citations, safety metadata, and explicit no-model-call disclosure.
 
 Deferred:
-- Verify the portfolio brief route against real AI Gateway credentials.
+- Add a separate opt-in live-provider verifier if the project later chooses to validate AI Gateway or another paid model provider.
 - Verify Supabase persistence with server-side Supabase credentials.
 
 ## Phase 6: Research And Goal Intelligence

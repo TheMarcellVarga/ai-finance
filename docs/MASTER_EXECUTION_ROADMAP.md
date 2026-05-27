@@ -185,14 +185,14 @@ Completed artifacts:
 - `apps/web/src/lib/ai/tool-registry.ts` and `portfolio-tools.ts` provide an owner-scoped `getPortfolioSnapshot` AI tool wrapper that calls the application finance API instead of raw database access.
 - `apps/web/src/lib/ai/persistence.ts` persists AI threads, messages, tool runs, briefs, citations, usage events, latency, model, and token usage when `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are configured server-side.
 - `scripts/run-ai-evals` and `scripts/check-ai-safety-fixtures` now run deterministic schema, citation/freshness, advice-boundary, ownership-isolation, prompt-injection, and safety fixture checks.
-- `scripts/verify-phase5-live` runs the credential-dependent acceptance gate: live AI Gateway call, owner-scoped portfolio snapshot, schema/citation checks, and Supabase persistence IDs for thread, messages, tool run, brief, citations, and usage.
+- `scripts/verify-phase5-live` now intentionally skips Vercel AI Gateway so local verification is not blocked by account billing or credit-card requirements. It runs the deterministic portfolio brief path against an owner-scoped finance API snapshot and validates schema, citation, safety, disclaimer, and no-model-call metadata.
 
 Deferred live verification:
-- If the team later chooses to re-open live AI verification, add Vercel AI Gateway credentials via `vercel link` and `vercel env pull apps/web/.env.local`, or set `VERCEL_AI_GATEWAY_API_KEY` / `AI_GATEWAY_API_KEY`.
+- Vercel AI Gateway live calls are skipped by policy in local verification to avoid requiring a valid credit card or live model spend.
+- If the team later chooses to re-open live AI verification, add a separate script instead of changing the no-Gateway verifier. That future script should use Vercel AI Gateway credentials via `vercel link` and `vercel env pull apps/web/.env.local`, or `VERCEL_AI_GATEWAY_API_KEY` / `AI_GATEWAY_API_KEY`.
 - Optionally set `AI_GATEWAY_MODEL` to the intended final demo model; otherwise the route defaults to the low-cost `amazon/nova-micro`.
 - Point Next.js at the finance API with `FINANCE_API_BASE_URL` and, for local dev auth, `FINANCE_API_DEV_TOKEN`.
 - Apply Supabase migrations to the configured remote project so `public.profiles` and AI persistence tables exist.
-- If live verification is re-opened, run `scripts/verify-phase5-live` with AI Gateway credentials and a configured finance API to prove the demo includes a real model call.
 - Configure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` if you want live AI persistence verification later.
 
 Temporary Phase 6 unblock:
@@ -200,8 +200,8 @@ Temporary Phase 6 unblock:
 - Before Phase 8 recruiter-demo polish, Phase 5 only needs to be re-opened if the live AI path is being finalized for a public demo.
 
 Acceptance gate:
-- Demo includes at least one real model call.
-- Portfolio brief is schema-valid and persisted.
+- Local verification intentionally skips Vercel AI Gateway and proves the no-Gateway deterministic AI path.
+- Portfolio brief is schema-valid, citation-backed, and persistence-ready when Supabase credentials are configured.
 - AI cannot access another user's portfolio.
 - AI refuses trading-bot and direct buy/sell prompts.
 - Eval runner catches at least schema and advice-boundary failures.
@@ -227,7 +227,7 @@ Completed artifacts:
 - Research, goals, and risk app pages now render concrete Phase 6 outputs instead of skeleton placeholders.
 - `supabase/migrations/202605270001_phase6_research_goal_intelligence.sql` seeds safe educational challenges, achievements, and deterministic research document chunks without mock market prices.
 - AI eval and safety fixture scripts now cover filing citations, goal-planner safety, prompt injection, ownership-boundary language, and unsafe gamification language.
-- `scripts/verify-phase5-mock` provides the approved deterministic workaround for the external Vercel AI Gateway account/billing blocker while keeping `scripts/verify-phase5-live` as the true live-model gate.
+- `scripts/verify-phase5-mock` and `scripts/verify-phase5-live` both avoid Vercel AI Gateway account/billing blockers; the latter remains the Phase 5 verification command name but now validates the approved no-Gateway deterministic path.
 
 Deferred live hardening:
 - Replace deterministic SEC-style chunks with real SEC EDGAR ingestion, chunking, embeddings, and retrieval over `research_chunks`.

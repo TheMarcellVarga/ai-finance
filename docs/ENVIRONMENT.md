@@ -65,19 +65,22 @@ AI runtime should track:
 - cache hit/miss
 - safety label
 
-For cost-controlled development, `/api/ai/portfolio-brief` supports deterministic fixture mode. In non-production, the route defaults to fixture mode even when an AI Gateway credential is configured, unless `AI_PORTFOLIO_BRIEF_MODE=live` is explicitly set. Fixture mode still reads the owner-scoped finance API snapshot, applies prompt safety checks, returns the required structured fields, and attempts Supabase persistence if server credentials are configured. It does not make a model call and does not satisfy the final Phase 5 live AI acceptance gate.
+For cost-controlled development, `/api/ai/portfolio-brief` supports deterministic fixture mode. In non-production, the route defaults to fixture mode even when an AI Gateway credential is configured, unless `AI_PORTFOLIO_BRIEF_MODE=live` is explicitly set. Fixture mode still reads the owner-scoped finance API snapshot, applies prompt safety checks, returns the required structured fields, and attempts Supabase persistence if server credentials are configured. It does not make a model call.
 
 Fixture mode is the active working mode for this repo. It is the recommended
-path while live AI credentials are being deferred for privacy or account setup
-reasons.
+path while live AI credentials are being deferred for privacy, billing, or
+account setup reasons.
 
-Live Phase 5 verification remains available later as an opt-in check. With
+`scripts/verify-phase5-live` intentionally skips Vercel AI Gateway and clears
+Gateway/Supabase credentials for the spawned web process. The script validates
+the approved no-Gateway path: owner-scoped finance API context, schema-valid
+portfolio brief output, citations, safety labels, assumptions, and explicit
+`liveAiGatewayCall: false` metadata.
+
+Manual live route testing remains possible outside the verifier. With
 `AI_PORTFOLIO_BRIEF_MODE=live`, the route fails fast unless AI Gateway and
 Supabase persistence are configured, and non-streaming responses must persist
-thread, message, tool run, brief, citation, and usage metadata. For the Vercel
-AI Gateway free tier, prefer project-scoped OIDC credentials from `vercel link`
-and `vercel env pull apps/web/.env.local`; the verifier also accepts
-`AI_GATEWAY_API_KEY` or `VERCEL_AI_GATEWAY_API_KEY`.
+thread, message, tool run, brief, citation, and usage metadata.
 
 ## Provider Notes
 
