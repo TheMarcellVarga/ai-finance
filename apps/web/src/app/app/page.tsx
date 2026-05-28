@@ -7,7 +7,7 @@ export default function AppOverviewPage() {
       <WorkspaceSection
         eyebrow="Workspace"
         title="Financial intelligence workspace"
-        body="This shell now connects the portfolio, research, goals, risk, watchlist, settings, and billing surfaces used in the local Phase 8 case study."
+        body="This shell connects portfolio, research, goals, risk, watchlist, settings, and billing surfaces for the local portfolio demo."
       />
       <MarketShell />
     </div>

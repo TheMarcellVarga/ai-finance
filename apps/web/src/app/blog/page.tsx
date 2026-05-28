@@ -6,27 +6,27 @@ export default function BlogPage() {
   return (
     <PublicInfoPage
       eyebrow="Briefs"
-      title="Research notes will document product, AI, and finance safety decisions."
-      body="This surface is queued for the completion pass so the public site can show real case-study writing instead of reserved publishing content."
+      title="Case-study notes on architecture, AI safety, and finance boundaries."
+      body="Aperture publishes implementation notes that explain how the product separates research support from trading, keeps user-owned finance data behind server boundaries, and verifies AI output with deterministic evals."
       items={[
         {
-          title: "Architecture notes",
-          body: "The first article should explain why Next.js owns product rendering while Go owns authoritative finance APIs.",
+          title: "Architecture boundary",
+          body: "Next.js owns product rendering, authenticated UX, and AI route handlers while Go owns authoritative finance APIs, portfolio math, provider normalization, and audit-backed mutations.",
           icon: Gauge,
         },
         {
-          title: "AI safety logs",
-          body: "The AI safety article should cover schema validation, citations, freshness labels, and advice-boundary evals.",
+          title: "AI safety log",
+          body: "Portfolio briefs, filing summaries, goal plans, and risk explanations are schema-checked for citations, freshness labels, refusal behavior, and advice-boundary language.",
           icon: ShieldCheck,
         },
         {
           title: "Research workflow",
-          body: "Briefs will show how filings, portfolio context, and saved research artifacts support decision review.",
+          body: "The research room combines filing chunks, watchlist context, saved citations, assumptions, and source timestamps so outputs can be reviewed instead of blindly trusted.",
           icon: FileText,
         },
         {
-          title: "Case study material",
-          body: "Recruiter-facing writeups will focus on product tradeoffs, secure boundaries, and polished implementation evidence.",
+          title: "Portfolio evidence",
+          body: "The case-study material focuses on real data flow, disabled-by-default external model spend, server-enforced entitlements, signed webhooks, and polished responsive surfaces.",
           icon: BookOpenCheck,
         },
       ]}

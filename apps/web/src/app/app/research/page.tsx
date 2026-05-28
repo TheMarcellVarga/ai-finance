@@ -1,5 +1,6 @@
 import { BookOpenCheck, FileText, Link2 } from "lucide-react";
 
+import { AiActionPanel } from "@/components/ai-action-panel";
 import { createDeterministicFilingSummary } from "@/lib/ai/research-intelligence";
 
 export default function ResearchPage() {
@@ -71,6 +72,19 @@ export default function ResearchPage() {
         </div>
         <p className="mt-5 text-xs leading-5 text-zinc-500">{brief.disclaimer}</p>
       </div>
+
+      <AiActionPanel
+        title="Research route controls"
+        description="Run the filing-summary route through entitlement, rate-limit, schema, citation, and usage checks, then save the result as source-backed research context."
+        generateEndpoint="/api/ai/research-brief"
+        generatePayload={{
+          ticker: "AAPL",
+          prompt: "Summarize filing risks and research follow-ups for a portfolio research room.",
+        }}
+        saveTitle={`${brief.ticker} ${brief.filingType} research brief`}
+        saveSourceType="filing_summary"
+        citationCount={brief.retrievedChunks.length}
+      />
     </section>
   );
 }

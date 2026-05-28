@@ -6,12 +6,12 @@ export default function TermsPage() {
   return (
     <PublicInfoPage
       eyebrow="Terms"
-      title="Product terms will reinforce research support, not advice or execution."
-      body="This surface is queued for the completion pass and must become concrete product terms before any public recruiter demo."
+      title="Research-support terms for portfolio intelligence."
+      body="Aperture is a financial research and portfolio decision-support workspace. It helps organize source-backed context, explain risk factors, and compare scenarios; it is not a brokerage, robo-advisor, automated trading system, or suitability engine."
       items={[
         {
           title: "Research-only use",
-          body: "Aperture supports portfolio research, source review, scenario planning, and risk explanation.",
+          body: "Use the workspace for source review, portfolio context, goal scenario planning, watchlist monitoring, and risk explanation.",
           icon: FileCheck2,
         },
         {
@@ -21,12 +21,12 @@ export default function TermsPage() {
         },
         {
           title: "No advice promise",
-          body: "AI outputs must remain decision-support material and cannot promise suitability, returns, or outcomes.",
+          body: "AI outputs are decision-support material only and do not promise suitability, returns, outcomes, or personal investment advice.",
           icon: Scale,
         },
         {
           title: "Freshness limits",
-          body: "Market data, filings, and AI-generated context must disclose assumptions and stale-data limitations.",
+          body: "Market data, filings, and AI-generated context must be read with their assumptions, source citations, and freshness labels.",
           icon: TriangleAlert,
         },
       ]}

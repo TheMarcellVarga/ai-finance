@@ -1,5 +1,6 @@
 import { Activity, AlertTriangle, ShieldCheck } from "lucide-react";
 
+import { AiActionPanel } from "@/components/ai-action-panel";
 import type { PortfolioSnapshot } from "@/lib/ai/portfolio-brief";
 import { createDeterministicRiskExplainer, riskExplainerSchema } from "@/lib/ai/research-intelligence";
 
@@ -108,6 +109,19 @@ export default function RiskPage() {
         </div>
         <p className="mt-5 text-xs leading-5 text-zinc-500">{risk.disclaimer}</p>
       </div>
+
+      <AiActionPanel
+        title="Risk explainer route controls"
+        description="Save the risk review with citations and usage metadata. Running the live route requires the local finance API portfolio snapshot to be available for the authenticated workspace."
+        generateEndpoint="/api/ai/risk-explainer"
+        generatePayload={{
+          portfolioId: demoSnapshot.id,
+          prompt: "Explain concentration and allocation risk as research.",
+        }}
+        saveTitle="Core research portfolio risk explainer"
+        saveSourceType="risk_explainer"
+        citationCount={risk.citations.length}
+      />
     </section>
   );
 }

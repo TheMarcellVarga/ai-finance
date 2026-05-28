@@ -1,7 +1,7 @@
 const phaseItems = [
-  ["Data model", "Owner-scoped resources", "RLS + audit path"],
-  ["Go API", "Authoritative finance math", "JWT + rate limits"],
-  ["AI safety", "Citations and refusal rules", "eval gated"],
+  ["Data model", "Owner-scoped resources", "RLS and audit path"],
+  ["Go API", "Authoritative finance math", "JWT and rate limits"],
+  ["AI safety", "Citations and refusal rules", "Eval gated"],
 ];
 
 type WorkspaceSectionProps = {
@@ -30,7 +30,7 @@ export function WorkspaceSection({ eyebrow, title, body }: WorkspaceSectionProps
             <h2 className="type-card-title mt-4 text-lg text-white">{item}</h2>
             <p className="mt-2 text-xs uppercase tracking-[0.14em] text-cyan-100/75">{affordance}</p>
             <p className="mt-2 text-sm leading-6 text-zinc-500">
-              Implementation status is tracked in the roadmap completion pass before recruiter review.
+              This workspace keeps financial data, AI output, and usage controls behind server-owned boundaries.
             </p>
           </div>
         ))}

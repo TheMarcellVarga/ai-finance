@@ -6,9 +6,9 @@ This project is not a trading bot, brokerage product, robo-advisor, return-predi
 
 ## Current Status
 
-Roadmap phase: Phase 9 is queued next: Completion And No-Placeholder Pass. Phase 8 local case-study polish exists, but the project is not portfolio-ready while linked routes still contain unfinished or fixture-only surfaces. Public deployment, live Stripe/Clerk webhook delivery, remote Supabase persistence checks, and paid live AI/provider verification remain environment-dependent follow-on work.
+Roadmap phase: Phase 9 local completion pass is complete. The linked public and app routes now present finished portfolio-demo surfaces; public deployment, live Stripe/Clerk webhook delivery, remote Supabase persistence checks, and paid live AI/provider verification remain environment-dependent follow-on work.
 
-Phase 0 control-plane assets through Phase 8 local polish are in place:
+Phase 0 control-plane assets through Phase 9 local completion are in place:
 - [Agent instructions](AGENTS.md)
 - [Master execution roadmap](docs/MASTER_EXECUTION_ROADMAP.md)
 - [AI integration and development setup](docs/AI_INTEGRATION_AND_DEV_SETUP.md)
@@ -24,7 +24,8 @@ Phase 0 control-plane assets through Phase 8 local polish are in place:
 - Phase 6 deterministic research, goal, and risk intelligence surfaces with citations, assumptions, safety labels, and not-financial-advice boundaries
 - Phase 7 server-side entitlements, usage gates, signed webhook handlers, rate limits, audit logging, and privacy-scrubbed observability helpers
 - Phase 8 local case-study package: brand/media notes, architecture diagram, walkthrough script, screenshot capture set, README updates, and API docs
-- Phase 9 unfinished-surface audit in [docs/UNFINISHED_SURFACES_AUDIT.md](docs/UNFINISHED_SURFACES_AUDIT.md)
+- Phase 9 completion audit in [docs/UNFINISHED_SURFACES_AUDIT.md](docs/UNFINISHED_SURFACES_AUDIT.md)
+- Watchlist, settings, research, goals, risk, blog, privacy, and terms surfaces with local demo interactions and completion-copy cleanup
 
 Current AI working mode:
 - Deterministic fixture mode is the default for local development and review.
@@ -143,13 +144,14 @@ or OpenAI key is present. Set `AI_EXTERNAL_CALLS_ENABLED=true` and
 `AI_PORTFOLIO_BRIEF_MODE=live` only when manually testing the route outside the
 verifier with an explicit live provider.
 
-## Phase 8 Demo Path
+## Local Demo Path
 
 1. Open `/` and confirm the product is framed as AI financial research, not trading automation.
 2. Open `/app/portfolio`, refresh provider-backed portfolio data, and inspect holdings, allocation, freshness, and the intraday chart.
-3. Open `/app/research`, `/app/goals`, and `/app/risk` to review deterministic cited Phase 6 AI outputs and safety copy.
-4. Open `/app/billing` to verify server-side entitlement limits and local fixture billing state.
-5. Run the verification commands in [Demo walkthrough script](docs/DEMO_WALKTHROUGH.md).
+3. Open `/app/watchlist` to review provider-backed watchlist data, freshness, add-ticker flow, and failure states.
+4. Open `/app/research`, `/app/goals`, and `/app/risk` to review cited AI outputs, route-backed generation controls, saved research behavior, and safety copy.
+5. Open `/app/settings` and `/app/billing` to verify privacy/provider controls, server-side entitlement limits, and local demo billing state.
+6. Run the verification commands in [Demo walkthrough script](docs/DEMO_WALKTHROUGH.md).
 
 ## Recruiter Case Study
 

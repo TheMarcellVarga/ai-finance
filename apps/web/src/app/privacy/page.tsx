@@ -7,26 +7,26 @@ export default function PrivacyPage() {
     <PublicInfoPage
       eyebrow="Privacy"
       title="Privacy posture for sensitive portfolio and AI research data."
-      body="This surface is queued for the completion pass and must become a concrete privacy policy before any public recruiter demo."
+      body="Aperture treats identity, holdings, prompts, AI outputs, billing records, and usage events as sensitive product data. The app is designed around server-side access controls, ownership checks, minimized telemetry, and explicit source freshness."
       items={[
         {
           title: "Sensitive data",
-          body: "Portfolio holdings, prompts, AI outputs, billing data, and identity metadata are treated as protected product data.",
+          body: "Portfolio holdings, watchlists, saved research, AI brief metadata, billing state, and account identity are scoped to the authenticated user and should never be exposed across tenants.",
           icon: Fingerprint,
         },
         {
           title: "Server-only secrets",
-          body: "Provider keys, service-role credentials, webhook secrets, and private prompts must never ship to browser bundles.",
+          body: "Provider keys, Supabase service-role credentials, webhook secrets, model configuration, and raw JWTs stay in server runtimes and are not shipped to browser bundles.",
           icon: KeyRound,
         },
         {
           title: "Tool boundaries",
-          body: "AI tools will call application-owned APIs instead of unrestricted database access or raw credentials.",
+          body: "AI tools call owner-scoped application APIs and typed server wrappers; models do not receive unrestricted database credentials or arbitrary tenant access.",
           icon: DatabaseZap,
         },
         {
           title: "Scrubbed telemetry",
-          body: "Analytics and error reporting must avoid PII, holdings, raw prompts, AI outputs, and financial amounts by default.",
+          body: "Observability helpers scrub PII, holdings, financial amounts, raw prompts, AI outputs, API keys, and webhook secrets before analytics or error reporting.",
           icon: ShieldCheck,
         },
       ]}

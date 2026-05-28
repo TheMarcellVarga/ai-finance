@@ -51,6 +51,36 @@ type FinancePortfolioListResponse = {
   meta: FinancePortfolioResponse["meta"];
 };
 
+export type FinanceWatchlistResponse = {
+  data: {
+    id: string;
+    name: string;
+    items: Array<{
+      id: string;
+      asset: {
+        ticker: string;
+        name: string;
+        exchange: string;
+        type: string;
+        sector?: string;
+        capturedAt?: string;
+        freshness?: string;
+        provider?: string;
+        displayPrice?: string;
+        dailyChangeBps?: number;
+      };
+      notes?: string;
+    }>;
+    dataFreshness: { provider: string; capturedAt: string; freshness: string };
+  };
+  meta: { provider: string; freshness: string; capturedAt: string };
+};
+
+type FinanceWatchlistListResponse = {
+  data: FinanceWatchlistResponse["data"][];
+  meta: FinanceWatchlistResponse["meta"];
+};
+
 export type IntradayChartResponse = {
   data: Array<{
     timestamp: string;
@@ -78,6 +108,8 @@ const starterHoldings = [
   { ticker: "MSFT", quantity: 4, averageCostCents: 0, notes: "Software and cloud exposure." },
   { ticker: "NVDA", quantity: 6, averageCostCents: 0, notes: "Semiconductor exposure for risk review." },
 ];
+
+const starterWatchlistAssets = ["AAPL", "MSFT", "NVDA"];
 
 export class FinanceApiUnavailableError extends Error {
   readonly code = "finance_api_unavailable";
@@ -169,4 +201,74 @@ export async function loadIntradayChart(ticker: string, interval = "5min"): Prom
     throw new Error(payload?.error?.message ?? `Finance API returned ${response.status}.`);
   }
   return payload as IntradayChartResponse;
+}
+
+async function listWatchlists() {
+  const response = await financeFetch(`${financeApiBaseUrl}/v1/watchlists`, {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${devToken}`,
+    },
+    cache: "no-store",
+  });
+  const text = await response.text();
+  const payload = parseFinancePayload(text);
+  if (!response.ok) {
+    throw new Error(payload?.error?.message ?? `Finance API returned ${response.status}.`);
+  }
+  return payload as FinanceWatchlistListResponse;
+}
+
+async function createStarterWatchlist() {
+  const response = await financeFetch(`${financeApiBaseUrl}/v1/watchlists`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${devToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: "Research watchlist",
+      initialAssets: starterWatchlistAssets,
+    }),
+    cache: "no-store",
+  });
+  const text = await response.text();
+  const payload = parseFinancePayload(text);
+  if (!response.ok) {
+    throw new Error(payload?.error?.message ?? `Finance API returned ${response.status}.`);
+  }
+  return payload as FinanceWatchlistResponse;
+}
+
+export async function loadRealProviderWatchlist(): Promise<FinanceWatchlistResponse> {
+  const listPayload = await listWatchlists();
+  const existingWatchlist = listPayload.data?.[0];
+  if (existingWatchlist) {
+    return {
+      data: existingWatchlist,
+      meta: listPayload.meta,
+    };
+  }
+  return createStarterWatchlist();
+}
+
+export async function addRealProviderWatchlistItem(ticker: string, notes?: string): Promise<FinanceWatchlistResponse> {
+  const current = await loadRealProviderWatchlist();
+  const response = await financeFetch(`${financeApiBaseUrl}/v1/watchlists/${encodeURIComponent(current.data.id)}/items`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${devToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ticker, notes }),
+    cache: "no-store",
+  });
+  const text = await response.text();
+  const payload = parseFinancePayload(text);
+  if (!response.ok) {
+    throw new Error(payload?.error?.message ?? `Finance API returned ${response.status}.`);
+  }
+  return payload as FinanceWatchlistResponse;
 }

@@ -4,7 +4,7 @@
 
 Aperture Financial Intelligence is a recruiter-grade fintech/wealthtech workspace for portfolio-aware research, cited AI briefs, goal scenario planning, and risk explanation. The product deliberately avoids brokerage, trade execution, personalized investment advice, and return promises.
 
-Current state: local Phase 8 case-study package is complete, but Phase 9 is required before portfolio-ready review because several linked routes still need to be finished, replaced, or removed. The app builds, the Go API tests pass, deterministic AI evals pass, billing/security verification passes, and screenshots can be captured from the local dev server.
+Current state: the local Phase 9 completion pass is complete. Linked public and app routes now present finished portfolio-demo surfaces, the app builds, the Go API tests pass, deterministic AI evals pass, billing/security verification passes, and screenshots can be captured from the local dev server.
 
 ## Product Boundary
 
@@ -85,7 +85,6 @@ These screenshots should not contain real user PII, real holdings, raw prompts, 
 
 ## Follow-On Hardening
 
-- Complete Phase 9 from `docs/UNFINISHED_SURFACES_AUDIT.md` so no linked route exposes placeholder, scaffold, or future-work content.
 - Deploy Next.js and Go API with production domains, Cloudflare controls, and secure CORS.
 - Configure real Stripe products/prices and run live webhook delivery tests.
 - Configure Clerk production auth and organization flows.

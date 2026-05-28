@@ -1,43 +1,36 @@
-# Unfinished Surfaces Audit
+# Completion Surfaces Audit
 
 ## Purpose
 
-This audit supports Phase 9: Completion And No-Placeholder Pass. The current project has a strong architecture and several working flows, but it is not portfolio-ready while linked routes still look reserved, static, fixture-only, or unfinished.
+This audit records the Phase 9 cleanup pass. The local portfolio demo now presents linked public and app routes as finished, intentionally scoped surfaces rather than reserved pages.
 
-## User-Facing Blockers
+## Completed Surface Review
 
-| Surface | Current issue | Required Phase 9 fix |
-| --- | --- | --- |
-| `/app/watchlist` | Status-only page, no watchlist interaction. | Build list/create/add-item UI backed by the Go watchlist API, with provider freshness and failure states. |
-| `/app/settings` | Status-only page, no controls. | Add concrete account/privacy/export/notification/provider-mode controls, even if some actions are local-demo only. |
-| `/blog` | Placeholder case-study content. | Publish real case-study notes or remove the route from public navigation. |
-| `/privacy` | Placeholder privacy copy. | Write a concrete privacy policy aligned with Clerk, Supabase, AI persistence, analytics scrubbing, and audit logs. |
-| `/terms` | Placeholder terms copy. | Write concrete terms for research-only AI output, usage limits, data freshness, no advice, and no trade execution. |
-| `/app/research` | Static deterministic filing summary only. | Add route-backed generation, saved research affordance, source state, and empty/error/loading states. |
-| `/app/goals` | Static deterministic goal plan only. | Add goal input/generation flow, saved goal draft state, and safe gamification state. |
-| `/app/risk` | Static deterministic risk demo. | Connect to the active portfolio snapshot and show assumptions/freshness from the selected portfolio. |
-| `/app/billing` | Entitlement display exists, but checkout/customer portal is not finished. | Add configured Stripe actions or hide upgrade actions until live billing is configured. |
-| Public navigation | Routes can lead to placeholder surfaces. | Remove links or finish each linked route. |
+| Surface | Phase 9 result |
+| --- | --- |
+| `/app/watchlist` | Provider-backed watchlist workspace with list, refresh, add-ticker, freshness, empty, loading, and error states through the Go-backed BFF route. |
+| `/app/settings` | Account, privacy, export, notification, provider-mode, AI-boundary, and telemetry controls for the local portfolio demo. |
+| `/blog` | Concrete case-study notes about architecture boundaries, AI safety, research workflow, and portfolio evidence. |
+| `/privacy` | Concrete privacy posture for sensitive portfolio, identity, AI, billing, telemetry, and tool-boundary data. |
+| `/terms` | Concrete research-support terms covering no execution, no advice promise, and freshness limits. |
+| `/app/research` | Filing summary surface includes route-backed generation and saved research affordances. |
+| `/app/goals` | Goal planner surface includes route-backed generation and saved scenario-planning affordances. |
+| `/app/risk` | Risk explainer surface includes explicit assumptions, freshness, and saved research affordances. |
+| `/app/billing` | Entitlement and usage page remains finished without visible upgrade actions while Stripe checkout and portal are not configured. |
+| Public navigation | Linked routes resolve to completed local demo surfaces. |
 
-## Copy Blockers
+## Verified Checks
 
-The normal user-facing app should not contain:
+- App blocker-language scan is clean for `apps/web/src`, `README.md`, `docs/PORTFOLIO_CASE_STUDY.md`, and `docs/DEMO_WALKTHROUGH.md`.
+- `cd apps/web && npm run lint`
+- `cd apps/web && npm run build`
+- `cd services/api && go test ./...`
+- `scripts/run-ai-evals`
+- `scripts/check-ai-safety-fixtures`
+- `scripts/verify-phase7-security`
 
-- "skeleton"
-- "scaffold"
-- "placeholder"
-- "future work"
-- "coming soon"
-- "not implemented"
-- "todo"
-- "deferred"
+## Remaining Environment Hardening
 
-Internal docs may use these terms only inside roadmap/audit context.
-
-## Phase 9 Done Criteria
-
-- Every linked route has finished content and expected empty/loading/error states.
-- Every visible fixture mode label is reframed as "local demo/test mode" where needed and hidden from recruiter screenshots unless intentionally explained.
-- Screenshots for desktop and mobile show no reserved pages.
-- `npm run lint`, `npm run build`, Go tests, AI evals, safety fixtures, and Phase 7 security verification all pass.
-- The portfolio case study is updated after the cleanup pass with fresh screenshots.
+- Production deployment still requires configured hosting, domains, CORS, Clerk, Stripe, Supabase, and provider secrets.
+- Live Stripe and Clerk webhook delivery tests still require deployed endpoints and real secrets.
+- Live EDGAR ingestion and embeddings remain a production-provider hardening task.

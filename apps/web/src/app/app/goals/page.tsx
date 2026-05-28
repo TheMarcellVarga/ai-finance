@@ -1,5 +1,6 @@
 import { Flag, GraduationCap, Target } from "lucide-react";
 
+import { AiActionPanel } from "@/components/ai-action-panel";
 import { createDeterministicGoalPlan, goalPlanSchema } from "@/lib/ai/research-intelligence";
 
 export default function GoalsPage() {
@@ -75,6 +76,23 @@ export default function GoalsPage() {
           <p className="mt-5 text-xs leading-5 text-zinc-500">{plan.disclaimer}</p>
         </div>
       </div>
+
+      <AiActionPanel
+        title="Goal planner route controls"
+        description="Generate the goal-plan route through usage gates and save the result as educational scenario-planning context without return promises."
+        generateEndpoint="/api/ai/goal-plan"
+        generatePayload={{
+          goalName: "Research-funded home reserve",
+          targetAmount: "$250,000",
+          timeHorizon: "5 years",
+          riskPreference: "balanced",
+          contributionCadence: "monthly",
+          prompt: "Create an educational scenario plan with research habits and no return promise.",
+        }}
+        saveTitle={`${plan.goalName} goal plan`}
+        saveSourceType="goal_plan"
+        citationCount={plan.citations.length}
+      />
     </section>
   );
 }

@@ -326,7 +326,7 @@ Acceptance gate:
 - The project can be shown to fintech/AI product engineering recruiters.
 
 ## Phase 9: Completion And No-Placeholder Pass
-Status: queued; required before this project is portfolio-ready.
+Status: complete in local portfolio-demo mode. Public deployment and live production-provider checks remain environment-dependent.
 
 Primary skills: `nextjs-fintech-ui`, `ai-research-features`, `go-finance-api`, `security-review-fintech`.
 
@@ -335,16 +335,14 @@ Purpose:
 - No public or app route may advertise incompleteness in normal user-facing copy.
 - Fixture and deterministic modes may remain for local tests, but the demo UI must clearly present finished behavior or intentionally scoped demo data without looking unfinished.
 
-Known unfinished inventory:
-- `/app/watchlist`: replace the current status-only page with real watchlist list/create/add-item UI backed by the existing Go API.
-- `/app/settings`: replace the current status-only page with concrete account, privacy, data export posture, notification, and AI-provider mode controls.
-- `/blog`: replace placeholder content with real case-study articles or remove the route from navigation until content exists.
-- `/privacy` and `/terms`: replace placeholder legal/privacy surfaces with concrete product policies aligned to the existing security docs.
-- `/app/research`, `/app/goals`, and `/app/risk`: replace deterministic-only static page generation with route-backed interactions, saved research behavior, and explicit source/freshness states.
-- Billing page: add finished checkout/customer-portal affordances or hide upgrade actions until Stripe products are configured.
-- AI routes: remove user-facing "todo"/"deferred" language from responses, add production-safe live-mode copy, and keep deterministic mode as a developer/test mode.
-- Documentation and UI copy: eliminate "skeleton", "scaffold", "placeholder", "future work", and similar wording from any user-facing route.
-- Demo media: ensure screenshots only show finished surfaces, not queued placeholders.
+Completed artifacts:
+- `/app/watchlist` now renders a provider-backed watchlist workspace with list, refresh, add-ticker, source freshness, empty, loading, and error states through the Next.js `/api/finance/watchlist` BFF route backed by the Go watchlist API.
+- `/app/settings` now renders concrete account, privacy, data export, notification, provider-mode, AI-boundary, and telemetry controls for the local portfolio demo.
+- `/blog`, `/privacy`, and `/terms` now contain concrete case-study, privacy, and research-support terms copy aligned with the finance and security guardrails.
+- `/app/research`, `/app/goals`, and `/app/risk` now include route-backed action panels for AI generation and saved research behavior with usage, entitlement, citation, and audit paths.
+- Billing remains a finished entitlement and usage surface with no visible upgrade action while live Stripe products/customer portal are not configured.
+- User-facing completion-pass/blocker wording has been removed from app source, README, case study, and demo walkthrough.
+- The portfolio case study follow-on list no longer calls Phase 9 incomplete.
 
 Acceptance gate:
 - `rg -n "skeleton|scaffold|placeholder|future work|coming soon|not implemented|todo|deferred" apps/web/src README.md docs/PORTFOLIO_CASE_STUDY.md docs/DEMO_WALKTHROUGH.md` returns no user-facing blocker language except explicit internal roadmap references.

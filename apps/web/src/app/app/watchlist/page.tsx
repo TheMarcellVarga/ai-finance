@@ -1,11 +1,23 @@
-import { WorkspaceSection } from "@/components/workspace-section";
+import { WatchlistWorkspace } from "@/components/watchlist-workspace";
+import { loadRealProviderWatchlist } from "@/lib/finance-api";
 
-export default function WatchlistPage() {
+export const dynamic = "force-dynamic";
+
+export default async function WatchlistPage() {
+  let payload: Awaited<ReturnType<typeof loadRealProviderWatchlist>> | null = null;
+  let initialError: string | undefined;
+
+  try {
+    payload = await loadRealProviderWatchlist();
+  } catch (error) {
+    initialError = error instanceof Error ? error.message : "The watchlist feed is unavailable.";
+  }
+
   return (
-    <WorkspaceSection
-      eyebrow="Watchlist"
-      title="Watchlist intelligence"
-      body="This surface is queued for the completion pass: curated asset tracking, cached market data, movement explanations, and stale-data disclosure must be fully wired before recruiter review."
+    <WatchlistWorkspace
+      initialError={initialError}
+      initialMeta={payload?.meta}
+      initialWatchlist={payload?.data}
     />
   );
 }
