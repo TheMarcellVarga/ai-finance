@@ -1,22 +1,22 @@
 import { BookOpenCheck, FileText, Gauge, ShieldCheck } from "lucide-react";
 
-import { PublicSkeletonPage } from "@/components/public-skeleton-page";
+import { PublicInfoPage } from "@/components/public-info-page";
 
 export default function BlogPage() {
   return (
-    <PublicSkeletonPage
+    <PublicInfoPage
       eyebrow="Briefs"
       title="Research notes will document product, AI, and finance safety decisions."
-      body="This scaffold reserves the public writing surface for cited product updates, architecture notes, and implementation case-study material."
+      body="This surface is queued for the completion pass so the public site can show real case-study writing instead of reserved publishing content."
       items={[
         {
           title: "Architecture notes",
-          body: "Planned posts will explain why Next.js owns product rendering while Go owns authoritative finance APIs.",
+          body: "The first article should explain why Next.js owns product rendering while Go owns authoritative finance APIs.",
           icon: Gauge,
         },
         {
           title: "AI safety logs",
-          body: "Future notes will cover schema validation, citations, freshness labels, and advice-boundary evals.",
+          body: "The AI safety article should cover schema validation, citations, freshness labels, and advice-boundary evals.",
           icon: ShieldCheck,
         },
         {

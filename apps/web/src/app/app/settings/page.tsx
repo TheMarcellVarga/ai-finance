@@ -4,8 +4,8 @@ export default function SettingsPage() {
   return (
     <WorkspaceSection
       eyebrow="Settings"
-      title="Settings skeleton"
-      body="Future settings will include account preferences, privacy controls, data export posture, and notification configuration."
+      title="Account and privacy controls"
+      body="This surface is queued for the completion pass: account preferences, privacy controls, data export posture, and notification configuration need finished flows before recruiter review."
     />
   );
 }

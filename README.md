@@ -6,21 +6,25 @@ This project is not a trading bot, brokerage product, robo-advisor, return-predi
 
 ## Current Status
 
-Roadmap phase: Phase 5, Real AI Foundation, with deterministic fixture mode active and live credential verification deferred.
+Roadmap phase: Phase 9 is queued next: Completion And No-Placeholder Pass. Phase 8 local case-study polish exists, but the project is not portfolio-ready while linked routes still contain unfinished or fixture-only surfaces. Public deployment, live Stripe/Clerk webhook delivery, remote Supabase persistence checks, and paid live AI/provider verification remain environment-dependent follow-on work.
 
-Phase 0 control-plane assets, Phase 1 product/brand direction, Phase 2 app scaffold/design system, Phase 3 backend/data foundation, Phase 4 portfolio workspace MVP, and Phase 5 real AI foundation are in place:
+Phase 0 control-plane assets through Phase 8 local polish are in place:
 - [Agent instructions](AGENTS.md)
 - [Master execution roadmap](docs/MASTER_EXECUTION_ROADMAP.md)
 - [AI integration and development setup](docs/AI_INTEGRATION_AND_DEV_SETUP.md)
 - [Backend decision](docs/BACKEND_DECISION.md)
 - [Repo-local AI skills](ai-dev/skills)
-- Go API scaffold in [services/api](services/api)
+- Go API service in [services/api](services/api)
 - OpenAPI contract and generated TypeScript client in [packages/contracts](packages/contracts)
 - Supabase migrations in [supabase/migrations](supabase/migrations)
 - Deterministic workflow scripts in [scripts](scripts)
 - Owner-scoped portfolio/watchlist API flows with real provider market-data metadata
 - Portfolio workspace UI with provider-backed portfolio creation, holdings, transactions, allocation review, and decision-support disclaimers
 - AI SDK portfolio brief route with disabled-by-default external provider configuration, owner-scoped `getPortfolioSnapshot` tool wrapper, structured output schema, citations/freshness contract, Supabase persistence path, usage tracking, and deterministic AI eval/safety scripts
+- Phase 6 deterministic research, goal, and risk intelligence surfaces with citations, assumptions, safety labels, and not-financial-advice boundaries
+- Phase 7 server-side entitlements, usage gates, signed webhook handlers, rate limits, audit logging, and privacy-scrubbed observability helpers
+- Phase 8 local case-study package: brand/media notes, architecture diagram, walkthrough script, screenshot capture set, README updates, and API docs
+- Phase 9 unfinished-surface audit in [docs/UNFINISHED_SURFACES_AUDIT.md](docs/UNFINISHED_SURFACES_AUDIT.md)
 
 Current AI working mode:
 - Deterministic fixture mode is the default for local development and review.
@@ -68,6 +72,27 @@ Read these before implementation:
 - [Security and compliance](docs/SECURITY_AND_COMPLIANCE.md)
 - [Testing strategy](docs/TESTING_STRATEGY.md)
 - [Environment](docs/ENVIRONMENT.md)
+- [Brand and media notes](docs/BRAND_AND_MEDIA.md)
+- [Portfolio case study](docs/PORTFOLIO_CASE_STUDY.md)
+- [Demo walkthrough script](docs/DEMO_WALKTHROUGH.md)
+
+## Architecture At A Glance
+
+```mermaid
+flowchart LR
+  Browser["Browser"] --> Next["Next.js App Router"]
+  Next --> AI["Vercel AI SDK routes"]
+  Next --> Webhooks["Stripe and Clerk webhooks"]
+  Next --> Go["Go finance API"]
+  AI --> Tools["Owner-scoped AI tools"]
+  Tools --> Go
+  Go --> Supabase["Supabase Postgres and pgvector"]
+  Go --> Providers["Market data and SEC providers"]
+  Webhooks --> Supabase
+  AI --> Supabase
+```
+
+Browsers generally talk to Next.js. Next.js server code and AI tools call the Go API for authoritative portfolio, market-data, and ownership-checked finance behavior. Model calls remain disabled by default until explicitly enabled.
 
 ## Workflow Scripts
 
@@ -78,6 +103,7 @@ scripts/validate-supabase-migrations
 scripts/run-ai-evals
 scripts/check-ai-safety-fixtures
 scripts/verify-phase5-live
+scripts/verify-phase7-security
 ```
 
 ## Local Development
@@ -116,3 +142,15 @@ Local development defaults to deterministic fixture mode even when an AI Gateway
 or OpenAI key is present. Set `AI_EXTERNAL_CALLS_ENABLED=true` and
 `AI_PORTFOLIO_BRIEF_MODE=live` only when manually testing the route outside the
 verifier with an explicit live provider.
+
+## Phase 8 Demo Path
+
+1. Open `/` and confirm the product is framed as AI financial research, not trading automation.
+2. Open `/app/portfolio`, refresh provider-backed portfolio data, and inspect holdings, allocation, freshness, and the intraday chart.
+3. Open `/app/research`, `/app/goals`, and `/app/risk` to review deterministic cited Phase 6 AI outputs and safety copy.
+4. Open `/app/billing` to verify server-side entitlement limits and local fixture billing state.
+5. Run the verification commands in [Demo walkthrough script](docs/DEMO_WALKTHROUGH.md).
+
+## Recruiter Case Study
+
+The portfolio story is documented in [docs/PORTFOLIO_CASE_STUDY.md](docs/PORTFOLIO_CASE_STUDY.md). It covers the product boundary, architecture tradeoffs, AI safety posture, backend ownership checks, billing/security implementation, verification commands, and remaining live-environment hardening.

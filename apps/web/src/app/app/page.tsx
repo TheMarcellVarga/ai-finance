@@ -6,8 +6,8 @@ export default function AppOverviewPage() {
     <div className="space-y-8">
       <WorkspaceSection
         eyebrow="Workspace"
-        title="Authenticated app shell scaffold"
-        body="This route establishes the responsive workspace shell. Clerk, portfolio data, and AI streaming are intentionally deferred to later roadmap phases."
+        title="Financial intelligence workspace"
+        body="This shell now connects the portfolio, research, goals, risk, watchlist, settings, and billing surfaces used in the local Phase 8 case study."
       />
       <MarketShell />
     </div>

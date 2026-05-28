@@ -1,0 +1,36 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Aperture Financial Intelligence social preview</title>
+  <desc id="desc">Dark fintech social preview for an AI financial research workspace.</desc>
+  <rect width="1200" height="630" fill="#09090B"/>
+  <path d="M0 0H1200V630H0V0Z" fill="url(#grid)" fill-opacity="0.2"/>
+  <circle cx="970" cy="110" r="330" fill="#164E63" fill-opacity="0.22"/>
+  <circle cx="110" cy="560" r="280" fill="#0F766E" fill-opacity="0.14"/>
+  <rect x="76" y="74" width="1048" height="482" rx="36" fill="#18181B" fill-opacity="0.66" stroke="white" stroke-opacity="0.1"/>
+  <g transform="translate(112 116)">
+    <rect width="92" height="92" rx="22" fill="#09090B" stroke="white" stroke-opacity="0.12"/>
+    <path d="M46 12L66 46H26L46 12Z" fill="#67E8F9" fill-opacity="0.34"/>
+    <path d="M80 46L46 66V26L80 46Z" fill="#67E8F9" fill-opacity="0.22"/>
+    <path d="M46 80L26 46H66L46 80Z" fill="#FDE68A" fill-opacity="0.2"/>
+    <path d="M12 46L46 26V66L12 46Z" fill="#14B8A6" fill-opacity="0.22"/>
+    <circle cx="46" cy="46" r="14" fill="#67E8F9" fill-opacity="0.1" stroke="#CFFAFE" stroke-opacity="0.7"/>
+  </g>
+  <text x="112" y="268" fill="#FFFFFF" font-family="Outfit, Arial, sans-serif" font-size="74" font-weight="300" letter-spacing="-2">Aperture Financial Intelligence</text>
+  <text x="116" y="330" fill="#A1A1AA" font-family="Outfit, Arial, sans-serif" font-size="30" font-weight="300">AI research, portfolio risk context, cited briefs, and safe goal scenarios.</text>
+  <g transform="translate(116 410)">
+    <rect width="244" height="58" rx="18" fill="white" fill-opacity="0.05" stroke="white" stroke-opacity="0.08"/>
+    <text x="22" y="37" fill="#CFFAFE" font-family="Geist Mono, Menlo, monospace" font-size="18">CITATIONS READY</text>
+  </g>
+  <g transform="translate(384 410)">
+    <rect width="252" height="58" rx="18" fill="white" fill-opacity="0.05" stroke="white" stroke-opacity="0.08"/>
+    <text x="22" y="37" fill="#CFFAFE" font-family="Geist Mono, Menlo, monospace" font-size="18">NO TRADING BOT</text>
+  </g>
+  <g transform="translate(660 410)">
+    <rect width="276" height="58" rx="18" fill="white" fill-opacity="0.05" stroke="white" stroke-opacity="0.08"/>
+    <text x="22" y="37" fill="#FDE68A" font-family="Geist Mono, Menlo, monospace" font-size="18">FRESHNESS SHOWN</text>
+  </g>
+  <defs>
+    <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse">
+      <path d="M44 0H0V44" stroke="white" stroke-opacity="0.2"/>
+    </pattern>
+  </defs>
+</svg>

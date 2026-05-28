@@ -19,7 +19,7 @@ export default function ResearchPage() {
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-400">{brief.summary}</p>
           </div>
-          <div className="rounded-[8px] border border-cyan-200/15 bg-cyan-200/8 px-4 py-3 text-sm text-cyan-50">
+          <div className="max-w-full break-words rounded-[8px] border border-cyan-200/15 bg-cyan-200/8 px-4 py-3 text-sm leading-6 text-cyan-50">
             {brief.dataFreshness.provider} · {brief.dataFreshness.freshness}
           </div>
         </div>

@@ -1,13 +1,13 @@
 import { FileCheck2, LockKeyhole, Scale, TriangleAlert } from "lucide-react";
 
-import { PublicSkeletonPage } from "@/components/public-skeleton-page";
+import { PublicInfoPage } from "@/components/public-info-page";
 
 export default function TermsPage() {
   return (
-    <PublicSkeletonPage
+    <PublicInfoPage
       eyebrow="Terms"
       title="Product terms will reinforce research support, not advice or execution."
-      body="This scaffold reserves the legal terms surface for boundaries around AI outputs, data freshness, usage limits, and financial decision-support disclaimers."
+      body="This surface is queued for the completion pass and must become concrete product terms before any public recruiter demo."
       items={[
         {
           title: "Research-only use",

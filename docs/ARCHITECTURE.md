@@ -18,6 +18,25 @@ Aperture Financial Intelligence is a research and portfolio decision-support pro
 | PostHog/Sentry | Privacy-scrubbed product analytics and error monitoring |
 | Cloudflare | DNS, WAF, security headers, bot controls |
 
+## System Diagram
+
+```mermaid
+flowchart LR
+  Browser["Browser"] --> Next["Next.js App Router"]
+  Next --> Marketing["Marketing and app UI"]
+  Next --> BFF["Same-origin BFF routes"]
+  Next --> AIRoutes["AI route handlers"]
+  Next --> Webhooks["Stripe and Clerk webhooks"]
+  BFF --> GoAPI["Go finance API"]
+  AIRoutes --> Tools["Validated AI tool registry"]
+  Tools --> GoAPI
+  GoAPI --> Supabase["Supabase Postgres"]
+  GoAPI --> Providers["Market data and SEC providers"]
+  AIRoutes --> Supabase
+  Webhooks --> Supabase
+  GoAPI --> Audit["Audit and rate-limit layer"]
+```
+
 ## Request Flow
 
 1. Browser renders public routes or authenticated app routes through Next.js.
@@ -57,6 +76,10 @@ docs/                  Project source-of-truth docs
 - Database: Supabase Postgres.
 - Cache/rate limits: Upstash Redis.
 - Edge/security: Cloudflare.
+
+## Phase 8 Deployment Caveat
+
+The local recruiter case study is complete, but public deployment is intentionally documented as follow-on work until production secrets, Stripe products/prices, Clerk webhook endpoints, Supabase remote migrations, Upstash, Sentry, PostHog, and Cloudflare controls are configured.
 
 ## Non-Goals
 

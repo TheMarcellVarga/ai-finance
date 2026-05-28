@@ -187,7 +187,7 @@ export async function POST(request: Request) {
           liveExternalAiCall: false,
           latencyMs,
           persistence,
-          todo: "Fixture mode is active for local development and review; live verification is deferred.",
+          localDemoMode: "Fixture mode is active for local development and review; live verification requires explicit provider configuration.",
           toolRuns: [
             {
               name: "getPortfolioSnapshot",

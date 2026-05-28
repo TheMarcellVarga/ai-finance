@@ -45,6 +45,7 @@ Assume a focused solo/AI-assisted build. Compress or expand based on available t
 | 6. Research And Goal Intelligence | 5-8 days | Filing summaries, RAG chunks, goal planner, risk explainer, safe gamification. |
 | 7. Billing, Security, And Observability | 4-7 days | Stripe plans, entitlements, usage limits, Sentry, PostHog, audit logs, security checks. |
 | 8. Polish And Portfolio Case Study | 5-10 days | Brand assets, stock media, mobile pass, screenshots, README, architecture diagram, demo video. |
+| 9. Completion And No-Placeholder Pass | 4-8 days | Replace, finish, or remove every visible scaffold, fixture-only surface, placeholder page, and unfinished workflow before portfolio review. |
 
 ## Phase 0: Control Plane
 Status: complete.
@@ -284,6 +285,8 @@ Acceptance gate:
 - Security review has no known blocker.
 
 ## Phase 8: Polish And Portfolio Case Study
+Status: complete in local portfolio-case-study mode, but not portfolio-ready until Phase 9 removes unfinished visible surfaces. Public deployment and live production-provider checks remain environment-dependent.
+
 Primary skills: `nextjs-fintech-ui`, Taste Skill, `security-review-fintech`.
 
 Deliverables:
@@ -298,12 +301,66 @@ Deliverables:
 - case-study section describing tradeoffs and security
 - deployed demo
 
+Completed artifacts:
+- Updated `README.md` with Phase 8 status, architecture diagram, demo path, scripts, and case-study link.
+- `docs/BRAND_AND_MEDIA.md` documents the production-safe brand package, final media direction, and license rules.
+- `apps/web/public/brand/aperture-mark.svg` and `aperture-social-card.svg` provide local vector brand assets without relying on generated raster text.
+- `docs/PORTFOLIO_CASE_STUDY.md` explains product boundary, architecture tradeoffs, AI safety, security posture, verification, and follow-on hardening.
+- `docs/DEMO_WALKTHROUGH.md` provides a short demo video/walkthrough script and verification commands.
+- `docs/API_SPEC.md` now documents the implemented Next.js route handlers alongside the Go API contract.
+- `docs/ARCHITECTURE.md` includes a Mermaid system diagram.
+- Local screenshot capture set is generated under `docs/screenshots/` during verification when a local browser is available.
+
+Deferred live hardening:
+- Deploy the public Next.js and Go API demo after production secrets and hosting targets are configured.
+- Run live Stripe and Clerk webhook delivery tests against deployed endpoints.
+- Apply migrations to remote Supabase and verify persisted AI runs with service-role credentials.
+- Replace deterministic SEC-style content with live EDGAR ingestion and embeddings.
+- Source final licensed stock media only after license terms are approved and recorded.
+
 Acceptance gate:
 - App looks credible in screenshots before the user clicks.
 - Golden path works on mobile and desktop.
 - AI demo is real, cited, and safe.
 - README explains architecture, AI, security, and tradeoffs clearly.
 - The project can be shown to fintech/AI product engineering recruiters.
+
+## Phase 9: Completion And No-Placeholder Pass
+Status: queued; required before this project is portfolio-ready.
+
+Primary skills: `nextjs-fintech-ui`, `ai-research-features`, `go-finance-api`, `security-review-fintech`.
+
+Purpose:
+- Turn the local case-study app into a cohesive portfolio product by finishing, replacing, or removing every user-visible scaffold, skeleton, placeholder, fixture-only page, and "future work" surface.
+- No public or app route may advertise incompleteness in normal user-facing copy.
+- Fixture and deterministic modes may remain for local tests, but the demo UI must clearly present finished behavior or intentionally scoped demo data without looking unfinished.
+
+Known unfinished inventory:
+- `/app/watchlist`: replace the current status-only page with real watchlist list/create/add-item UI backed by the existing Go API.
+- `/app/settings`: replace the current status-only page with concrete account, privacy, data export posture, notification, and AI-provider mode controls.
+- `/blog`: replace placeholder content with real case-study articles or remove the route from navigation until content exists.
+- `/privacy` and `/terms`: replace placeholder legal/privacy surfaces with concrete product policies aligned to the existing security docs.
+- `/app/research`, `/app/goals`, and `/app/risk`: replace deterministic-only static page generation with route-backed interactions, saved research behavior, and explicit source/freshness states.
+- Billing page: add finished checkout/customer-portal affordances or hide upgrade actions until Stripe products are configured.
+- AI routes: remove user-facing "todo"/"deferred" language from responses, add production-safe live-mode copy, and keep deterministic mode as a developer/test mode.
+- Documentation and UI copy: eliminate "skeleton", "scaffold", "placeholder", "future work", and similar wording from any user-facing route.
+- Demo media: ensure screenshots only show finished surfaces, not queued placeholders.
+
+Acceptance gate:
+- `rg -n "skeleton|scaffold|placeholder|future work|coming soon|not implemented|todo|deferred" apps/web/src README.md docs/PORTFOLIO_CASE_STUDY.md docs/DEMO_WALKTHROUGH.md` returns no user-facing blocker language except explicit internal roadmap references.
+- Every route linked in navigation has either a complete working experience or is removed from navigation.
+- Watchlist, settings, public briefs/blog, privacy, and terms no longer look like reserved pages.
+- Deterministic AI mode is visually presented as a local demo/test mode, not as an unfinished feature.
+- Portfolio, research, goal, risk, billing, and watchlist flows have at least focused smoke/eval coverage.
+- Fresh desktop and mobile screenshots show only finished portfolio-demo surfaces.
+
+Verification commands:
+- `cd services/api && go test ./...`
+- `cd apps/web && npm run lint && npm run build`
+- `scripts/run-ai-evals`
+- `scripts/check-ai-safety-fixtures`
+- `scripts/verify-phase7-security`
+- Browser screenshot pass for `/`, `/app`, `/app/portfolio`, `/app/watchlist`, `/app/research`, `/app/goals`, `/app/risk`, `/app/settings`, `/app/billing`, `/blog`, `/privacy`, and `/terms`.
 
 ## AI Task Template
 Use this template for future agent tasks.
@@ -328,6 +385,7 @@ Security/AI/compliance checks:
 - Do not polish screens before the golden path works.
 - Do not create final marketing claims before product guardrails are reviewed.
 - Do not deploy public demos before security and data privacy checks pass.
+- Do not call the project portfolio-ready while any linked route still contains visible scaffold, skeleton, placeholder, or future-work copy.
 
 ## Done Definition For The Whole Project
 The project is portfolio-ready when:
@@ -338,5 +396,6 @@ The project is portfolio-ready when:
 - AI evals enforce safety boundaries,
 - billing and usage limits work,
 - security review has no known blocker,
+- no linked route exposes visible scaffold, skeleton, placeholder, or future-work copy,
 - stock media and logo assets are license-safe and documented,
 - README/case study explain architecture and tradeoffs clearly.

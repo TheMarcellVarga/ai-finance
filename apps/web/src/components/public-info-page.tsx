@@ -2,7 +2,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { MarketingPage } from "@/components/marketing-page";
 
-type PublicSkeletonPageProps = {
+type PublicInfoPageProps = {
   eyebrow: string;
   title: string;
   body: string;
@@ -13,12 +13,12 @@ type PublicSkeletonPageProps = {
   }>;
 };
 
-export function PublicSkeletonPage({
+export function PublicInfoPage({
   eyebrow,
   title,
   body,
   items,
-}: PublicSkeletonPageProps) {
+}: PublicInfoPageProps) {
   return (
     <MarketingPage>
       <section className="page-stage px-4 py-16 sm:px-6 lg:px-8">

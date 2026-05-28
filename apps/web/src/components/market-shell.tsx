@@ -113,7 +113,7 @@ export function MarketShell() {
           </div>
         </div>
         <p className="relative mt-5 rounded-[1rem] bg-black/16 px-4 py-3 text-xs leading-5 text-zinc-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-          Preview data is deterministic scaffold content. AI briefs require citations, freshness
+          Preview data is deterministic demonstration content. AI briefs require citations, freshness
           labels, safety metadata, and live-provider validation only when explicitly configured.
         </p>
         </div>

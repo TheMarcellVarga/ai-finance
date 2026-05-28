@@ -1,13 +1,13 @@
 import { DatabaseZap, Fingerprint, KeyRound, ShieldCheck } from "lucide-react";
 
-import { PublicSkeletonPage } from "@/components/public-skeleton-page";
+import { PublicInfoPage } from "@/components/public-info-page";
 
 export default function PrivacyPage() {
   return (
-    <PublicSkeletonPage
+    <PublicInfoPage
       eyebrow="Privacy"
       title="Privacy posture for sensitive portfolio and AI research data."
-      body="This scaffold marks the public privacy surface before implementation of Clerk, Supabase, analytics scrubbing, and audit-backed data flows."
+      body="This surface is queued for the completion pass and must become a concrete privacy policy before any public recruiter demo."
       items={[
         {
           title: "Sensitive data",

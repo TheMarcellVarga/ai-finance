@@ -45,7 +45,7 @@ export default function Home() {
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg" className="rounded-[0.95rem] px-5">
               <Link href="/app">
-                Open workspace scaffold
+                Open workspace
                 <ArrowRight data-icon="inline-end" />
               </Link>
             </Button>

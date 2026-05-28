@@ -46,6 +46,11 @@ export type FinancePortfolioResponse = {
   meta: { provider: string; freshness: string; capturedAt: string };
 };
 
+type FinancePortfolioListResponse = {
+  data: FinancePortfolioResponse["data"][];
+  meta: FinancePortfolioResponse["meta"];
+};
+
 export type IntradayChartResponse = {
   data: Array<{
     timestamp: string;
@@ -105,6 +110,27 @@ function parseFinancePayload(text: string) {
 }
 
 export async function loadRealProviderPortfolio(): Promise<FinancePortfolioResponse> {
+  const existingResponse = await financeFetch(`${financeApiBaseUrl}/v1/portfolios`, {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${devToken}`,
+    },
+    cache: "no-store",
+  });
+
+  const existingText = await existingResponse.text();
+  const existingPayload = parseFinancePayload(existingText);
+  if (existingResponse.ok) {
+    const listPayload = existingPayload as FinancePortfolioListResponse;
+    const existingPortfolio = listPayload.data?.[0];
+    if (existingPortfolio) {
+      return {
+        data: existingPortfolio,
+        meta: listPayload.meta,
+      };
+    }
+  }
+
   const response = await financeFetch(`${financeApiBaseUrl}/v1/portfolios`, {
     method: "POST",
     headers: {

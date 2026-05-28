@@ -94,6 +94,7 @@ Deferred:
 - Verify Supabase persistence with server-side Supabase credentials.
 
 ## Phase 6: Research And Goal Intelligence
+Status: complete in deterministic fixture mode; live SEC ingestion and model-backed generation remain follow-on hardening work.
 
 Work:
 - Add SEC filing ingestion, `pgvector` retrieval, filing summaries, watchlist digest, goal planner, risk explainer, and safe achievements.
@@ -112,12 +113,38 @@ Gate:
 - Entitlements are server-enforced and sensitive data is scrubbed from analytics/errors.
 
 ## Phase 8: Polish And Portfolio Case Study
+Status: complete in local portfolio-case-study mode; public deployment remains environment-dependent. This phase is not enough for portfolio readiness until Phase 9 removes unfinished visible surfaces.
 
 Work:
 - Final brand assets, licensed media notes, mobile polish, screenshots, demo video script, architecture diagram, README, API docs, and deployed demo.
 
 Gate:
 - The project is credible in screenshots and works end to end on mobile and desktop.
+
+Artifacts:
+- Updated README with current phase status, architecture diagram, demo path, and case-study link.
+- Brand/media notes in `docs/BRAND_AND_MEDIA.md`.
+- Portfolio case study in `docs/PORTFOLIO_CASE_STUDY.md`.
+- Demo walkthrough script in `docs/DEMO_WALKTHROUGH.md`.
+- Phase 8 API documentation notes in `docs/API_SPEC.md`.
+- Local screenshot capture set in `docs/screenshots/` when generated from the dev server.
+
+## Phase 9: Completion And No-Placeholder Pass
+Status: queued; required before portfolio-ready review.
+
+Work:
+- Finish, replace, or remove every linked route that still looks reserved, static-only, fixture-only, or incomplete.
+- Build working watchlist and settings experiences.
+- Turn blog/privacy/terms into real content or remove them from navigation until complete.
+- Connect research, goals, and risk pages to route-backed interactions instead of static deterministic-only displays.
+- Add or hide billing checkout/customer-portal affordances based on configured Stripe state.
+- Remove user-facing "skeleton", "scaffold", "placeholder", "future work", "coming soon", "not implemented", "todo", and "deferred" wording.
+
+Gate:
+- No linked route looks unfinished in desktop or mobile screenshots.
+- Navigation only points to finished routes.
+- The unfinished surfaces audit in `docs/UNFINISHED_SURFACES_AUDIT.md` is fully resolved.
+- Lint, build, Go tests, AI evals, safety fixtures, and Phase 7 security checks pass.
 
 ## Task Template
 

@@ -30,7 +30,7 @@ export function WorkspaceSection({ eyebrow, title, body }: WorkspaceSectionProps
             <h2 className="type-card-title mt-4 text-lg text-white">{item}</h2>
             <p className="mt-2 text-xs uppercase tracking-[0.14em] text-cyan-100/75">{affordance}</p>
             <p className="mt-2 text-sm leading-6 text-zinc-500">
-              Phase scaffold only. Real data, auth, and persistence arrive in the ordered roadmap phases.
+              Implementation status is tracked in the roadmap completion pass before recruiter review.
             </p>
           </div>
         ))}

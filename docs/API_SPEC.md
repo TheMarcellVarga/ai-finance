@@ -9,7 +9,7 @@ The Go service exposes versioned REST APIs under `/v1`. Next.js may wrap selecte
 - Errors are structured and do not leak secrets, raw prompts, holdings details, or internal stack traces.
 - Finance APIs return provider and freshness metadata when values depend on cached or external data.
 
-## Initial Routes
+## Go API Routes
 
 | Method | Route | Purpose |
 | --- | --- | --- |
@@ -41,7 +41,13 @@ The Go service exposes versioned REST APIs under `/v1`. Next.js may wrap selecte
 
 | Method | Route | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/ai/chat` | Streaming AI route |
+| `POST` | `/api/ai/portfolio-brief` | Structured portfolio brief with fixture mode by default and dormant live provider support |
+| `POST` | `/api/ai/research-brief` | Deterministic filing/research brief route with citations and freshness metadata |
+| `POST` | `/api/ai/goal-plan` | Safe educational goal scenario route with usage checks |
+| `POST` | `/api/ai/risk-explainer` | Portfolio risk explanation route with assumptions and disclaimer |
+| `GET` | `/api/finance/intraday` | Same-origin intraday chart proxy backed by the finance API |
+| `POST` | `/api/finance/portfolio` | Same-origin provider-backed portfolio fixture route for local demo flows |
+| `POST` | `/api/research/saves` | Research-room save route with entitlement and usage checks |
 | `POST` | `/api/webhooks/stripe` | Stripe webhook with signature verification |
 | `POST` | `/api/webhooks/clerk` | Clerk webhook with signature verification |
 
@@ -68,9 +74,28 @@ Do not expose whether another user's resource exists.
 3. Generate or validate TypeScript client through `scripts/generate-openapi-client`.
 4. Add tests for auth, ownership, validation, and error shape.
 
-## Phase 4 Contract Artifacts
+## Contract Artifacts
 
 - OpenAPI source: `packages/contracts/openapi/finance-api.yaml`
 - Generated TypeScript client: `packages/contracts/src/generated/client.ts`
 - Go handlers: `services/api/internal/httpapi`
 - Local verification: `scripts/generate-openapi-client`
+
+## Phase 8 API Documentation Notes
+
+The OpenAPI contract currently documents the Go finance API surface. Next.js route handlers are documented here because they are application/BFF routes rather than public Go API endpoints.
+
+Route-level implementation files:
+
+- AI routes: `apps/web/src/app/api/ai/*/route.ts`
+- Finance BFF routes: `apps/web/src/app/api/finance/*/route.ts`
+- Research save route: `apps/web/src/app/api/research/saves/route.ts`
+- Webhooks: `apps/web/src/app/api/webhooks/*/route.ts`
+
+Verification commands:
+
+```bash
+scripts/generate-openapi-client
+cd services/api && go test ./...
+cd apps/web && npm run build
+```
