@@ -18,8 +18,12 @@ const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="page-stage min-h-dvh bg-zinc-950 text-white">
-      <aside className="fixed inset-y-4 left-4 hidden w-72 rounded-[1.2rem] border border-white/10 bg-zinc-950/56 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_28px_76px_rgba(0,0,0,0.42)] backdrop-blur-2xl lg:block">
+    <div className="page-stage workspace-stage min-h-dvh text-white">
+      <div className="workspace-atmosphere" aria-hidden="true">
+        <span className="workspace-orb workspace-orb-cyan" />
+        <span className="workspace-orb workspace-orb-amber" />
+      </div>
+      <aside className="workspace-sidebar fixed inset-y-4 left-4 hidden w-72 rounded-[1.2rem] border border-white/10 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_28px_76px_rgba(0,0,0,0.42)] backdrop-blur-2xl lg:block">
         <div className="glass-surface rounded-[1rem] p-3">
           <BrandMark />
         </div>
@@ -39,14 +43,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="lg:pl-80">
         <header className="sticky top-0 z-10 px-3 py-3 lg:hidden">
           <div className="glass-surface rounded-[1.1rem] p-4">
-          <BrandMark />
-          <nav className="mt-4 flex gap-2 overflow-x-auto pb-1 text-sm text-zinc-400">
-            {nav.slice(0, 6).map((item) => (
-              <Link key={item.href} href={item.href} className="shrink-0 rounded-[0.85rem] border border-white/10 bg-white/[0.025] px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-[background-color,color,border-color,box-shadow] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-cyan-200/15 hover:bg-black/25 hover:text-cyan-50">
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+            <BrandMark />
+            <nav className="mt-4 flex gap-2 overflow-x-auto pb-1 text-sm text-zinc-400">
+              {nav.map((item) => (
+                <Link key={item.href} href={item.href} className="shrink-0 rounded-[0.85rem] border border-white/10 bg-white/[0.025] px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-[background-color,color,border-color,box-shadow] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-cyan-200/15 hover:bg-black/25 hover:text-cyan-50">
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
           </div>
         </header>
         <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
