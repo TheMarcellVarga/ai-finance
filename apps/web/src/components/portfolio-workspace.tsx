@@ -95,7 +95,7 @@ function formatTimestamp(value?: string) {
 
 function compactTime(value?: string) {
   if (!value) {
-    return "--";
+    return "N/A";
   }
   return new Intl.DateTimeFormat("en-US", {
     hour: "2-digit",
@@ -418,7 +418,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                       </span>
                       <span>
                         <span className="block text-[0.62rem] uppercase tracking-[0.14em] text-zinc-500">Last</span>
-                        <span className="mt-1 block truncate font-mono text-sm text-zinc-300">{holding.asset.displayPrice ?? "--"}</span>
+                        <span className="mt-1 block truncate font-mono text-sm text-zinc-300">{holding.asset.displayPrice ?? "N/A"}</span>
                       </span>
                     </span>
                   </button>

@@ -20,13 +20,20 @@ import {
 export const dynamic = "force-dynamic";
 
 const fallbackDevToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
+const unavailableValue = "N/A";
 
 function percentFromBps(value?: number) {
-  return `${((value ?? 0) / 100).toFixed(1)}%`;
+  if (value == null) {
+    return unavailableValue;
+  }
+  return `${(value / 100).toFixed(1)}%`;
 }
 
 function formatMove(value?: number) {
-  const move = (value ?? 0) / 100;
+  if (value == null) {
+    return unavailableValue;
+  }
+  const move = value / 100;
   return `${move > 0 ? "+" : ""}${move.toFixed(1)}%`;
 }
 
@@ -69,28 +76,28 @@ export default async function AppOverviewPage() {
   const summaryMetrics = [
     {
       label: "Portfolio value",
-      value: portfolio?.summary.displayTotalValue ?? "--",
+      value: portfolio?.summary.displayTotalValue ?? unavailableValue,
       detail: portfolio ? `${portfolio.summary.holdingCount} source-backed positions` : "Finance API unavailable",
       icon: WalletCards,
       tone: "cyan",
     },
     {
       label: "Concentration",
-      value: topHolding ? percentFromBps(topHolding.weightBps) : "--",
+      value: topHolding ? percentFromBps(topHolding.weightBps) : unavailableValue,
       detail: topHolding ? `${topHolding.asset.ticker} largest allocation` : "Awaiting portfolio snapshot",
       icon: CircleGauge,
       tone: portfolio && portfolio.summary.reviewFlags > 0 ? "amber" : "cyan",
     },
     {
       label: "Watchlist focus",
-      value: largestMove?.asset.ticker ?? "--",
+      value: largestMove?.asset.ticker ?? unavailableValue,
       detail: largestMove ? `${formatMove(largestMove.asset.dailyChangeBps)} provider-reported move` : "Awaiting market feed",
       icon: Radar,
       tone: "cyan",
     },
     {
       label: "Research usage",
-      value: aiUsage ? `${aiUsage.used}/${aiUsage.limit}` : "--",
+      value: aiUsage ? `${aiUsage.used}/${aiUsage.limit}` : unavailableValue,
       detail: usage ? `${usage.entitlements.label} plan · ${usage.period}` : "Usage service unavailable",
       icon: Sparkles,
       tone: "amber",
@@ -162,7 +169,7 @@ export default async function AppOverviewPage() {
               <p className="text-xs uppercase tracking-[0.15em] text-zinc-500">{label}</p>
               <Icon className={`size-4 ${tone === "amber" ? "text-amber-100/80" : "text-cyan-100/80"}`} />
             </div>
-            <p className="mt-5 font-mono text-2xl font-light text-white">{value}</p>
+            <p className="mt-5 min-w-0 truncate font-mono text-2xl font-light text-white">{value}</p>
             <p className="mt-2 text-xs leading-5 text-zinc-500">{detail}</p>
           </article>
         ))}
@@ -221,8 +228,8 @@ export default async function AppOverviewPage() {
                     <p className="font-mono text-sm text-white">{item.asset.ticker}</p>
                     <p className="mt-1 truncate text-xs text-zinc-500">{item.asset.name}</p>
                   </div>
-                  <p className="font-mono text-sm text-zinc-300">{item.asset.displayPrice ?? "--"}</p>
-                  <p className={`font-mono text-sm ${(item.asset.dailyChangeBps ?? 0) >= 0 ? "text-cyan-100" : "text-amber-100"}`}>
+                  <p className="truncate font-mono text-sm text-zinc-300">{item.asset.displayPrice ?? unavailableValue}</p>
+                  <p className={`font-mono text-sm ${item.asset.dailyChangeBps == null ? "text-zinc-500" : item.asset.dailyChangeBps >= 0 ? "text-cyan-100" : "text-amber-100"}`}>
                     {formatMove(item.asset.dailyChangeBps)}
                   </p>
                 </div>

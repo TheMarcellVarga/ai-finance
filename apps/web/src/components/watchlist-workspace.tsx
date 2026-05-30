@@ -35,8 +35,8 @@ function formatTimestamp(value?: string) {
 }
 
 function formatBps(value?: number) {
-  if (!value) {
-    return "0.0%";
+  if (value == null) {
+    return "N/A";
   }
   const prefix = value > 0 ? "+" : "";
   return `${prefix}${(value / 100).toFixed(1)}%`;
@@ -134,7 +134,7 @@ export function WatchlistWorkspace({ initialWatchlist, initialMeta, initialError
               <Radar className="mt-1 size-5 text-cyan-200" />
               <div>
                 <p className="text-sm text-zinc-400">Largest move</p>
-                <p className="mt-1 font-mono text-2xl text-white">{largestMove?.asset.ticker ?? "--"}</p>
+                <p className="mt-1 truncate font-mono text-2xl text-white">{largestMove?.asset.ticker ?? "N/A"}</p>
                 <p className="mt-1 text-sm text-zinc-500">
                   {largestMove ? `${formatBps(largestMove.asset.dailyChangeBps)} provider-reported move` : "Refresh after starting the finance API."}
                 </p>
@@ -202,11 +202,15 @@ export function WatchlistWorkspace({ initialWatchlist, initialMeta, initialError
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Price</p>
-                    <p className="mt-2 font-mono text-lg text-white">{item.asset.displayPrice ?? "--"}</p>
+                    <p className="mt-2 truncate font-mono text-lg text-white">{item.asset.displayPrice ?? "N/A"}</p>
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Move</p>
-                    <p className={`mt-2 font-mono text-lg ${(item.asset.dailyChangeBps ?? 0) >= 0 ? "text-emerald-100" : "text-rose-100"}`}>
+                    <p
+                      className={`mt-2 font-mono text-lg ${
+                        item.asset.dailyChangeBps == null ? "text-zinc-500" : item.asset.dailyChangeBps >= 0 ? "text-emerald-100" : "text-rose-100"
+                      }`}
+                    >
                       {formatBps(item.asset.dailyChangeBps)}
                     </p>
                   </div>
