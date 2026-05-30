@@ -170,9 +170,9 @@
 }
 
 .glass-surface {
-  background:
+  /* background:
     linear-gradient(145deg, rgb(255 255 255 / 0.17), rgb(255 255 255 / 0.065) 46%, rgb(255 255 255 / 0.025)),
-    rgb(34 38 40 / 0.48);
+    rgb(34 38 40 / 0.48); */
   box-shadow:
     0 24px 76px rgb(0 0 0 / 0.38);
   backdrop-filter: blur(22px) saturate(120%);
