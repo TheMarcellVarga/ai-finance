@@ -24,7 +24,7 @@ export default function Home() {
         <div className="cinema-ambient" />
         <div className="cinema-vignette" />
 
-        <div className="relative z-10 mx-auto grid min-h-[calc(100dvh-4.75rem)] max-w-7xl items-center gap-12 pb-16 pt-16 lg:grid-cols-[0.92fr_1.08fr] lg:pb-20 lg:pt-14">
+        <div className="relative z-10 mx-auto grid min-h-[calc(100dvh-4.75rem)] max-w-7xl items-center gap-12 pb-16 pt-28 lg:grid-cols-[0.92fr_1.08fr] lg:pb-20 lg:pt-24">
           <div className="cinema-reveal max-w-3xl">
             <p className="inline-flex rounded-full border border-amber-100/16 bg-amber-100/[0.045] px-4 py-2 text-xs font-light uppercase tracking-[0.24em] text-amber-100/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
               Private wealth intelligence
