@@ -3,7 +3,8 @@ import "server-only";
 import type { FinancePortfolioResponse } from "@/lib/finance-api";
 import type { PortfolioSnapshot } from "@/lib/ai/portfolio-brief";
 
-const financeApiBaseUrl = process.env.FINANCE_API_BASE_URL ?? "http://127.0.0.1:8080";
+const financeApiBaseUrl =
+  process.env.FINANCE_API_BASE_URL ?? process.env.API_URL ?? "http://127.0.0.1:8080";
 const devToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
 
 function selectAuthToken(requestAuthorization?: string | null) {

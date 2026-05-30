@@ -98,7 +98,8 @@ export type IntradayChartResponse = {
   };
 };
 
-const financeApiBaseUrl = process.env.FINANCE_API_BASE_URL ?? "http://127.0.0.1:8080";
+const financeApiBaseUrl =
+  process.env.FINANCE_API_BASE_URL ?? process.env.API_URL ?? "http://127.0.0.1:8080";
 const devToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
 const financeApiUnavailableMessage =
   "Market data is temporarily unavailable. Start local services with scripts/dev-local and refresh again shortly.";
