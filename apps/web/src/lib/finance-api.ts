@@ -100,7 +100,6 @@ export type IntradayChartResponse = {
 
 const financeApiBaseUrl =
   process.env.FINANCE_API_BASE_URL ?? process.env.API_URL ?? "http://127.0.0.1:8080";
-const devToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
 const financeApiUnavailableMessage =
   "Market data is temporarily unavailable. Start local services with scripts/dev-local and refresh again shortly.";
 
@@ -142,11 +141,11 @@ function parseFinancePayload(text: string) {
   }
 }
 
-export async function loadRealProviderPortfolio(): Promise<FinancePortfolioResponse> {
+export async function loadRealProviderPortfolio(authToken: string): Promise<FinancePortfolioResponse> {
   const existingResponse = await financeFetch(`${financeApiBaseUrl}/v1/portfolios`, {
     headers: {
       Accept: "application/json",
-      Authorization: `Bearer ${devToken}`,
+      Authorization: `Bearer ${authToken}`,
     },
     cache: "no-store",
   });
@@ -168,7 +167,7 @@ export async function loadRealProviderPortfolio(): Promise<FinancePortfolioRespo
     method: "POST",
     headers: {
       Accept: "application/json",
-      Authorization: `Bearer ${devToken}`,
+      Authorization: `Bearer ${authToken}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -204,11 +203,11 @@ export async function loadIntradayChart(ticker: string, interval = "5min"): Prom
   return payload as IntradayChartResponse;
 }
 
-async function listWatchlists() {
+async function listWatchlists(authToken: string) {
   const response = await financeFetch(`${financeApiBaseUrl}/v1/watchlists`, {
     headers: {
       Accept: "application/json",
-      Authorization: `Bearer ${devToken}`,
+      Authorization: `Bearer ${authToken}`,
     },
     cache: "no-store",
   });
@@ -220,12 +219,12 @@ async function listWatchlists() {
   return payload as FinanceWatchlistListResponse;
 }
 
-async function createStarterWatchlist() {
+async function createStarterWatchlist(authToken: string) {
   const response = await financeFetch(`${financeApiBaseUrl}/v1/watchlists`, {
     method: "POST",
     headers: {
       Accept: "application/json",
-      Authorization: `Bearer ${devToken}`,
+      Authorization: `Bearer ${authToken}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -242,8 +241,8 @@ async function createStarterWatchlist() {
   return payload as FinanceWatchlistResponse;
 }
 
-export async function loadRealProviderWatchlist(): Promise<FinanceWatchlistResponse> {
-  const listPayload = await listWatchlists();
+export async function loadRealProviderWatchlist(authToken: string): Promise<FinanceWatchlistResponse> {
+  const listPayload = await listWatchlists(authToken);
   const existingWatchlist = listPayload.data?.[0];
   if (existingWatchlist) {
     return {
@@ -251,16 +250,16 @@ export async function loadRealProviderWatchlist(): Promise<FinanceWatchlistRespo
       meta: listPayload.meta,
     };
   }
-  return createStarterWatchlist();
+  return createStarterWatchlist(authToken);
 }
 
-export async function addRealProviderWatchlistItem(ticker: string, notes?: string): Promise<FinanceWatchlistResponse> {
-  const current = await loadRealProviderWatchlist();
+export async function addRealProviderWatchlistItem(ticker: string, notes: string | undefined, authToken: string): Promise<FinanceWatchlistResponse> {
+  const current = await loadRealProviderWatchlist(authToken);
   const response = await financeFetch(`${financeApiBaseUrl}/v1/watchlists/${encodeURIComponent(current.data.id)}/items`, {
     method: "POST",
     headers: {
       Accept: "application/json",
-      Authorization: `Bearer ${devToken}`,
+      Authorization: `Bearer ${authToken}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ ticker, notes }),

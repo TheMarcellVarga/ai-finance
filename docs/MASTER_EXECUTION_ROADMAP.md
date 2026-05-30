@@ -338,6 +338,7 @@ Purpose:
 Completed artifacts:
 - `/app/watchlist` now renders a provider-backed watchlist workspace with list, refresh, add-ticker, source freshness, empty, loading, and error states through the Next.js `/api/finance/watchlist` BFF route backed by the Go watchlist API.
 - `/app/settings` now renders concrete account, privacy, data export, notification, provider-mode, AI-boundary, and telemetry controls for the local portfolio demo.
+- Clerk now gates `/app(.*)` through the Next.js 16 proxy and protected app layout, provides `/sign-in` and `/sign-up`, exposes Clerk-managed profile and session security at `/app/settings/account`, and replaces browser-side demo identity fallbacks with authenticated session tokens.
 - `/blog`, `/privacy`, and `/terms` now contain concrete case-study, privacy, and research-support terms copy aligned with the finance and security guardrails.
 - `/app/research`, `/app/goals`, and `/app/risk` now include route-backed action panels for AI generation and saved research behavior with usage, entitlement, citation, and audit paths.
 - Billing remains a finished entitlement and usage surface with no visible upgrade action while live Stripe products/customer portal are not configured.

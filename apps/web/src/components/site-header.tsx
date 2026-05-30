@@ -1,3 +1,4 @@
+import { Show } from "@clerk/nextjs";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
@@ -29,24 +30,27 @@ export function SiteHeader() {
                 </Link>
               ))}
             </nav>
-            <Button
-              asChild
-              size="lg"
-              className="hidden rounded-[0.95rem] px-5 md:inline-flex"
-            >
-              <Link href="/app">
-                Open workspace
-                <ArrowRight data-icon="inline-end" />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="rounded-[0.9rem] md:hidden"
-            >
-              <Link href="/app">Workspace</Link>
-            </Button>
+            <Show when="signed-in">
+              <Button asChild size="lg" className="hidden rounded-[0.95rem] px-5 md:inline-flex">
+                <Link href="/app" prefetch={false}>
+                  Open workspace
+                  <ArrowRight data-icon="inline-end" />
+                </Link>
+              </Button>
+              <Button asChild size="sm" variant="outline" className="rounded-[0.9rem] md:hidden">
+                <Link href="/app" prefetch={false}>Workspace</Link>
+              </Button>
+            </Show>
+            <Show when="signed-out">
+              <div className="flex items-center gap-2">
+                <Button asChild size="sm" variant="outline" className="rounded-[0.9rem]">
+                  <Link href="/sign-in">Sign in</Link>
+                </Button>
+                <Button asChild size="sm" className="hidden rounded-[0.9rem] sm:inline-flex">
+                  <Link href="/sign-up">Create account</Link>
+                </Button>
+              </div>
+            </Show>
           </div>
         </div>
       </div>

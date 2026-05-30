@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { Bell, Database, Download, KeyRound, Lock, MonitorCog, ShieldCheck, ToggleLeft, ToggleRight } from "lucide-react";
+import { Bell, Database, Download, KeyRound, Lock, MonitorCog, ShieldCheck, ToggleLeft, ToggleRight, UserRound } from "lucide-react";
 
 type ToggleKey = "privacyTelemetry" | "providerFreshness" | "weeklyDigest" | "aiDisclaimers";
 
@@ -139,6 +140,22 @@ export function SettingsWorkspace() {
         </div>
 
         <aside className="space-y-4">
+          <div className="glass-surface rounded-[1.25rem] p-5">
+            <div className="flex items-center gap-3">
+              <UserRound className="size-5 text-cyan-200" />
+              <h2 className="type-card-title text-xl text-white">Account management</h2>
+            </div>
+            <p className="mt-4 text-sm leading-6 text-zinc-400">
+              Review your Clerk-managed profile, sign-in methods, connected accounts, active sessions, and account security.
+            </p>
+            <Link
+              href="/app/settings/account"
+              className="mt-5 inline-flex rounded-[0.85rem] border border-cyan-200/25 bg-cyan-200/10 px-4 py-2 text-sm text-cyan-50 transition hover:bg-cyan-200/15"
+            >
+              Manage account
+            </Link>
+          </div>
+
           <div className="glass-surface rounded-[1.25rem] p-5">
             <div className="flex items-center gap-3">
               <ShieldCheck className="size-5 text-cyan-200" />

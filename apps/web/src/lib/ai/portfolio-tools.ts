@@ -5,13 +5,12 @@ import type { PortfolioSnapshot } from "@/lib/ai/portfolio-brief";
 
 const financeApiBaseUrl =
   process.env.FINANCE_API_BASE_URL ?? process.env.API_URL ?? "http://127.0.0.1:8080";
-const devToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
 
 function selectAuthToken(requestAuthorization?: string | null) {
   if (requestAuthorization?.startsWith("Bearer ")) {
     return requestAuthorization.slice("Bearer ".length).trim();
   }
-  return devToken;
+  throw new Error("An authenticated finance API token is required.");
 }
 
 function snapshotFromPortfolio(payload: FinancePortfolioResponse): PortfolioSnapshot {

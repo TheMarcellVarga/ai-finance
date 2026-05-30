@@ -4,12 +4,15 @@ import { z } from "zod";
 import { checkUsageLimit, recordUsageEvent } from "@/lib/billing/usage";
 import { writeAuditLog } from "@/lib/security/audit";
 import { checkRateLimit } from "@/lib/security/rate-limit";
-import { bearerTokenFromRequest, decodeJwtSubject } from "@/lib/server/identity";
+import {
+  authenticatedTokenFromRequest,
+  authenticationRequiredResponse,
+  decodeJwtSubject,
+  isAuthenticationRequiredError,
+} from "@/lib/server/identity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const fallbackDevToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
 
 const researchSaveRequestSchema = z.object({
   title: z.string().min(3).max(120),
@@ -36,7 +39,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const authToken = bearerTokenFromRequest(request, fallbackDevToken);
+  let authToken: string;
+  try {
+    authToken = await authenticatedTokenFromRequest(request);
+  } catch (error) {
+    if (isAuthenticationRequiredError(error)) {
+      return authenticationRequiredResponse();
+    }
+    throw error;
+  }
   const rateLimit = await checkRateLimit({ key: `research_save:${authToken}`, windowSeconds: 60, max: 20 });
   if (!rateLimit.allowed) {
     return NextResponse.json(

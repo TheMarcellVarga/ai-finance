@@ -14,9 +14,21 @@ import { MarketingPage } from "@/components/marketing-page";
 import { Button } from "@/components/ui/button";
 
 const rhythm = [
-  ["Morning", "A composed read on what changed across portfolios, filings, and watchlists."],
-  ["Review", "Plain-language context separates meaningful risk from market noise."],
-  ["Decide", "Scenario notes help frame questions for your own research and advisors."],
+  {
+    number: "01",
+    label: "Load the portfolio",
+    body: "Start from provider-backed holdings, allocation, and freshness metadata.",
+  },
+  {
+    number: "02",
+    label: "Inspect the evidence",
+    body: "Review material changes with visible sources, assumptions, and risk context.",
+  },
+  {
+    number: "03",
+    label: "Save the cited brief",
+    body: "Keep the research record for follow-up questions and advisor conversations.",
+  },
 ];
 
 const assurances = [
@@ -69,7 +81,7 @@ export default function Home() {
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg" className="rounded-[0.95rem] px-5">
-                <Link href="/app">
+                <Link href="/app" prefetch={false}>
                   Open workspace
                   <ArrowRight data-icon="inline-end" />
                 </Link>
@@ -137,23 +149,42 @@ export default function Home() {
 
       <section id="review-rhythm" className="cinema-review-section scroll-mt-4 relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-100/24 to-transparent" />
-        <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[0.76fr_1.24fr]">
-          <div>
-            <p className="text-xs font-light uppercase tracking-[0.24em] text-amber-100/58">
-              Product feeling
-            </p>
-            <h2 className="mt-6 max-w-xl text-4xl font-extralight leading-tight tracking-normal text-white sm:text-5xl">
-              A private review rhythm, not another dashboard.
-            </h2>
-            <div className="cinema-detail-media mt-10" aria-hidden="true" />
-          </div>
-          <div className="divide-y divide-white/10">
-            {rhythm.map(([label, body]) => (
-              <article key={label} className="grid gap-5 py-8 md:grid-cols-[10rem_1fr]">
-                <h3 className="text-2xl font-extralight tracking-normal text-white">{label}</h3>
-                <p className="max-w-2xl text-base leading-8 text-zinc-400">{body}</p>
-              </article>
-            ))}
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-12 lg:grid-cols-[0.86fr_1.14fr] lg:gap-20">
+            <div>
+              <p className="text-xs font-light uppercase tracking-[0.24em] text-amber-100/58">
+                Product feeling
+              </p>
+              <h2 className="mt-6 max-w-xl text-4xl font-extralight leading-tight tracking-normal text-white sm:text-5xl">
+                A private review rhythm, not another dashboard.
+              </h2>
+              <p className="mt-7 max-w-lg text-base leading-8 text-zinc-400">
+                Aperture keeps the daily research loop deliberately small:
+                understand the portfolio, inspect the evidence, and keep a
+                useful record for the next conversation.
+              </p>
+            </div>
+
+            <div className="cinema-rhythm">
+              {rhythm.map(({ number, label, body }) => (
+                <article key={label} className="cinema-rhythm-row">
+                  <p className="font-mono text-[0.62rem] tracking-[0.18em] text-amber-100/54">
+                    {number}
+                  </p>
+                  <div>
+                    <h3 className="text-xl font-extralight tracking-normal text-white sm:text-2xl">
+                      {label}
+                    </h3>
+                    <p className="mt-3 max-w-xl text-sm leading-7 text-zinc-400 sm:text-base">
+                      {body}
+                    </p>
+                  </div>
+                </article>
+              ))}
+              <p className="pt-6 text-sm leading-7 text-zinc-500">
+                Sources, assumptions, and freshness stay visible throughout.
+              </p>
+            </div>
           </div>
         </div>
       </section>

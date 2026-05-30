@@ -2,17 +2,25 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { addRealProviderWatchlistItem, loadRealProviderWatchlist } from "@/lib/finance-api";
+import {
+  authenticatedTokenFromRequest,
+  authenticationRequiredResponse,
+  isAuthenticationRequiredError,
+} from "@/lib/server/identity";
 
 const addWatchlistItemSchema = z.object({
   ticker: z.string().trim().min(1).max(12),
   notes: z.string().trim().max(180).optional(),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const payload = await loadRealProviderWatchlist();
+    const payload = await loadRealProviderWatchlist(await authenticatedTokenFromRequest(request));
     return NextResponse.json(payload);
   } catch (error) {
+    if (isAuthenticationRequiredError(error)) {
+      return authenticationRequiredResponse();
+    }
     return NextResponse.json(
       {
         error: {
@@ -45,9 +53,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const payload = await addRealProviderWatchlistItem(parsedRequest.data.ticker.toUpperCase(), parsedRequest.data.notes);
+    const authToken = await authenticatedTokenFromRequest(request);
+    const payload = await addRealProviderWatchlistItem(parsedRequest.data.ticker.toUpperCase(), parsedRequest.data.notes, authToken);
     return NextResponse.json(payload, { status: 201 });
   } catch (error) {
+    if (isAuthenticationRequiredError(error)) {
+      return authenticationRequiredResponse();
+    }
     return NextResponse.json(
       {
         error: {

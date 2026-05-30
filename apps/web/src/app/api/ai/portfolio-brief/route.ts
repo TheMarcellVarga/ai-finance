@@ -19,12 +19,14 @@ import {
 } from "@/lib/ai/model-provider";
 import { checkUsageLimit } from "@/lib/billing/usage";
 import { checkRateLimit } from "@/lib/security/rate-limit";
-import { bearerTokenFromRequest } from "@/lib/server/identity";
+import {
+  authenticatedTokenFromRequest,
+  authenticationRequiredResponse,
+  isAuthenticationRequiredError,
+} from "@/lib/server/identity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const fallbackDevToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
 
 function shouldUseDeterministicFixtureMode() {
   if (process.env.AI_PORTFOLIO_BRIEF_MODE === "fixture") {
@@ -38,10 +40,6 @@ function shouldUseDeterministicFixtureMode() {
 
 function liveModeRequested() {
   return process.env.AI_PORTFOLIO_BRIEF_MODE === "live";
-}
-
-function requestAuthorization(request: Request) {
-  return request.headers.get("authorization") ?? `Bearer ${fallbackDevToken}`;
 }
 
 export async function POST(request: Request) {
@@ -70,7 +68,15 @@ export async function POST(request: Request) {
     "Generate a portfolio brief focused on allocation, concentration, data freshness, and research follow-ups.";
   const safety = classifyPromptSafety(prompt);
   const fixtureMode = shouldUseDeterministicFixtureMode();
-  const authToken = bearerTokenFromRequest(request, fallbackDevToken);
+  let authToken: string;
+  try {
+    authToken = await authenticatedTokenFromRequest(request);
+  } catch (error) {
+    if (isAuthenticationRequiredError(error)) {
+      return authenticationRequiredResponse();
+    }
+    throw error;
+  }
 
   const rateLimit = await checkRateLimit({
     key: `ai:portfolio_brief:${authToken}`,
@@ -159,7 +165,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const authorization = requestAuthorization(request);
+    const authorization = `Bearer ${authToken}`;
     const snapshot = await getPortfolioSnapshot({
       portfolioId: parsedRequest.data.portfolioId,
       requestAuthorization: authorization,

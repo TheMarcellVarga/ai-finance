@@ -16,10 +16,10 @@ import {
   loadRealProviderPortfolio,
   loadRealProviderWatchlist,
 } from "@/lib/finance-api";
+import { authenticatedSessionToken } from "@/lib/server/identity";
 
 export const dynamic = "force-dynamic";
 
-const fallbackDevToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
 const unavailableValue = "N/A";
 
 function percentFromBps(value?: number) {
@@ -49,11 +49,11 @@ function formatTimestamp(value?: string) {
   }).format(new Date(value));
 }
 
-async function loadOverviewData() {
+async function loadOverviewData(authToken: string) {
   const [portfolioResult, watchlistResult, usageResult] = await Promise.allSettled([
-    loadRealProviderPortfolio(),
-    loadRealProviderWatchlist(),
-    getUsageSummaryForToken(fallbackDevToken),
+    loadRealProviderPortfolio(authToken),
+    loadRealProviderWatchlist(authToken),
+    getUsageSummaryForToken(authToken),
   ]);
 
   return {
@@ -65,7 +65,8 @@ async function loadOverviewData() {
 }
 
 export default async function AppOverviewPage() {
-  const { portfolio, watchlist, usage, marketDataAvailable } = await loadOverviewData();
+  const authToken = await authenticatedSessionToken();
+  const { portfolio, watchlist, usage, marketDataAvailable } = await loadOverviewData(authToken);
   const topHolding = portfolio ? [...portfolio.holdings].sort((left, right) => right.weightBps - left.weightBps)[0] : undefined;
   const watchlistItems = watchlist ? [...watchlist.items].sort(
     (left, right) => Math.abs(right.asset.dailyChangeBps ?? 0) - Math.abs(left.asset.dailyChangeBps ?? 0),

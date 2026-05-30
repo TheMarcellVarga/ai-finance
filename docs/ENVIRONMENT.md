@@ -16,6 +16,8 @@ Use `scripts/dev-local` for local portfolio and AI development. It starts the Go
 Only values safe for browser exposure:
 - `NEXT_PUBLIC_APP_URL`
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+- `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, set to `/sign-in`
+- `NEXT_PUBLIC_CLERK_SIGN_UP_URL`, set to `/sign-up`
 - `NEXT_PUBLIC_POSTHOG_KEY` if configured with privacy-safe capture
 - `NEXT_PUBLIC_POSTHOG_HOST`
 
@@ -59,6 +61,7 @@ Never expose service-role keys, provider keys, webhook secrets, raw JWTs, or pri
 - `FINNHUB_WEBHOOK_SECRET`
 - `SEC_USER_AGENT`
 - `FINANCE_API_BASE_URL` for the Next.js server-side BFF route when it calls the Go API
+- `FINANCE_API_AUTH_MODE`, optional Next.js local override; set to `clerk` only when the Go API validates Clerk JWTs locally
 - `WEB_PORT`, optional local override for `scripts/dev-local`; defaults to `3000`
 
 ## AI Configuration
@@ -116,7 +119,7 @@ approves enabling spend.
 
 ## Go API Local Auth
 
-The Go API supports `API_AUTH_MODE=dev` only outside production. It accepts `Authorization: Bearer dev:<clerk_user_id>` so the local authenticated path can be tested before Clerk is wired.
+The Go API supports `API_AUTH_MODE=dev` only outside production. It accepts `Authorization: Bearer dev:<clerk_user_id>` so a Clerk-authenticated local web session can remain owner-scoped before local JWKS verification is enabled. The Next.js workspace still requires Clerk sign-in before issuing this local token.
 
 Production must use `API_AUTH_MODE=clerk`, `CLERK_JWT_ISSUER`, and `CLERK_JWKS_URL` so the API validates Clerk JWTs with RS256 JWKS keys. `CLERK_JWT_AUDIENCE` is optional but should be set when Clerk token templates include an audience.
 

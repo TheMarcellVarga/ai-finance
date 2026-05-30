@@ -40,7 +40,7 @@ export function SiteFooter() {
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button asChild size="lg" className="rounded-[0.95rem] px-5">
-              <Link href="/app">
+              <Link href="/app" prefetch={false}>
                 Open workspace
                 <ArrowRight data-icon="inline-end" />
               </Link>
@@ -62,6 +62,7 @@ export function SiteFooter() {
                   <Link
                     key={link.href}
                     href={link.href}
+                    prefetch={link.href === "/app" ? false : undefined}
                     className="rounded-[0.7rem] border border-transparent px-0 py-1.5 text-zinc-400 transition-[background-color,color,border-color,box-shadow] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-cyan-200/15 hover:bg-white/[0.03] hover:text-cyan-50 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.055)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/35 sm:px-2"
                   >
                     {link.label}

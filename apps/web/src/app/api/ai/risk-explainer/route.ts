@@ -8,16 +8,14 @@ import {
 } from "@/lib/ai/research-intelligence";
 import { checkUsageLimit, recordUsageEvent } from "@/lib/billing/usage";
 import { checkRateLimit } from "@/lib/security/rate-limit";
-import { bearerTokenFromRequest } from "@/lib/server/identity";
+import {
+  authenticatedTokenFromRequest,
+  authenticationRequiredResponse,
+  isAuthenticationRequiredError,
+} from "@/lib/server/identity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const fallbackDevToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
-
-function requestAuthorization(request: Request) {
-  return request.headers.get("authorization") ?? `Bearer ${fallbackDevToken}`;
-}
 
 export async function POST(request: Request) {
   let parsedBody: unknown;
@@ -38,7 +36,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const authToken = bearerTokenFromRequest(request, fallbackDevToken);
+  let authToken: string;
+  try {
+    authToken = await authenticatedTokenFromRequest(request);
+  } catch (error) {
+    if (isAuthenticationRequiredError(error)) {
+      return authenticationRequiredResponse();
+    }
+    throw error;
+  }
   const rateLimit = await checkRateLimit({ key: `ai:risk_explainer:${authToken}`, windowSeconds: 60, max: 12 });
   if (!rateLimit.allowed) {
     return NextResponse.json(
@@ -65,7 +71,7 @@ export async function POST(request: Request) {
   try {
     const snapshot = await getPortfolioSnapshot({
       portfolioId: parsedRequest.data.portfolioId,
-      requestAuthorization: requestAuthorization(request),
+      requestAuthorization: `Bearer ${authToken}`,
     });
     const explanation = createDeterministicRiskExplainer(snapshot, parsedRequest.data.prompt);
     const parsedExplanation = "concentrationSignals" in explanation ? riskExplainerSchema.parse(explanation) : explanation;

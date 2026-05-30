@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { loadIntradayChart } from "@/lib/finance-api";
+import {
+  authenticatedTokenFromRequest,
+  authenticationRequiredResponse,
+  isAuthenticationRequiredError,
+} from "@/lib/server/identity";
 
 export async function GET(request: NextRequest) {
   const ticker = request.nextUrl.searchParams.get("ticker")?.trim().toUpperCase();
@@ -14,9 +19,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    await authenticatedTokenFromRequest(request);
     const payload = await loadIntradayChart(ticker, interval);
     return NextResponse.json(payload);
   } catch (error) {
+    if (isAuthenticationRequiredError(error)) {
+      return authenticationRequiredResponse();
+    }
     return NextResponse.json(
       {
         error: {

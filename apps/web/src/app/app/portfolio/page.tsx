@@ -1,5 +1,6 @@
 import { PortfolioWorkspace } from "@/components/portfolio-workspace";
 import { loadIntradayChart, loadRealProviderPortfolio } from "@/lib/finance-api";
+import { authenticatedSessionToken } from "@/lib/server/identity";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ function firstParam(value: string | string[] | undefined) {
 }
 
 export default async function PortfolioPage({ searchParams }: PortfolioPageProps) {
+  const authToken = await authenticatedSessionToken();
   const params = (await searchParams) ?? {};
   const requestedTicker = firstParam(params.ticker)?.toUpperCase();
   const requestedInterval = firstParam(params.interval) ?? "5min";
@@ -21,7 +23,7 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
   let initialChartError: string | undefined;
 
   try {
-    payload = await loadRealProviderPortfolio();
+    payload = await loadRealProviderPortfolio(authToken);
     const topHolding = [...payload.data.holdings].sort((a, b) => b.weightBps - a.weightBps)[0];
     const selectedHolding =
       payload.data.holdings.find((holding) => holding.asset.ticker === requestedTicker) ?? topHolding;

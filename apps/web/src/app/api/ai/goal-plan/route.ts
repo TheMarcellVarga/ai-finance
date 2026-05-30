@@ -3,12 +3,14 @@ import { NextResponse } from "next/server";
 import { createDeterministicGoalPlan, goalPlanRequestSchema, goalPlanSchema } from "@/lib/ai/research-intelligence";
 import { checkUsageLimit, recordUsageEvent } from "@/lib/billing/usage";
 import { checkRateLimit } from "@/lib/security/rate-limit";
-import { bearerTokenFromRequest } from "@/lib/server/identity";
+import {
+  authenticatedTokenFromRequest,
+  authenticationRequiredResponse,
+  isAuthenticationRequiredError,
+} from "@/lib/server/identity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const fallbackDevToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
 
 export async function POST(request: Request) {
   let parsedBody: unknown;
@@ -29,7 +31,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const authToken = bearerTokenFromRequest(request, fallbackDevToken);
+  let authToken: string;
+  try {
+    authToken = await authenticatedTokenFromRequest(request);
+  } catch (error) {
+    if (isAuthenticationRequiredError(error)) {
+      return authenticationRequiredResponse();
+    }
+    throw error;
+  }
   const rateLimit = await checkRateLimit({ key: `ai:goal_plan:${authToken}`, windowSeconds: 60, max: 12 });
   if (!rateLimit.allowed) {
     return NextResponse.json(

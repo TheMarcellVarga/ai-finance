@@ -2,15 +2,14 @@ import { AlertTriangle, CheckCircle2, Gauge, ShieldCheck, WalletCards } from "lu
 
 import { PLAN_ENTITLEMENTS, type PlanTier } from "@/lib/billing/entitlements";
 import { getUsageSummaryForToken } from "@/lib/billing/usage";
-
-const fallbackDevToken = process.env.FINANCE_API_DEV_TOKEN ?? "dev:user_demo";
+import { authenticatedSessionToken } from "@/lib/server/identity";
 
 const tierOrder: PlanTier[] = ["free", "pro", "research_pro", "team"];
 
 export const dynamic = "force-dynamic";
 
 export default async function BillingPage() {
-  const usage = await getUsageSummaryForToken(fallbackDevToken);
+  const usage = await getUsageSummaryForToken(await authenticatedSessionToken());
 
   return (
     <div className="space-y-6">
