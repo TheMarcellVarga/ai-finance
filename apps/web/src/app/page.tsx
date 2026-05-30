@@ -143,19 +143,21 @@ export default function Home() {
         aria-label="Ambient intelligence briefing"
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-100/18 to-transparent" />
-        <div className="mx-auto w-full max-w-7xl">
-          <p className="font-mono text-[0.62rem] uppercase tracking-[0.24em] text-amber-100/66">
-            Ambient intelligence
-          </p>
-          <p className="mt-4 max-w-xl text-sm font-light text-zinc-100 sm:text-base">
-            A quiet read before the day gets loud.
-          </p>
-          <p className="mt-5 inline-flex items-center gap-2 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-zinc-400">
-            <span className="size-[0.42rem] shrink-0 rounded-full bg-cyan-300/90 shadow-[0_0_0_0.28rem_rgb(103_232_249/0.08)]" />
-            Source-aware research flow
-          </p>
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center">
+          <div className="flex max-w-2xl flex-col items-center text-center">
+            <p className="font-mono text-[0.62rem] uppercase tracking-[0.24em] text-amber-100/66">
+              Ambient intelligence
+            </p>
+            <p className="mt-4 text-sm font-light text-zinc-100 sm:text-base">
+              A quiet read before the day gets loud.
+            </p>
+            <p className="mt-5 inline-flex items-center justify-center gap-2 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-zinc-400">
+              <span className="size-[0.42rem] shrink-0 rounded-full bg-cyan-300/90 shadow-[0_0_0_0.28rem_rgb(103_232_249/0.08)]" />
+              Source-aware research flow
+            </p>
+          </div>
 
-          <div className="cinema-intelligence-dock mt-10 max-w-3xl overflow-hidden">
+          <div className="cinema-intelligence-dock mt-10 w-full max-w-3xl overflow-hidden">
             <div className="grid grid-cols-1 divide-y divide-white/8 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
               {ambientSignals.map(({ title, body, icon: Icon }) => (
                 <div className="flex gap-3 px-4 py-5 sm:flex-col sm:px-5 sm:py-6" key={title}>
