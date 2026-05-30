@@ -13,7 +13,7 @@ const navItems = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-20 px-3 pt-3">
+    <header className="fixed inset-x-0 top-0 z-20 px-3 pt-3">
       <div className="glass-surface mx-auto flex h-16 w-full max-w-7xl items-center justify-between rounded-[1.2rem] px-4 sm:px-5 lg:px-6">
         <BrandMark />
         <nav className="hidden items-center rounded-[0.95rem] bg-black/20 p-1 text-sm font-light text-zinc-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:flex">
