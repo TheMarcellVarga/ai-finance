@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  ArrowDown,
   ArrowRight,
   FileCheck2,
   FileSearch,
@@ -39,19 +38,16 @@ const assurances = [
 
 const ambientSignals = [
   {
-    time: "01",
     title: "Portfolio context",
     body: "Allocation context first",
     icon: Radar,
   },
   {
-    time: "02",
     title: "Source review",
     body: "Citations stay visible",
     icon: FileSearch,
   },
   {
-    time: "03",
     title: "Scenario questions",
     body: "Questions, not instructions",
     icon: ScanSearch,
@@ -66,7 +62,7 @@ export default function Home() {
         <div className="cinema-ambient" />
         <div className="cinema-vignette" />
 
-        <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-12 pb-8 pt-28 lg:min-h-[calc(100dvh-4.75rem)] lg:grid-cols-[0.92fr_1.08fr] lg:pb-44 lg:pt-24">
+        <div className="relative z-10 mx-auto w-full max-w-7xl">
           <div className="cinema-reveal max-w-3xl">
             <p className="inline-flex rounded-full border border-amber-100/16 bg-amber-100/[0.045] px-4 py-2 text-xs font-light uppercase tracking-[0.24em] text-amber-100/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
               Private wealth intelligence
@@ -97,54 +93,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        <aside
-          className="cinema-intelligence-dock relative z-10 mx-auto mb-4 max-w-7xl lg:absolute lg:inset-x-8 lg:bottom-5 lg:mb-0 xl:inset-x-[max(2rem,calc((100vw-80rem)/2))]"
-          aria-label="Ambient intelligence briefing"
-        >
-          <div className="cinema-dock-heading">
-            <div>
-              <p className="font-mono text-[0.62rem] uppercase tracking-[0.24em] text-amber-100/66">
-                Ambient intelligence
-              </p>
-              <p className="mt-2 text-sm font-light text-zinc-100">
-                A quiet read before the day gets loud.
-              </p>
-            </div>
-            <div className="cinema-live-status">
-              <span className="cinema-live-dot" />
-              Source-aware research flow
-            </div>
-          </div>
-
-          <div className="cinema-dock-content">
-            <div className="cinema-signal-flow">
-              {ambientSignals.map(({ time, title, body, icon: Icon }, index) => (
-                <div className="cinema-signal" key={title}>
-                  <div className="cinema-signal-icon">
-                    <Icon className="size-3.5" />
-                  </div>
-                  <div>
-                    <p className="font-mono text-[0.58rem] uppercase tracking-[0.18em] text-zinc-500">
-                      {time}
-                    </p>
-                    <p className="mt-1 text-xs font-light text-zinc-100 sm:text-sm">{title}</p>
-                    <p className="mt-1 hidden text-xs font-light text-zinc-500 sm:block">{body}</p>
-                  </div>
-                  {index < ambientSignals.length - 1 ? <span className="cinema-signal-link" /> : null}
-                </div>
-              ))}
-            </div>
-
-            <Link className="cinema-scroll-cue" href="#review-rhythm">
-              <span>
-                Continue the review
-                <small>Morning, review, decide</small>
-              </span>
-              <ArrowDown className="cinema-scroll-arrow size-4" />
-            </Link>
-          </div>
-        </aside>
       </section>
 
       <section id="review-rhythm" className="cinema-review-section scroll-mt-4 relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8">
@@ -184,6 +132,42 @@ export default function Home() {
               <p className="pt-6 text-sm leading-7 text-zinc-500">
                 Sources, assumptions, and freshness stay visible throughout.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="ambient-intelligence"
+        className="cinema-ambient-section relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8"
+        aria-label="Ambient intelligence briefing"
+      >
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-100/18 to-transparent" />
+        <div className="mx-auto w-full max-w-7xl">
+          <p className="font-mono text-[0.62rem] uppercase tracking-[0.24em] text-amber-100/66">
+            Ambient intelligence
+          </p>
+          <p className="mt-4 max-w-xl text-sm font-light text-zinc-100 sm:text-base">
+            A quiet read before the day gets loud.
+          </p>
+          <p className="mt-5 inline-flex items-center gap-2 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-zinc-400">
+            <span className="size-[0.42rem] shrink-0 rounded-full bg-cyan-300/90 shadow-[0_0_0_0.28rem_rgb(103_232_249/0.08)]" />
+            Source-aware research flow
+          </p>
+
+          <div className="cinema-intelligence-dock mt-10 max-w-3xl overflow-hidden">
+            <div className="grid grid-cols-1 divide-y divide-white/8 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+              {ambientSignals.map(({ title, body, icon: Icon }) => (
+                <div className="flex gap-3 px-4 py-5 sm:flex-col sm:px-5 sm:py-6" key={title}>
+                  <div className="cinema-signal-icon shrink-0">
+                    <Icon className="size-3.5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-light text-zinc-100 sm:text-sm">{title}</p>
+                    <p className="mt-1 text-xs font-light text-zinc-500">{body}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

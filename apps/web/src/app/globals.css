@@ -396,7 +396,13 @@
 }
 
 .cinema-hero {
+  --cinema-header-offset: 4.75rem;
+  box-sizing: border-box;
+  display: flex;
   min-height: 100dvh;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: var(--cinema-header-offset);
   background:
     radial-gradient(circle at 80% 16%, rgb(103 232 249 / 0.12), transparent 30rem),
     radial-gradient(circle at 18% 28%, rgb(206 180 108 / 0.1), transparent 28rem),
@@ -482,6 +488,12 @@
   gap: 1rem;
   padding: 1.55rem 0;
   border-bottom: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.cinema-ambient-section {
+  background:
+    radial-gradient(circle at 50% 0%, rgb(206 180 108 / 0.1), transparent 26rem),
+    linear-gradient(180deg, rgb(15 18 19), rgb(12 21 22));
 }
 
 .cinema-context-section {
@@ -701,6 +713,10 @@
     height: 1.55rem;
     margin-bottom: 0.55rem;
     border-radius: 0.55rem;
+  }
+
+  .cinema-ambient-section .cinema-signal-icon {
+    margin-bottom: 0;
   }
 
   .cinema-scroll-cue {
