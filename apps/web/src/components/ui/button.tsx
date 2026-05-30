@@ -5,14 +5,14 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-light tracking-[-0.01em] whitespace-nowrap outline-none select-none transition-[background-color,color,border-color,box-shadow] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-light tracking-[-0.01em] whitespace-nowrap outline-none select-none transition-[background-color,color] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
         default:
           "bg-slate-800 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:bg-slate-700 hover:text-white",
         outline:
-          "border-white/10 bg-white/[0.025] text-zinc-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl hover:border-cyan-200/14 hover:bg-black/22 hover:text-cyan-50 aria-expanded:border-cyan-200/14 aria-expanded:bg-black/22 aria-expanded:text-cyan-50 dark:border-white/10 dark:bg-white/[0.025] dark:hover:bg-black/22",
+          "border-white/10 bg-white/[0.025] text-zinc-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl hover:bg-black/22 hover:text-cyan-50 aria-expanded:bg-black/22 aria-expanded:text-cyan-50 dark:border-white/10 dark:bg-white/[0.025] dark:hover:bg-black/22",
         secondary:
           "bg-zinc-800 text-zinc-100 hover:bg-zinc-900 aria-expanded:bg-zinc-900 aria-expanded:text-zinc-100",
         ghost:

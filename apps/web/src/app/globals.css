@@ -179,15 +179,17 @@
 }
 
 .glass-hover {
+  isolation: isolate;
+  overflow: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
   transition:
-    background var(--motion-hover-duration) var(--motion-hover-ease),
+    background-color var(--motion-hover-duration) var(--motion-hover-ease),
     color var(--motion-hover-duration) var(--motion-hover-ease);
 }
 
 .glass-hover:hover {
-  background:
-    linear-gradient(145deg, rgb(255 255 255 / 0.055), rgb(255 255 255 / 0.018)),
-    rgb(9 9 11 / 0.56);
+  background-color: rgb(9 9 11 / 0.56);
 }
 
 .cinematic-grid {
@@ -352,15 +354,18 @@
 }
 
 .overview-area {
+  isolation: isolate;
+  overflow: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: background-color, color;
   transition:
-    background var(--motion-hover-duration) var(--motion-hover-ease),
+    background-color var(--motion-hover-duration) var(--motion-hover-ease),
     color var(--motion-hover-duration) var(--motion-hover-ease);
 }
 
 .overview-area:hover {
-  background:
-    linear-gradient(145deg, rgb(103 232 249 / 0.09), rgb(255 255 255 / 0.025) 52%, rgb(206 180 108 / 0.045)),
-    rgb(9 12 13 / 0.54);
+  background-color: rgb(9 12 13 / 0.54);
 }
 
 .overview-link {
