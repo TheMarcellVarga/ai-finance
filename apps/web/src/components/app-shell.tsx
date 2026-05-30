@@ -23,7 +23,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <span className="workspace-orb workspace-orb-cyan" />
         <span className="workspace-orb workspace-orb-amber" />
       </div>
-      <aside className="workspace-sidebar fixed inset-y-4 left-4 hidden w-72 rounded-[1.2rem] border border-white/10 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_28px_76px_rgba(0,0,0,0.42)] backdrop-blur-2xl lg:block">
+      <aside className="workspace-sidebar fixed inset-y-4 left-4 hidden w-72 rounded-[1.2rem] border border-white/10 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_28px_76px_rgba(0,0,0,0.42)] backdrop-blur-2xl xl:block">
         <div className="glass-surface rounded-[1rem] p-3">
           <BrandMark />
         </div>
@@ -40,11 +40,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
       </aside>
-      <div className="lg:pl-80">
-        <header className="sticky top-0 z-10 px-3 py-3 lg:hidden">
-          <div className="glass-surface rounded-[1.1rem] p-4">
+      <div className="xl:pl-80">
+        <header className="sticky top-0 z-20 px-3 py-3 xl:hidden">
+          <div className="glass-surface rounded-[1.1rem] p-3 sm:p-4">
             <BrandMark />
-            <nav className="mt-4 flex gap-2 overflow-x-auto pb-1 text-sm text-zinc-400">
+            <nav className="mt-4 hidden gap-2 overflow-x-auto pb-1 text-sm text-zinc-400 sm:flex">
               {nav.map((item) => (
                 <Link key={item.href} href={item.href} className="shrink-0 rounded-[0.85rem] border border-white/10 bg-white/[0.025] px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-[background-color,color,border-color,box-shadow] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-cyan-200/15 hover:bg-black/25 hover:text-cyan-50">
                   {item.label}
@@ -53,8 +53,20 @@ export function AppShell({ children }: { children: ReactNode }) {
             </nav>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+        <main className="mx-auto w-full max-w-7xl px-3 pb-24 pt-4 sm:px-6 sm:pb-8 sm:pt-6 lg:px-8 xl:py-8">{children}</main>
       </div>
+      <nav className="glass-surface fixed inset-x-3 bottom-3 z-30 flex gap-1 overflow-x-auto rounded-[1.05rem] border border-white/10 p-1.5 sm:hidden" aria-label="Workspace navigation">
+        {nav.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="flex min-w-[4.25rem] flex-1 flex-col items-center gap-1 rounded-[0.8rem] px-1 py-2 text-[0.62rem] text-zinc-400 transition hover:bg-black/25 hover:text-cyan-50"
+          >
+            <item.icon className="size-4 text-cyan-200/70" />
+            <span className="truncate">{item.label}</span>
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }

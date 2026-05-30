@@ -385,7 +385,46 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                   Refresh
                 </Button>
               </div>
-              <div className="mt-5 overflow-x-auto">
+              <div className="mt-5 space-y-3 md:hidden">
+                {holdings.map((holding) => (
+                  <button
+                    key={`mobile-${holding.id}`}
+                    type="button"
+                    onClick={() => void loadChart(holding.asset.ticker, interval)}
+                    className={`w-full rounded-[0.95rem] border p-4 text-left transition ${
+                      selectedTicker === holding.asset.ticker
+                        ? "border-cyan-200/35 bg-cyan-200/[0.07]"
+                        : "border-white/8 bg-black/18 hover:border-white/20"
+                    }`}
+                  >
+                    <span className="flex items-start justify-between gap-3">
+                      <span className="min-w-0">
+                        <span className="block font-mono text-base text-white">{holding.asset.ticker}</span>
+                        <span className="mt-1 block truncate text-xs text-zinc-500">{holding.asset.name}</span>
+                      </span>
+                      <span className={(holding.asset.dailyChangeBps ?? 0) >= 0 ? "font-mono text-sm text-emerald-200" : "font-mono text-sm text-amber-200"}>
+                        {(holding.asset.dailyChangeBps ?? 0) >= 0 ? "+" : ""}
+                        {percentFromBps(holding.asset.dailyChangeBps ?? 0)}
+                      </span>
+                    </span>
+                    <span className="mt-4 grid grid-cols-3 gap-3">
+                      <span>
+                        <span className="block text-[0.62rem] uppercase tracking-[0.14em] text-zinc-500">Value</span>
+                        <span className="mt-1 block font-mono text-sm text-white">{holding.displayValue}</span>
+                      </span>
+                      <span>
+                        <span className="block text-[0.62rem] uppercase tracking-[0.14em] text-zinc-500">Weight</span>
+                        <span className="mt-1 block font-mono text-sm text-zinc-300">{percentFromBps(holding.weightBps)}</span>
+                      </span>
+                      <span>
+                        <span className="block text-[0.62rem] uppercase tracking-[0.14em] text-zinc-500">Last</span>
+                        <span className="mt-1 block truncate font-mono text-sm text-zinc-300">{holding.asset.displayPrice ?? "--"}</span>
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div className="mt-5 hidden overflow-x-auto md:block">
                 <table className="w-full min-w-[42rem] text-left text-sm">
                   <thead className="text-xs uppercase tracking-[0.14em] text-zinc-500">
                     <tr>
@@ -430,7 +469,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                   </tbody>
                 </table>
               </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="mt-4 hidden gap-3 md:grid md:grid-cols-3">
                 {holdings.map((holding) => (
                   <a
                     key={`quick-${holding.id}`}
