@@ -87,7 +87,7 @@ export default function Home() {
         </div>
 
         <aside
-          className="cinema-intelligence-dock cinema-reveal-delayed relative z-10 mx-auto mb-4 max-w-7xl lg:absolute lg:inset-x-8 lg:bottom-5 lg:mb-0 xl:inset-x-[max(2rem,calc((100vw-80rem)/2))]"
+          className="cinema-intelligence-dock relative z-10 mx-auto mb-4 max-w-7xl lg:absolute lg:inset-x-8 lg:bottom-5 lg:mb-0 xl:inset-x-[max(2rem,calc((100vw-80rem)/2))]"
           aria-label="Ambient intelligence briefing"
         >
           <div className="cinema-dock-heading">
@@ -135,7 +135,7 @@ export default function Home() {
         </aside>
       </section>
 
-      <section id="review-rhythm" className="scroll-mt-4 relative overflow-hidden bg-zinc-950/88 px-4 py-24 sm:px-6 lg:px-8">
+      <section id="review-rhythm" className="cinema-review-section scroll-mt-4 relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-100/24 to-transparent" />
         <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[0.76fr_1.24fr]">
           <div>
@@ -158,7 +158,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8">
+      <section className="cinema-context-section relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="cinema-panel rounded-[1.5rem] p-7 sm:p-10">
             <div className="flex items-start justify-between gap-5">
