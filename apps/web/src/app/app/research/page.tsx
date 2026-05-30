@@ -20,7 +20,7 @@ export default function ResearchPage() {
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-400">{brief.summary}</p>
           </div>
-          <div className="max-w-full break-words rounded-[8px] border border-cyan-200/15 bg-cyan-200/8 px-4 py-3 text-sm leading-6 text-cyan-50">
+          <div className="max-w-full break-words rounded-[8px] bg-cyan-200/8 px-4 py-3 text-sm leading-6 text-cyan-50">
             {brief.dataFreshness.provider} · {brief.dataFreshness.freshness}
           </div>
         </div>
@@ -34,7 +34,7 @@ export default function ResearchPage() {
           </div>
           <div className="mt-5 space-y-3">
             {brief.filingHighlights.map((item) => (
-              <p key={item} className="rounded-[8px] border border-white/10 bg-black/20 p-4 text-sm leading-6 text-zinc-300">
+              <p key={item} className="rounded-[8px] bg-black/20 p-4 text-sm leading-6 text-zinc-300">
                 {item}
               </p>
             ))}
@@ -63,7 +63,7 @@ export default function ResearchPage() {
         </div>
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           {brief.retrievedChunks.map((chunk) => (
-            <article key={chunk.id} className="rounded-[8px] border border-white/10 bg-zinc-950/45 p-4">
+            <article key={chunk.id} className="rounded-[8px] bg-zinc-950/45 p-4">
               <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/75">{chunk.section}</p>
               <h3 className="mt-2 text-sm font-medium text-white">{chunk.sourceLocator}</h3>
               <p className="mt-3 text-sm leading-6 text-zinc-400">{chunk.excerpt}</p>

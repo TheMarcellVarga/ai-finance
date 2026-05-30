@@ -297,26 +297,26 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
         </div>
         <div className="mt-6 flex flex-wrap items-center gap-2">
           {["Portfolio view", "Risk lens", "Income lens"].map((label) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => setRiskLens(label === "Income lens" ? "income" : label === "Risk lens" ? "review" : "concentration")}
-              className={`rounded-full border px-3 py-1.5 text-xs transition ${
-                (label === "Portfolio view" && riskLens === "concentration") ||
-                (label === "Risk lens" && riskLens === "review") ||
-                (label === "Income lens" && riskLens === "income")
-                  ? "border-cyan-200/50 bg-cyan-200/12 text-cyan-50"
-                  : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20 hover:text-zinc-200"
-              }`}
-            >
-              {label}
-            </button>
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setRiskLens(label === "Income lens" ? "income" : label === "Risk lens" ? "review" : "concentration")}
+                  className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                    (label === "Portfolio view" && riskLens === "concentration") ||
+                    (label === "Risk lens" && riskLens === "review") ||
+                    (label === "Income lens" && riskLens === "income")
+                      ? "border-cyan-200/50 bg-cyan-200/12 text-cyan-50"
+                  : "border-white/10 bg-white/[0.03] text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200"
+                  }`}
+                >
+                  {label}
+                </button>
           ))}
           <button
             type="button"
             onClick={() => setLiveRefresh((value) => !value)}
             className={`ml-0 rounded-full border px-3 py-1.5 text-xs transition sm:ml-2 ${
-              liveRefresh ? "border-emerald-200/50 bg-emerald-200/10 text-emerald-100" : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20"
+              liveRefresh ? "border-emerald-200/50 bg-emerald-200/10 text-emerald-100" : "border-white/10 bg-white/[0.03] text-zinc-400 hover:bg-white/[0.06]"
             }`}
           >
             {liveRefresh ? "Live refresh on" : "Live refresh off"}
@@ -345,7 +345,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
               ["Risk review", "Concentration and allocation signals highlight positions that deserve attention."],
               ["Research only", "The workspace supports analysis and scenario review, not trade execution."],
             ].map(([title, body], index) => (
-              <div key={title} className="rounded-[1rem] bg-black/18 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+              <div key={title} className="rounded-[1rem] bg-black/18 p-5">
                 <p className="font-mono text-xs text-cyan-100">0{index + 1}</p>
                 <h2 className="type-card-title mt-4 text-xl text-white">{title}</h2>
                 <p className="mt-3 text-sm leading-6 text-zinc-400">{body}</p>
@@ -394,7 +394,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                     className={`w-full rounded-[0.95rem] border p-4 text-left transition ${
                       selectedTicker === holding.asset.ticker
                         ? "border-cyan-200/35 bg-cyan-200/[0.07]"
-                        : "border-white/8 bg-black/18 hover:border-white/20"
+                        : "border-white/8 bg-black/18 hover:bg-black/26"
                     }`}
                   >
                     <span className="flex items-start justify-between gap-3">
@@ -481,7 +481,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                     className={`rounded-[0.9rem] border px-3 py-3 text-left transition ${
                       selectedTicker === holding.asset.ticker
                         ? "border-cyan-200/40 bg-cyan-200/10"
-                        : "border-white/8 bg-white/[0.03] hover:border-white/20"
+                        : "border-white/8 bg-white/[0.03] hover:bg-white/[0.06]"
                     }`}
                   >
                     <span className="block font-mono text-sm text-white">{holding.asset.ticker}</span>
@@ -517,8 +517,8 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                         event.preventDefault();
                         void loadChart(selectedTicker, choice);
                       }}
-                      className={`rounded-full border px-3 py-1.5 text-xs transition ${
-                        interval === choice ? "border-cyan-200/50 bg-cyan-200/12 text-cyan-50" : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20"
+                    className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                        interval === choice ? "border-cyan-200/50 bg-cyan-200/12 text-cyan-50" : "border-white/10 bg-white/[0.03] text-zinc-400 hover:bg-white/[0.06]"
                       }`}
                     >
                       {choice}
@@ -529,8 +529,8 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                       key={choice}
                       type="button"
                       onClick={() => setChartMode(choice)}
-                      className={`rounded-full border px-3 py-1.5 text-xs capitalize transition ${
-                        chartMode === choice ? "border-white/40 bg-white/10 text-white" : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20"
+                    className={`rounded-full border px-3 py-1.5 text-xs capitalize transition ${
+                        chartMode === choice ? "border-white/40 bg-white/10 text-white" : "border-white/10 bg-white/[0.03] text-zinc-400 hover:bg-white/[0.06]"
                       }`}
                     >
                       {choice}
@@ -574,7 +574,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                         ) : null}
                       </svg>
                       {hoveredPoint ? (
-                        <div className="pointer-events-none absolute left-4 top-4 rounded-[0.8rem] border border-white/10 bg-black/70 px-3 py-2 text-xs shadow-2xl backdrop-blur">
+                        <div className="pointer-events-none absolute left-4 top-4 rounded-[0.8rem] bg-black/70 px-3 py-2 text-xs shadow-2xl backdrop-blur">
                           <span className="block font-mono text-white">{hoveredPoint.displayClose}</span>
                           <span className="mt-1 block text-zinc-400">{compactTime(hoveredPoint.timestamp)}</span>
                           <span className="mt-1 block text-zinc-500">Vol {new Intl.NumberFormat("en-US").format(hoveredPoint.volume ?? 0)}</span>
@@ -651,8 +651,8 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                       key={value}
                       type="button"
                       onClick={() => setRiskLens(value as typeof riskLens)}
-                      className={`rounded-[0.85rem] border px-3 py-2 text-xs transition ${
-                        riskLens === value ? "border-cyan-200/45 bg-cyan-200/10 text-cyan-50" : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20"
+                    className={`rounded-[0.85rem] border px-3 py-2 text-xs transition ${
+                        riskLens === value ? "border-cyan-200/45 bg-cyan-200/10 text-cyan-50" : "border-white/10 bg-white/[0.03] text-zinc-400 hover:bg-white/[0.06]"
                       }`}
                     >
                       {label}

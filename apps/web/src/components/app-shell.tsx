@@ -25,7 +25,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <span className="workspace-orb workspace-orb-cyan" />
         <span className="workspace-orb workspace-orb-amber" />
       </div>
-      <aside className="workspace-sidebar fixed inset-y-4 left-4 hidden w-72 rounded-[1.2rem] border border-white/10 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_28px_76px_rgba(0,0,0,0.42)] backdrop-blur-2xl xl:block">
+      <aside className="workspace-sidebar fixed inset-y-4 left-4 hidden w-72 rounded-[1.2rem] p-5 shadow-[0_28px_76px_rgba(0,0,0,0.38)] backdrop-blur-2xl xl:block">
         <div className="glass-surface rounded-[1rem] p-3">
           <div className="flex items-center justify-between gap-3">
             <BrandMark />
@@ -37,7 +37,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link
               key={item.href}
               href={item.href}
-              className="glass-hover flex items-center gap-3 rounded-[0.95rem] border border-transparent px-3 py-2.5 text-sm text-zinc-400 transition-[background-color,color,border-color,box-shadow] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-cyan-200/15 hover:text-cyan-50"
+              className="flex items-center gap-3 rounded-[0.95rem] px-3 py-2.5 text-sm text-zinc-400 transition-colors duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-white/[0.05] hover:text-cyan-50 focus-visible:bg-white/[0.05] focus-visible:text-cyan-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-200/30"
             >
               <item.icon className="size-4 text-cyan-200/70" />
               {item.label}
@@ -54,7 +54,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
             <nav className="mt-4 hidden gap-2 overflow-x-auto pb-1 text-sm text-zinc-400 sm:flex">
               {nav.map((item) => (
-                <Link key={item.href} href={item.href} className="shrink-0 rounded-[0.85rem] border border-white/10 bg-white/[0.025] px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-[background-color,color,border-color,box-shadow] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-cyan-200/15 hover:bg-black/25 hover:text-cyan-50">
+                <Link key={item.href} href={item.href} className="shrink-0 rounded-[0.85rem] bg-white/[0.025] px-3 py-1.5 transition-[background-color,color] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-black/25 hover:text-cyan-50">
                   {item.label}
                 </Link>
               ))}
@@ -63,7 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>
         <main className="mx-auto w-full max-w-7xl px-3 pb-24 pt-4 sm:px-6 sm:pb-8 sm:pt-6 lg:px-8 xl:py-8">{children}</main>
       </div>
-      <nav className="glass-surface fixed inset-x-3 bottom-3 z-30 flex gap-1 overflow-x-auto rounded-[1.05rem] border border-white/10 p-1.5 sm:hidden" aria-label="Workspace navigation">
+      <nav className="glass-surface fixed inset-x-3 bottom-3 z-30 flex gap-1 overflow-x-auto rounded-[1.05rem] p-1.5 sm:hidden" aria-label="Workspace navigation">
         {nav.map((item) => (
           <Link
             key={item.href}

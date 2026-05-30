@@ -9,13 +9,14 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-cyan-300 text-zinc-950 shadow-[0_16px_44px_rgba(103,232,249,0.12)] hover:bg-cyan-400 hover:shadow-[0_14px_32px_rgba(34,211,238,0.1)]",
+        default:
+          "bg-slate-800 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:bg-slate-700 hover:text-white",
         outline:
-          "border-white/10 bg-white/[0.025] text-zinc-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl hover:border-cyan-200/20 hover:bg-black/25 hover:text-cyan-50 aria-expanded:border-cyan-200/20 aria-expanded:bg-black/25 aria-expanded:text-cyan-50 dark:border-white/10 dark:bg-white/[0.025] dark:hover:bg-black/25",
+          "border-white/10 bg-white/[0.025] text-zinc-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl hover:border-cyan-200/14 hover:bg-black/22 hover:text-cyan-50 aria-expanded:border-cyan-200/14 aria-expanded:bg-black/22 aria-expanded:text-cyan-50 dark:border-white/10 dark:bg-white/[0.025] dark:hover:bg-black/22",
         secondary:
           "bg-zinc-800 text-zinc-100 hover:bg-zinc-900 aria-expanded:bg-zinc-900 aria-expanded:text-zinc-100",
         ghost:
-          "text-zinc-300 hover:bg-black/20 hover:text-cyan-50 aria-expanded:bg-black/20 aria-expanded:text-cyan-50 dark:hover:bg-black/20",
+          "text-zinc-300 hover:bg-black/18 hover:text-cyan-50 aria-expanded:bg-black/18 aria-expanded:text-cyan-50 dark:hover:bg-black/18",
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",

@@ -116,13 +116,13 @@ export function AiActionPanel({
         </div>
       </div>
       {message ? (
-        <div className="mt-4 flex items-start gap-2 rounded-[0.9rem] border border-emerald-200/15 bg-emerald-200/8 p-3 text-sm leading-6 text-emerald-50">
+        <div className="mt-4 flex items-start gap-2 rounded-[0.9rem] bg-emerald-200/8 p-3 text-sm leading-6 text-emerald-50">
           <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
           <p>{message}</p>
         </div>
       ) : null}
       {error ? (
-        <div className="mt-4 rounded-[0.9rem] border border-amber-200/20 bg-amber-200/8 p-3 text-sm leading-6 text-amber-50">
+        <div className="mt-4 rounded-[0.9rem] bg-amber-200/8 p-3 text-sm leading-6 text-amber-50">
           {error}
         </div>
       ) : null}

@@ -158,7 +158,7 @@ export function WatchlistWorkspace({ initialWatchlist, initialMeta, initialError
       ) : null}
 
       {status ? (
-        <section className="rounded-[1rem] border border-emerald-200/15 bg-emerald-200/8 p-4 text-sm text-emerald-50">
+        <section className="rounded-[1rem] bg-emerald-200/8 p-4 text-sm text-emerald-50">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="size-4" />
             {status}
@@ -168,7 +168,7 @@ export function WatchlistWorkspace({ initialWatchlist, initialMeta, initialError
 
       <section className="grid gap-4 xl:grid-cols-[0.76fr_0.24fr]">
         <div className="glass-surface overflow-hidden rounded-[1.25rem]">
-          <div className="flex flex-col gap-4 border-b border-white/10 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 p-5 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="type-card-title text-xl text-white">{watchlist?.name ?? "Research watchlist"}</h2>
               <p className="mt-1 text-sm text-zinc-500">
@@ -188,11 +188,11 @@ export function WatchlistWorkspace({ initialWatchlist, initialMeta, initialError
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-3">
                       <p className="font-mono text-lg text-white">{item.asset.ticker}</p>
-                      <span className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-1 text-xs text-zinc-500">
+                      <span className="rounded-full bg-white/[0.03] px-2 py-1 text-xs text-zinc-500">
                         {item.asset.exchange || item.asset.type}
                       </span>
                       {item.asset.sector ? (
-                        <span className="rounded-full border border-cyan-200/15 bg-cyan-200/8 px-2 py-1 text-xs text-cyan-100/80">
+                        <span className="rounded-full bg-cyan-200/8 px-2 py-1 text-xs text-cyan-100/80">
                           {item.asset.sector}
                         </span>
                       ) : null}

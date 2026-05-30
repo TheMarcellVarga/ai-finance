@@ -64,7 +64,7 @@ export default function Home() {
 
         <div className="relative z-10 mx-auto w-full max-w-7xl">
           <div className="cinema-reveal max-w-3xl">
-            <p className="inline-flex rounded-full border border-amber-100/16 bg-amber-100/[0.045] px-4 py-2 text-xs font-light uppercase tracking-[0.24em] text-amber-100/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
+            <p className="inline-flex rounded-full bg-amber-100/[0.045] px-4 py-2 text-xs font-light uppercase tracking-[0.24em] text-amber-100/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
               Private wealth intelligence
             </p>
             <h1 className="mt-7 max-w-4xl text-5xl font-extralight leading-[0.96] tracking-normal text-zinc-50 sm:text-6xl xl:text-7xl">
@@ -206,10 +206,7 @@ export default function Home() {
             </div>
             <div className="mt-8 grid gap-3">
               {assurances.map((item) => (
-                <div
-                  key={item}
-                  className="flex items-start gap-3 rounded-[1rem] border border-white/[0.08] bg-black/[0.16] px-4 py-3 text-sm leading-6 text-zinc-300"
-                >
+                <div key={item} className="flex items-start gap-3 rounded-[1rem] bg-black/[0.16] px-4 py-3 text-sm leading-6 text-zinc-300">
                   <FileCheck2 className="mt-0.5 size-4 shrink-0 text-cyan-100/68" />
                   {item}
                 </div>

@@ -51,7 +51,7 @@ export default async function BillingPage() {
           const entitlements = PLAN_ENTITLEMENTS[tier];
           const active = usage.plan === tier;
           return (
-            <article key={tier} className={`glass-surface rounded-[1rem] p-5 ${active ? "ring-1 ring-cyan-200/35" : ""}`}>
+            <article key={tier} className={`glass-surface rounded-[1rem] p-5 ${active ? "shadow-[0_22px_68px_rgba(0,0,0,0.34)]" : ""}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="type-card-title text-lg text-white">{entitlements.label}</h2>
@@ -85,7 +85,7 @@ export default async function BillingPage() {
           {usage.features.map((feature) => {
             const width = feature.limit > 0 ? Math.min(100, Math.round((feature.used / feature.limit) * 100)) : 0;
             return (
-              <div key={feature.feature} className="rounded-[0.85rem] border border-white/8 bg-black/18 p-4">
+              <div key={feature.feature} className="rounded-[0.85rem] bg-black/18 p-4">
                 <div className="flex items-center justify-between gap-3 text-sm">
                   <span className="capitalize text-zinc-300">{feature.feature.replace(/_/g, " ")}</span>
                   <span className="font-mono text-zinc-500">

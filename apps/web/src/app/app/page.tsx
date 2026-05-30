@@ -138,7 +138,7 @@ export default async function AppOverviewPage() {
         <div className="workspace-hero-glow" aria-hidden="true" />
         <div className="relative grid gap-8 xl:grid-cols-[1fr_20rem] xl:items-end">
           <div className="max-w-3xl">
-            <p className="type-label inline-flex rounded-[0.9rem] border border-cyan-200/10 bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+            <p className="type-label inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
               Overview
             </p>
             <h1 className="type-display mt-6 text-4xl text-white sm:text-5xl">Your research day, composed.</h1>
@@ -146,7 +146,7 @@ export default async function AppOverviewPage() {
               A quiet summary of portfolio context, watchlist movement, saved research, goal scenarios, and risk review.
             </p>
           </div>
-          <div className="workspace-sync rounded-[1rem] border border-white/10 bg-black/18 p-4">
+          <div className="workspace-sync rounded-[1rem] bg-black/18 p-4">
             <div className="flex items-start gap-3">
               <span className={`mt-1.5 size-2 shrink-0 rounded-full ${marketDataAvailable ? "bg-cyan-200 shadow-[0_0_0_6px_rgba(103,232,249,0.08)]" : "bg-amber-200 shadow-[0_0_0_6px_rgba(253,230,138,0.08)]"}`} />
               <div>
@@ -204,7 +204,7 @@ export default async function AppOverviewPage() {
               ))}
             </div>
           ) : (
-            <p className="mt-6 rounded-[1rem] border border-amber-100/10 bg-amber-100/[0.035] p-4 text-sm leading-6 text-zinc-400">
+            <p className="mt-6 rounded-[1rem] bg-amber-100/[0.035] p-4 text-sm leading-6 text-zinc-400">
               Portfolio values are hidden while the local finance API is unavailable. No estimated prices are substituted.
             </p>
           )}
@@ -237,7 +237,7 @@ export default async function AppOverviewPage() {
               ))}
             </div>
           ) : (
-            <p className="mt-6 rounded-[1rem] border border-amber-100/10 bg-amber-100/[0.035] p-4 text-sm leading-6 text-zinc-400">
+            <p className="mt-6 rounded-[1rem] bg-amber-100/[0.035] p-4 text-sm leading-6 text-zinc-400">
               Watchlist movement will appear when the provider-backed feed is available.
             </p>
           )}
@@ -259,7 +259,7 @@ export default async function AppOverviewPage() {
           {researchAreas.map(({ href, eyebrow, title, body, icon: Icon, meta }) => (
             <Link key={href} className="overview-area glass-surface group rounded-[1.1rem] p-5" href={href}>
               <div className="flex items-start justify-between gap-4">
-                <div className="grid size-9 place-items-center rounded-[0.75rem] border border-cyan-200/15 bg-cyan-200/[0.055] text-cyan-100">
+                <div className="grid size-9 place-items-center rounded-[0.75rem] bg-cyan-200/[0.055] text-cyan-100">
                   <Icon className="size-4" />
                 </div>
                 <ArrowRight className="size-4 text-zinc-600 transition group-hover:translate-x-1 group-hover:text-cyan-100" />

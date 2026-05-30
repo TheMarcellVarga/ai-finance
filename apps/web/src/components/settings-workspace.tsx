@@ -102,10 +102,10 @@ export function SettingsWorkspace() {
                   key={item}
                   type="button"
                   onClick={() => setMode(item)}
-                  className={`rounded-[0.85rem] border px-3 py-2 text-sm transition active:scale-[0.98] ${
-                    mode === item
-                      ? "border-cyan-200/40 bg-cyan-200/12 text-cyan-50"
-                      : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20 hover:text-zinc-200"
+                    className={`rounded-[0.85rem] border px-3 py-2 text-sm transition active:scale-[0.98] ${
+                      mode === item
+                        ? "border-cyan-200/40 bg-cyan-200/12 text-cyan-50"
+                      : "border-white/10 bg-white/[0.03] text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200"
                   }`}
                 >
                   {item === "demo" ? "Demo" : "Live-ready"}
@@ -170,7 +170,7 @@ export function SettingsWorkspace() {
                     key={item.key}
                     type="button"
                     onClick={() => setValues((current) => ({ ...current, [item.key]: !current[item.key] }))}
-                    className="w-full rounded-[1rem] border border-white/10 bg-white/[0.025] p-4 text-left transition hover:border-cyan-200/20 hover:bg-black/20 active:scale-[0.99]"
+                    className="w-full rounded-[1rem] border border-white/10 bg-white/[0.025] p-4 text-left transition hover:bg-black/20 active:scale-[0.99]"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
@@ -193,7 +193,7 @@ export function SettingsWorkspace() {
             <p className="mt-4 text-sm leading-6 text-zinc-400">
               Exports are scoped to authenticated, user-owned records and should include portfolios, saved research metadata, AI citations, usage records, and audit references.
             </p>
-            <p className="mt-4 rounded-[0.9rem] border border-white/10 bg-zinc-950/60 p-3 text-xs leading-5 text-zinc-500">
+            <p className="mt-4 rounded-[0.9rem] bg-zinc-950/60 p-3 text-xs leading-5 text-zinc-500">
               Export workflows are designed to avoid raw secrets, provider credentials, raw JWTs, and unrelated tenant data.
             </p>
           </div>

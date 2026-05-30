@@ -54,7 +54,7 @@ export default function RiskPage() {
             <h1 className="text-3xl font-light tracking-normal text-white sm:text-5xl">Portfolio risk review</h1>
             <p className="mt-4 max-w-3xl text-sm leading-6 text-zinc-400">{risk.summary}</p>
           </div>
-          <div className="rounded-[8px] border border-amber-200/20 bg-amber-200/8 p-4">
+          <div className="rounded-[8px] bg-amber-200/8 p-4">
             <p className="text-xs uppercase tracking-[0.18em] text-amber-100/80">Review flags</p>
             <p className="mt-2 text-3xl font-light text-white">{demoSnapshot.summary.reviewFlags}</p>
             <p className="mt-1 text-sm text-zinc-400">{risk.dataFreshness.freshness}</p>
@@ -102,7 +102,7 @@ export default function RiskPage() {
         <h2 className="text-lg font-medium tracking-normal text-white">Research review actions</h2>
         <div className="mt-5 grid gap-3 md:grid-cols-3">
           {risk.reviewActions.map((action) => (
-            <p key={action} className="rounded-[8px] border border-white/10 bg-black/20 p-4 text-sm leading-6 text-zinc-400">
+            <p key={action} className="rounded-[8px] bg-black/20 p-4 text-sm leading-6 text-zinc-400">
               {action}
             </p>
           ))}

@@ -24,7 +24,7 @@ export default function GoalsPage() {
             <h1 className="text-3xl font-light tracking-normal text-white sm:text-5xl">{plan.goalName}</h1>
             <p className="mt-4 max-w-3xl text-sm leading-6 text-zinc-400">{plan.summary}</p>
           </div>
-          <div className="rounded-[8px] border border-white/10 bg-black/20 p-4">
+          <div className="rounded-[8px] bg-black/20 p-4">
             <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Scenario target</p>
             <p className="mt-2 text-2xl font-light text-white">{plan.targetAmount}</p>
             <p className="mt-1 text-sm text-zinc-400">{plan.timeHorizon}</p>
@@ -37,7 +37,7 @@ export default function GoalsPage() {
           <article key={milestone.title} className="glass-surface rounded-[8px] p-5">
             <div className="flex items-start justify-between gap-4">
               <Flag className="size-5 text-cyan-100" />
-              <span className="rounded-[8px] border border-white/10 px-2 py-1 text-xs uppercase tracking-[0.14em] text-zinc-500">
+              <span className="rounded-[8px] bg-white/[0.04] px-2 py-1 text-xs uppercase tracking-[0.14em] text-zinc-500">
                 {milestone.status}
               </span>
             </div>
@@ -56,7 +56,7 @@ export default function GoalsPage() {
           </div>
           <div className="mt-5 space-y-4">
             {plan.contributionScenarios.map((scenario) => (
-              <div key={scenario.cadence} className="rounded-[8px] border border-white/10 bg-black/20 p-4">
+              <div key={scenario.cadence} className="rounded-[8px] bg-black/20 p-4">
                 <p className="text-sm font-medium text-white">{scenario.cadence} · {scenario.amount}</p>
                 <p className="mt-2 text-sm leading-6 text-zinc-400">{scenario.assumption}</p>
               </div>

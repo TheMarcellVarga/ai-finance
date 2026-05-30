@@ -19,7 +19,7 @@ export function SiteHeader() {
         <div className="glass-surface flex h-16 w-full items-center justify-between rounded-[1.2rem] px-4 sm:px-5 lg:px-6">
           <div className="pointer-events-auto flex w-full items-center justify-between gap-4">
             <BrandMark />
-            <nav className="hidden items-center rounded-[0.95rem] bg-black/20 p-1 text-sm font-light text-zinc-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:flex">
+            <nav className="hidden items-center rounded-[0.95rem] bg-black/20 p-1 text-sm font-light text-zinc-400 md:flex">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
