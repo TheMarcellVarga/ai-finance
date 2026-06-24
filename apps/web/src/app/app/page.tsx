@@ -146,7 +146,7 @@ export default async function AppOverviewPage() {
               A quiet summary of portfolio context, watchlist movement, saved research, goal scenarios, and risk review.
             </p>
           </div>
-          <div className="workspace-sync rounded-[1rem] bg-black/18 p-4">
+          <div className="workspace-sync rounded-[1rem] p-4">
             <div className="flex items-start gap-3">
               <span className={`mt-1.5 size-2 shrink-0 rounded-full ${marketDataAvailable ? "bg-cyan-200 shadow-[0_0_0_6px_rgba(103,232,249,0.08)]" : "bg-amber-200 shadow-[0_0_0_6px_rgba(253,230,138,0.08)]"}`} />
               <div>
