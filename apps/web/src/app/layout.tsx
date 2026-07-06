@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist_Mono, Outfit } from "next/font/google";
+import { hasClerkPublishableKey } from "@/lib/clerk-config";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -29,15 +30,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const content = hasClerkPublishableKey() ? (
+    <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">{children}</ClerkProvider>
+  ) : (
+    children
+  );
+
   return (
     <html
       lang="en"
       className={`${outfit.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
-          {children}
-        </ClerkProvider>
+        {content}
       </body>
     </html>
   );

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { auth } from "@clerk/nextjs/server";
+import { hasClerkRuntimeKeys } from "@/lib/clerk-config";
 
 export class AuthenticationRequiredError extends Error {
   readonly code = "authentication_required";
@@ -53,6 +54,10 @@ function explicitDevelopmentToken(request?: Request) {
 }
 
 export async function authenticatedSessionToken() {
+  if (!hasClerkRuntimeKeys()) {
+    throw new AuthenticationRequiredError();
+  }
+
   const { getToken, userId } = await auth();
   if (!userId) {
     throw new AuthenticationRequiredError();

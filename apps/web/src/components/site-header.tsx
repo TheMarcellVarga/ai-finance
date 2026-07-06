@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 
 import { BrandMark } from "@/components/brand";
 import { Button } from "@/components/ui/button";
+import { hasClerkRuntimeKeys } from "@/lib/clerk-config";
 
 const navItems = [
   { href: "/product", label: "Product" },
@@ -13,6 +14,8 @@ const navItems = [
 ];
 
 export function SiteHeader() {
+  const authConfigured = hasClerkRuntimeKeys();
+
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-20">
       <div className="mx-auto w-full max-w-7xl px-3 pt-3">
@@ -30,18 +33,31 @@ export function SiteHeader() {
                 </Link>
               ))}
             </nav>
-            <Show when="signed-in">
-              <Button asChild size="lg" className="hidden rounded-[0.95rem] px-5 md:inline-flex">
-                <Link href="/app" prefetch={false}>
-                  Open workspace
-                  <ArrowRight data-icon="inline-end" />
-                </Link>
-              </Button>
-              <Button asChild size="sm" variant="outline" className="rounded-[0.9rem] md:hidden">
-                <Link href="/app" prefetch={false}>Workspace</Link>
-              </Button>
-            </Show>
-            <Show when="signed-out">
+            {authConfigured ? (
+              <>
+                <Show when="signed-in">
+                  <Button asChild size="lg" className="hidden rounded-[0.95rem] px-5 md:inline-flex">
+                    <Link href="/app" prefetch={false}>
+                      Open workspace
+                      <ArrowRight data-icon="inline-end" />
+                    </Link>
+                  </Button>
+                  <Button asChild size="sm" variant="outline" className="rounded-[0.9rem] md:hidden">
+                    <Link href="/app" prefetch={false}>Workspace</Link>
+                  </Button>
+                </Show>
+                <Show when="signed-out">
+                  <div className="flex items-center gap-2">
+                    <Button asChild size="sm" variant="outline" className="rounded-[0.9rem]">
+                      <Link href="/sign-in">Sign in</Link>
+                    </Button>
+                    <Button asChild size="sm" className="hidden rounded-[0.9rem] sm:inline-flex">
+                      <Link href="/sign-up">Create account</Link>
+                    </Button>
+                  </div>
+                </Show>
+              </>
+            ) : (
               <div className="flex items-center gap-2">
                 <Button asChild size="sm" variant="outline" className="rounded-[0.9rem]">
                   <Link href="/sign-in">Sign in</Link>
@@ -50,7 +66,7 @@ export function SiteHeader() {
                   <Link href="/sign-up">Create account</Link>
                 </Button>
               </div>
-            </Show>
+            )}
           </div>
         </div>
       </div>
