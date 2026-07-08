@@ -10,9 +10,9 @@ Live marketing media remains a follow-on task because final source selection dep
 
 - Product name: Aperture Financial Intelligence.
 - Positioning: AI financial research and portfolio decision-support workspace.
-- Visual tone: dark metal, glass edge refraction, dense metrics, restrained cyan and amber state colors.
+- Visual tone: dark metal, glass edge refraction, dense metrics, restrained green and lime state colors.
 - Typography: Outfit for interface/display text and Geist Mono for tickers, prices, quotas, and timestamps.
-- Mark: aperture lens motif with a centered research focal point. The app renders the mark in `apps/web/src/components/brand.tsx`.
+- Mark: minimalist monoline A/lens motif with a centered research focal point. The app renders the mark in `apps/web/src/components/brand.tsx`.
 - Production-safe assets:
   - `apps/web/public/brand/aperture-mark.svg`
   - `apps/web/public/brand/aperture-social-card.svg`

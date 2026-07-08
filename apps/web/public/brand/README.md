@@ -3,9 +3,9 @@
 Phase 8 local brand assets are production-safe vector assets and documented media direction. The app still renders the live navigation mark in `src/components/brand.tsx` so the wordmark stays text-based and accessible.
 
 Included assets:
-- `aperture-mark.svg`: vector aperture icon for docs, social previews, and non-app contexts.
+- `aperture-mark.svg`: minimalist vector A/lens icon for docs, social previews, and non-app contexts.
 - `aperture-social-card.svg`: dark social preview concept.
-- `../logo.png`: generated concept image retained as reference only, not the production wordmark.
+- `../logo.png`: PNG export of the production vector mark for legacy/static contexts.
 - `../../src/app/icon.png`: app icon route asset.
 - `../../src/app/opengraph-image.png`: Open Graph image route asset.
 
