@@ -361,6 +361,189 @@ Verification commands:
 - `scripts/verify-phase7-security`
 - Browser screenshot pass for `/`, `/app`, `/app/portfolio`, `/app/watchlist`, `/app/research`, `/app/goals`, `/app/risk`, `/app/settings`, `/app/billing`, `/blog`, `/privacy`, and `/terms`.
 
+## Evidence Workspace Upgrade Track
+
+This is the active roadmap after the original local portfolio-demo phases. It upgrades Aperture into a production-style, evidence-first financial document research workspace while preserving the existing Next.js, Go, Clerk, and Supabase boundaries.
+
+The detailed gap analysis, architecture recommendation, migration risks, dependency proposal, and likely file changes are in `docs/REPOSITORY_ASSESSMENT.md`.
+
+The upgrade follows these rules:
+
+- Do not replace the Go finance/data backend with a Node-only backend.
+- Do not implement retrieval before owner-scoped workspace/document storage is complete.
+- Do not expose uploaded files or chunks through global read policies.
+- Do not present deterministic fixtures as final document-research functionality.
+- Do not let a model approve, publish, persist as approved, or export a conclusion.
+- Keep external AI calls disabled until the user explicitly approves provider spend.
+- Keep every feature commit reviewable and include its proportional tests.
+- Create a milestone-completion documentation commit only after the milestone acceptance gate passes.
+
+### Upgrade Phase 0: Repository Assessment And Roadmap Lock
+
+Status: complete.
+
+Primary skill: existing-project redesign audit.
+
+Support skill: Supabase security and persistence review.
+
+Deliverables:
+
+- `docs/REPOSITORY_ASSESSMENT.md`
+- current architecture and gap analysis
+- recommended architecture and dependency proposal
+- data, API, AI, frontend, security, testing, and migration review
+- Upgrade Phases 1-6 and acceptance gates
+
+Acceptance gate:
+
+- The first task from the AI product upgrade plan is answered without application implementation.
+- Existing working functionality is not deleted or replaced.
+- Assumptions and unknowns are explicit.
+- The master roadmap identifies the next permitted implementation phase.
+
+### Upgrade Phase 1: Document Foundation
+
+Status: pending.
+
+Primary skills: `go-finance-api`, `supabase-finance-schema`.
+
+Support skills: `nextjs-fintech-ui`, `security-review-fintech`.
+
+Deliverables:
+
+- document-research architecture decision record
+- durable Go/Postgres profile-scoped transaction pattern
+- owner-scoped research workspace and document schema
+- private Supabase Storage upload flow
+- PDF/text validation and page-aware parser abstraction
+- Postgres-backed processing jobs and Go worker
+- document processing status and retry UI
+
+Acceptance gate:
+
+- A signed-in user can upload a supported PDF or text file.
+- Processing status is durable and failed processing can be retried idempotently.
+- Parsed pages retain document, page, and source metadata.
+- Cross-workspace list, read, download, retry, and delete attempts fail.
+- No external model call is required.
+
+### Upgrade Phase 2: Retrieval
+
+Status: pending.
+
+Primary skills: `ai-research-features`, `supabase-finance-schema`.
+
+Support skills: `go-finance-api`, `security-review-fintech`.
+
+Deliverables:
+
+- deterministic page-aware chunking with stable IDs
+- provider-independent embedding interface
+- versioned embeddings and vector index
+- owner-filtered retrieval API with workspace/document filters
+- evidence search interface and retrieval diagnostics
+
+Acceptance gate:
+
+- Representative queries return relevant chunks with document and page metadata.
+- Duplicate or near-duplicate context is suppressed.
+- Cross-workspace retrieval tests pass.
+- Retrieved chunk IDs, filters, model version, and stage latency are recorded.
+
+### Upgrade Phase 3: Structured Generation
+
+Status: pending.
+
+Primary skill: `ai-research-features`.
+
+Support skills: `nextjs-fintech-ui`, `finance-product-guardrails`, `security-review-fintech`.
+
+Deliverables:
+
+- generation, streaming, usage, retry, cancellation, and fallback interfaces
+- first workflow input/output schemas
+- typed stage and section streaming
+- structured validation and one repair attempt
+- cancellation, partial results, degraded states, and normalized telemetry
+
+Acceptance gate:
+
+- An earnings-review or custom-research result streams into structured sections.
+- Invalid output is repaired once or preserved as an explicit partial result.
+- User cancellation stops downstream work and is stored.
+- Model, provider, prompt/schema versions, tokens, cost, latency, and retrieved chunks are stored.
+
+### Upgrade Phase 4: Citations And Trust
+
+Status: pending.
+
+Primary skills: `ai-research-features`, `nextjs-fintech-ui`.
+
+Support skill: `security-review-fintech`.
+
+Deliverables:
+
+- claim-to-chunk citation mapping
+- citation validation against the retrieved-chunk allow-list
+- interactive evidence panel
+- unsupported-claim warnings
+- qualitative evidence-strength states and citation coverage
+
+Acceptance gate:
+
+- Every material finding has valid support or a visible unsupported warning.
+- Citation activation reveals the correct source excerpt and page.
+- Citation targets cannot escape the active workspace or analysis run.
+
+### Upgrade Phase 5: Review And Approval
+
+Status: pending.
+
+Primary skills: `nextjs-fintech-ui`, `go-finance-api`.
+
+Support skills: `finance-product-guardrails`, `security-review-fintech`.
+
+Deliverables:
+
+- edit, accept, reject, and regenerate-section controls
+- immutable raw output and append-only approval history
+- incorrect-citation feedback
+- reviewed Markdown export
+
+Acceptance gate:
+
+- AI output cannot approve itself.
+- Raw and user-edited content remain distinct.
+- Regeneration invalidates stale approval.
+- Export distinguishes approved and unapproved content and preserves evidence references.
+
+### Upgrade Phase 6: Evaluation, Accessibility, And Release Polish
+
+Status: pending.
+
+Primary skills: `ai-research-features`, `nextjs-fintech-ui`.
+
+Support skills: `security-review-fintech`, `finance-product-guardrails`.
+
+Deliverables:
+
+- 30-50 evaluation cases across at least five source documents
+- stored build/model/prompt/retrieval comparisons
+- evaluation dashboard
+- prompt-injection, isolation, and failure-mode tests
+- end-to-end tests and CI gates
+- WCAG 2.2 AA-focused pass
+- API/worker deployment artifacts and updated portfolio case study
+
+Acceptance gate:
+
+- Structured output validates after repair or degrades explicitly.
+- No cross-workspace retrieval occurs.
+- Supported workflows contain no uncited material factual claims.
+- Every consequential action requires approval.
+- The upload-to-reviewed-export flow passes end to end.
+- Known failure modes and production configuration are documented.
+
 ## AI Task Template
 Use this template for future agent tasks.
 
