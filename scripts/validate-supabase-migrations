@@ -29,7 +29,7 @@ if ! grep -Rqi 'create extension if not exists vector' "$MIGRATIONS_DIR"; then
   exit 1
 fi
 
-for table in profiles portfolios holdings watchlists ai_threads ai_messages usage_events audit_logs webhook_events; do
+for table in profiles portfolios holdings watchlists ai_threads ai_messages usage_events audit_logs webhook_events research_workspaces document_pages document_processing_jobs; do
   if ! grep -Rqi "create table if not exists public.$table" "$MIGRATIONS_DIR"; then
     echo "Missing required table: $table" >&2
     exit 1
@@ -47,5 +47,35 @@ if grep -RniE 'demo-seed|deterministic-demo-data|demo_universe' "$MIGRATIONS_DIR
   echo "Migrations must not seed mock market prices or demo freshness states." >&2
   exit 1
 fi
+
+PHASE1_MIGRATION="$(find "$MIGRATIONS_DIR" -name '*_phase10_document_foundation.sql' -print -quit)"
+if [[ -z "$PHASE1_MIGRATION" ]]; then
+  echo "Missing Phase 1 document foundation migration." >&2
+  exit 1
+fi
+
+for requirement in \
+  "create role aperture_api" \
+  "alter table public.research_workspaces force row level security" \
+  "alter table public.research_documents force row level security" \
+  "alter table public.document_pages force row level security" \
+  "research_workspaces_own_rows" \
+  "research_documents_own_rows" \
+  "document_pages_own_rows" \
+  "document_processing_jobs_service_only" \
+  "'research-documents'" \
+  "false,"; do
+  if ! grep -Rqi "$requirement" "$MIGRATIONS_DIR"; then
+    echo "Missing Phase 1 document security requirement: $requirement" >&2
+    exit 1
+  fi
+done
+
+for retired_policy in research_documents_read_all research_chunks_read_all; do
+  if ! grep -qi "drop policy if exists $retired_policy" "$PHASE1_MIGRATION"; then
+    echo "Phase 1 must remove global policy: $retired_policy" >&2
+    exit 1
+  fi
+done
 
 echo "Supabase migration static validation passed."
