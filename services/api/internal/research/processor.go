@@ -45,6 +45,17 @@ func (p *Processor) ProcessNext(ctx context.Context, workerID string) (bool, err
 		p.Logger.Warn("document processing failed", "documentId", job.Document.ID, "errorType", code)
 		return true, nil
 	}
+	for index := range pages {
+		pages[index].ID = NewID()
+		pages[index].DocumentID = job.Document.ID
+		pages[index].WorkspaceID = job.Document.WorkspaceID
+		if pages[index].SourceMetadata == nil {
+			pages[index].SourceMetadata = map[string]any{}
+		}
+		pages[index].SourceMetadata["documentId"] = job.Document.ID
+		pages[index].SourceMetadata["workspaceId"] = job.Document.WorkspaceID
+		pages[index].SourceMetadata["pageNumber"] = pages[index].PageNumber
+	}
 
 	timings := map[string]int64{"parseMs": time.Since(startedAt).Milliseconds()}
 	if _, err := p.Store.CompleteProcessingJob(ctx, job.ID, pages, timings); err != nil {

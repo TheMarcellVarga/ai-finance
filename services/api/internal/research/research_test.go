@@ -146,6 +146,14 @@ func TestMemoryStoreEnforcesOwnershipAndProcessorCompletes(t *testing.T) {
 	if err != nil || len(pages) != 2 || pages[1].PageNumber != 2 {
 		t.Fatalf("unexpected pages: %#v err=%v", pages, err)
 	}
+	if pages[0].ID == "" || pages[0].DocumentID != document.ID || pages[0].WorkspaceID != workspace.ID {
+		t.Fatalf("expected persisted ownership provenance, got %#v", pages[0])
+	}
+	if pages[0].SourceMetadata["documentId"] != document.ID ||
+		pages[0].SourceMetadata["workspaceId"] != workspace.ID ||
+		pages[0].SourceMetadata["pageNumber"] != 1 {
+		t.Fatalf("expected source metadata provenance, got %#v", pages[0].SourceMetadata)
+	}
 	if _, err := store.GetDocument(ctx, "user-b", workspace.ID, document.ID); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("expected cross-user document denial, got %v", err)
 	}
