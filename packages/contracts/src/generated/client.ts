@@ -202,6 +202,56 @@ export type AddWatchlistItemRequest = {
   notes?: string;
 };
 
+export type ResearchMeta = {
+  persistence: "memory" | "postgres";
+  storage?: "memory" | "local-private" | "supabase-private";
+};
+
+export type ResearchWorkspace = {
+  id: string;
+  name: string;
+  description: string;
+  status: "active" | "archived";
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ResearchDocument = {
+  id: string;
+  workspaceId: string;
+  title: string;
+  originalFilename: string;
+  mimeType: "application/pdf" | "text/plain";
+  byteSize: number;
+  sha256: string;
+  status: "uploading" | "queued" | "processing" | "ready" | "failed";
+  attemptCount: number;
+  errorCode?: string;
+  errorMessage?: string;
+  pageCount: number;
+  uploadedAt?: string;
+  parsedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ResearchPage = {
+  id: string;
+  documentId: string;
+  workspaceId: string;
+  pageNumber: number;
+  normalizedText: string;
+  textSha256: string;
+  characterCount: number;
+  sourceMetadata: Record<string, unknown>;
+};
+
+export type ResearchWorkspaceListResponse = { data: ResearchWorkspace[]; meta: ResearchMeta };
+export type ResearchWorkspaceResponse = { data: ResearchWorkspace; meta: ResearchMeta };
+export type ResearchDocumentListResponse = { data: ResearchDocument[]; meta: ResearchMeta };
+export type ResearchDocumentResponse = { data: ResearchDocument; meta: ResearchMeta };
+export type ResearchPageListResponse = { data: ResearchPage[]; meta: ResearchMeta };
+
 export type FinanceApiClientOptions = {
   baseUrl: string;
   getToken?: () => Promise<string | undefined> | string | undefined;
@@ -284,9 +334,41 @@ export class FinanceApiClient {
     return this.request<WatchlistResponse>(`/v1/watchlists/${encodeURIComponent(id)}/items`, { auth: true, method: "POST", body });
   }
 
+  async listResearchWorkspaces(): Promise<ResearchWorkspaceListResponse> {
+    return this.request<ResearchWorkspaceListResponse>("/v1/research/workspaces", { auth: true });
+  }
+
+  async createResearchWorkspace(body: { name?: string; description?: string }): Promise<ResearchWorkspaceResponse> {
+    return this.request<ResearchWorkspaceResponse>("/v1/research/workspaces", { auth: true, method: "POST", body });
+  }
+
+  async getResearchWorkspace(workspaceId: string): Promise<ResearchWorkspaceResponse> {
+    return this.request<ResearchWorkspaceResponse>(`/v1/research/workspaces/${encodeURIComponent(workspaceId)}`, { auth: true });
+  }
+
+  async listResearchDocuments(workspaceId: string): Promise<ResearchDocumentListResponse> {
+    return this.request<ResearchDocumentListResponse>(`/v1/research/workspaces/${encodeURIComponent(workspaceId)}/documents`, { auth: true });
+  }
+
+  async uploadResearchDocument(workspaceId: string, formData: FormData): Promise<ResearchDocumentResponse> {
+    return this.request<ResearchDocumentResponse>(`/v1/research/workspaces/${encodeURIComponent(workspaceId)}/documents`, { auth: true, method: "POST", formData });
+  }
+
+  async getResearchDocument(workspaceId: string, documentId: string): Promise<ResearchDocumentResponse> {
+    return this.request<ResearchDocumentResponse>(`/v1/research/workspaces/${encodeURIComponent(workspaceId)}/documents/${encodeURIComponent(documentId)}`, { auth: true });
+  }
+
+  async retryResearchDocument(workspaceId: string, documentId: string): Promise<ResearchDocumentResponse> {
+    return this.request<ResearchDocumentResponse>(`/v1/research/workspaces/${encodeURIComponent(workspaceId)}/documents/${encodeURIComponent(documentId)}/retry`, { auth: true, method: "POST" });
+  }
+
+  async listResearchDocumentPages(workspaceId: string, documentId: string): Promise<ResearchPageListResponse> {
+    return this.request<ResearchPageListResponse>(`/v1/research/workspaces/${encodeURIComponent(workspaceId)}/documents/${encodeURIComponent(documentId)}/pages`, { auth: true });
+  }
+
   private async request<T>(
     path: string,
-    options: { auth?: boolean; method?: string; body?: unknown; empty?: boolean } = {},
+    options: { auth?: boolean; method?: string; body?: unknown; formData?: FormData; empty?: boolean } = {},
   ): Promise<T> {
     const headers = new Headers({ Accept: "application/json" });
     const init: RequestInit = { headers, method: options.method ?? "GET" };
@@ -299,6 +381,9 @@ export class FinanceApiClient {
     if (options.body !== undefined) {
       headers.set("Content-Type", "application/json");
       init.body = JSON.stringify(options.body);
+    }
+    if (options.formData !== undefined) {
+      init.body = options.formData;
     }
 
     const response = await this.fetcher(`${this.baseUrl}${path}`, init);

@@ -250,6 +250,145 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+  /v1/research/workspaces:
+    get:
+      operationId: listResearchWorkspaces
+      responses:
+        "200":
+          description: Owner-scoped research workspaces
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchWorkspaceListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createResearchWorkspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateResearchWorkspaceRequest"
+      responses:
+        "201":
+          description: Created research workspace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchWorkspaceResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/research/workspaces/{workspaceId}:
+    get:
+      operationId: getResearchWorkspace
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200":
+          description: Owner-scoped research workspace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchWorkspaceResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/research/workspaces/{workspaceId}/documents:
+    get:
+      operationId: listResearchDocuments
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200":
+          description: Owner-scoped research documents
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchDocumentListResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: uploadResearchDocument
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                title:
+                  type: string
+                  maxLength: 200
+      responses:
+        "202":
+          description: Document stored and queued for processing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchDocumentResponse"
+        "400":
+          description: Invalid file, signature, MIME type, or size
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/research/workspaces/{workspaceId}/documents/{documentId}:
+    get:
+      operationId: getResearchDocument
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "200":
+          description: Owner-scoped document processing state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchDocumentResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/research/workspaces/{workspaceId}/documents/{documentId}/retry:
+    post:
+      operationId: retryResearchDocument
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "202":
+          description: Failed document queued for an idempotent retry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchDocumentResponse"
+        "409":
+          description: Document is not retryable from its current state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/research/workspaces/{workspaceId}/documents/{documentId}/pages:
+    get:
+      operationId: listResearchDocumentPages
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/DocumentId"
+      responses:
+        "200":
+          description: Page-aware parsed document records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchPageListResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
 components:
   securitySchemes:
     ClerkBearer:
@@ -277,6 +416,20 @@ components:
       required: true
       schema:
         type: string
+    WorkspaceId:
+      in: path
+      name: workspaceId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DocumentId:
+      in: path
+      name: documentId
+      required: true
+      schema:
+        type: string
+        format: uuid
   schemas:
     HealthResponse:
       type: object
@@ -671,6 +824,163 @@ components:
           type: string
         notes:
           type: string
+    ResearchMeta:
+      type: object
+      required: [persistence]
+      properties:
+        persistence:
+          type: string
+          enum: [memory, postgres]
+        storage:
+          type: string
+          enum: [memory, local-private, supabase-private]
+    ResearchWorkspace:
+      type: object
+      required: [id, name, description, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, archived]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ResearchDocument:
+      type: object
+      required:
+        [id, workspaceId, title, originalFilename, mimeType, byteSize, sha256, status, attemptCount, pageCount, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspaceId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        originalFilename:
+          type: string
+        mimeType:
+          type: string
+          enum: [application/pdf, text/plain]
+        byteSize:
+          type: integer
+          format: int64
+          maximum: 10485760
+        sha256:
+          type: string
+        status:
+          type: string
+          enum: [uploading, queued, processing, ready, failed]
+        attemptCount:
+          type: integer
+        errorCode:
+          type: string
+        errorMessage:
+          type: string
+        pageCount:
+          type: integer
+        uploadedAt:
+          type: string
+          format: date-time
+        parsedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ResearchPage:
+      type: object
+      required: [id, documentId, workspaceId, pageNumber, normalizedText, textSha256, characterCount, sourceMetadata]
+      properties:
+        id:
+          type: string
+          format: uuid
+        documentId:
+          type: string
+          format: uuid
+        workspaceId:
+          type: string
+          format: uuid
+        pageNumber:
+          type: integer
+          minimum: 1
+        normalizedText:
+          type: string
+        textSha256:
+          type: string
+        characterCount:
+          type: integer
+        sourceMetadata:
+          type: object
+          additionalProperties: true
+    CreateResearchWorkspaceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 1000
+    ResearchWorkspaceListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResearchWorkspace"
+        meta:
+          $ref: "#/components/schemas/ResearchMeta"
+    ResearchWorkspaceResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ResearchWorkspace"
+        meta:
+          $ref: "#/components/schemas/ResearchMeta"
+    ResearchDocumentListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResearchDocument"
+        meta:
+          $ref: "#/components/schemas/ResearchMeta"
+    ResearchDocumentResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ResearchDocument"
+        meta:
+          $ref: "#/components/schemas/ResearchMeta"
+    ResearchPageListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResearchPage"
+        meta:
+          $ref: "#/components/schemas/ResearchMeta"
     ErrorResponse:
       type: object
       required: [error]
