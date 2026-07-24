@@ -3,7 +3,9 @@ package config
 import (
 	"log/slog"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/marcellvarga/ai-finance/services/api/internal/auth"
 )
@@ -18,6 +20,14 @@ type Config struct {
 	FinnhubAPIKey        string
 	FinnhubWebhookSecret string
 	SECUserAgent         string
+	DatabaseURL          string
+	ResearchPersistence  string
+	DocumentStorage      string
+	DocumentStorageDir   string
+	SupabaseURL          string
+	SupabaseServiceKey   string
+	PDFToTextPath        string
+	WorkerPollInterval   time.Duration
 }
 
 func FromEnv() Config {
@@ -27,6 +37,21 @@ func FromEnv() Config {
 		authMode = "clerk"
 		if env == "development" && os.Getenv("CLERK_JWKS_URL") == "" {
 			authMode = "dev"
+		}
+	}
+
+	researchPersistence := getenv("RESEARCH_PERSISTENCE_MODE", "")
+	documentStorage := getenv("DOCUMENT_STORAGE_MODE", "")
+	if researchPersistence == "" {
+		researchPersistence = "postgres"
+		if env == "development" || env == "test" {
+			researchPersistence = "memory"
+		}
+	}
+	if documentStorage == "" {
+		documentStorage = "supabase"
+		if env == "development" || env == "test" {
+			documentStorage = "local"
 		}
 	}
 
@@ -47,7 +72,26 @@ func FromEnv() Config {
 		FinnhubAPIKey:        os.Getenv("FINNHUB_API_KEY"),
 		FinnhubWebhookSecret: os.Getenv("FINNHUB_WEBHOOK_SECRET"),
 		SECUserAgent:         os.Getenv("SEC_USER_AGENT"),
+		DatabaseURL:          os.Getenv("DATABASE_URL"),
+		ResearchPersistence:  strings.ToLower(researchPersistence),
+		DocumentStorage:      strings.ToLower(documentStorage),
+		DocumentStorageDir:   getenv("DOCUMENT_STORAGE_DIR", "./var/research-documents"),
+		SupabaseURL:          os.Getenv("SUPABASE_URL"),
+		SupabaseServiceKey:   os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
+		PDFToTextPath:        os.Getenv("PDFTOTEXT_PATH"),
+		WorkerPollInterval:   parseDuration(getenv("DOCUMENT_WORKER_POLL_INTERVAL", "2s"), 2*time.Second),
 	}
+}
+
+func parseDuration(value string, fallback time.Duration) time.Duration {
+	parsed, err := time.ParseDuration(strings.TrimSpace(value))
+	if err == nil && parsed > 0 {
+		return parsed
+	}
+	if seconds, err := strconv.Atoi(strings.TrimSpace(value)); err == nil && seconds > 0 {
+		return time.Duration(seconds) * time.Second
+	}
+	return fallback
 }
 
 func (c Config) Addr() string {
