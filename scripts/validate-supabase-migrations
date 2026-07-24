@@ -63,6 +63,7 @@ for requirement in \
   "research_documents_own_rows" \
   "document_pages_own_rows" \
   "document_processing_jobs_service_only" \
+  "document_processing_jobs_api_own_rows" \
   "'research-documents'" \
   "false,"; do
   if ! grep -Rqi "$requirement" "$MIGRATIONS_DIR"; then
