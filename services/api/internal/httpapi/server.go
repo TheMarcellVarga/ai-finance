@@ -10,6 +10,7 @@ import (
 
 	"github.com/marcellvarga/ai-finance/services/api/internal/auth"
 	"github.com/marcellvarga/ai-finance/services/api/internal/providers"
+	"github.com/marcellvarga/ai-finance/services/api/internal/research"
 	"github.com/marcellvarga/ai-finance/services/api/internal/store"
 )
 
@@ -19,6 +20,8 @@ type Options struct {
 	QuoteProvider providers.QuoteProvider
 	ChartProvider providers.IntradayProvider
 	Workspace     *store.WorkspaceStore
+	Research      research.Store
+	DocumentStore research.ObjectStorage
 	Logger        *slog.Logger
 }
 
@@ -28,6 +31,8 @@ type server struct {
 	quoteProvider providers.QuoteProvider
 	chartProvider providers.IntradayProvider
 	workspace     *store.WorkspaceStore
+	research      research.Store
+	documentStore research.ObjectStorage
 	logger        *slog.Logger
 	rateLimiter   *rateLimiter
 }
@@ -46,6 +51,8 @@ func NewHandler(opts Options) http.Handler {
 		quoteProvider: opts.QuoteProvider,
 		chartProvider: opts.ChartProvider,
 		workspace:     opts.Workspace,
+		research:      opts.Research,
+		documentStore: opts.DocumentStore,
 		logger:        opts.Logger,
 		rateLimiter:   newRateLimiter(30, time.Minute),
 	}
@@ -66,6 +73,14 @@ func NewHandler(opts Options) http.Handler {
 	mux.Handle("GET /v1/watchlists", s.requireAuth(http.HandlerFunc(s.listWatchlists)))
 	mux.Handle("POST /v1/watchlists", s.requireAuth(http.HandlerFunc(s.createWatchlist)))
 	mux.Handle("POST /v1/watchlists/{id}/items", s.requireAuth(http.HandlerFunc(s.addWatchlistItem)))
+	mux.Handle("GET /v1/research/workspaces", s.requireAuth(http.HandlerFunc(s.listResearchWorkspaces)))
+	mux.Handle("POST /v1/research/workspaces", s.requireAuth(http.HandlerFunc(s.createResearchWorkspace)))
+	mux.Handle("GET /v1/research/workspaces/{workspaceID}", s.requireAuth(http.HandlerFunc(s.getResearchWorkspace)))
+	mux.Handle("GET /v1/research/workspaces/{workspaceID}/documents", s.requireAuth(http.HandlerFunc(s.listResearchDocuments)))
+	mux.Handle("POST /v1/research/workspaces/{workspaceID}/documents", s.requireAuth(http.HandlerFunc(s.uploadResearchDocument)))
+	mux.Handle("GET /v1/research/workspaces/{workspaceID}/documents/{documentID}", s.requireAuth(http.HandlerFunc(s.getResearchDocument)))
+	mux.Handle("POST /v1/research/workspaces/{workspaceID}/documents/{documentID}/retry", s.requireAuth(http.HandlerFunc(s.retryResearchDocument)))
+	mux.Handle("GET /v1/research/workspaces/{workspaceID}/documents/{documentID}/pages", s.requireAuth(http.HandlerFunc(s.listResearchDocumentPages)))
 
 	return requestID(accessLog(opts.Logger, mux))
 }
