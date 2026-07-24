@@ -82,6 +82,11 @@ func (s *PostgresStore) GetWorkspace(ctx context.Context, userID, workspaceID st
 func (s *PostgresStore) ListDocuments(ctx context.Context, userID, workspaceID string) ([]Document, error) {
 	var result []Document
 	err := s.withUserQueries(ctx, userID, func(q *dbqueries.Queries, profileID pgtype.UUID) error {
+		if _, err := q.GetResearchWorkspace(ctx, dbqueries.GetResearchWorkspaceParams{
+			ID: uuidValue(workspaceID), UserID: profileID,
+		}); err != nil {
+			return err
+		}
 		rows, err := q.ListResearchDocuments(ctx, dbqueries.ListResearchDocumentsParams{
 			WorkspaceID: uuidValue(workspaceID), UserID: profileID,
 		})
@@ -235,6 +240,11 @@ func (s *PostgresStore) RetryDocument(ctx context.Context, userID, workspaceID, 
 func (s *PostgresStore) ListPages(ctx context.Context, userID, workspaceID, documentID string) ([]Page, error) {
 	var result []Page
 	err := s.withUserQueries(ctx, userID, func(q *dbqueries.Queries, profileID pgtype.UUID) error {
+		if _, err := q.GetResearchDocument(ctx, dbqueries.GetResearchDocumentParams{
+			ID: uuidValue(documentID), WorkspaceID: uuidValue(workspaceID), UserID: profileID,
+		}); err != nil {
+			return err
+		}
 		rows, err := q.ListResearchDocumentPages(ctx, dbqueries.ListResearchDocumentPagesParams{
 			DocumentID: uuidValue(documentID), WorkspaceID: uuidValue(workspaceID), UserID: profileID,
 		})
