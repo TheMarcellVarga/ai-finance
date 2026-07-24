@@ -119,6 +119,35 @@ func TestResearchDocumentsAreOwnerScoped(t *testing.T) {
 	}
 }
 
+func TestResearchCrossOwnerOperationsAreOpaque(t *testing.T) {
+	handler, _, _ := researchHandler(t)
+	workspaceID := createTestResearchWorkspace(t, handler, "dev:user_owner")
+	documentID := uploadTestTextDocument(t, handler, workspaceID, "dev:user_owner")
+
+	tests := []struct {
+		method       string
+		path         string
+		expectedCode int
+	}{
+		{http.MethodGet, "/v1/research/workspaces/" + workspaceID, http.StatusNotFound},
+		{http.MethodGet, "/v1/research/workspaces/" + workspaceID + "/documents", http.StatusNotFound},
+		{http.MethodGet, "/v1/research/workspaces/" + workspaceID + "/documents/" + documentID, http.StatusNotFound},
+		{http.MethodGet, "/v1/research/workspaces/" + workspaceID + "/documents/" + documentID + "/pages", http.StatusNotFound},
+		{http.MethodPost, "/v1/research/workspaces/" + workspaceID + "/documents/" + documentID + "/retry", http.StatusNotFound},
+		{http.MethodGet, "/v1/research/workspaces/" + workspaceID + "/documents/" + documentID + "/download", http.StatusNotFound},
+		{http.MethodDelete, "/v1/research/workspaces/" + workspaceID + "/documents/" + documentID, http.StatusMethodNotAllowed},
+	}
+	for _, test := range tests {
+		request := httptest.NewRequest(test.method, test.path, nil)
+		request.Header.Set("Authorization", "Bearer dev:user_other")
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != test.expectedCode {
+			t.Errorf("%s %s: expected %d, got %d: %s", test.method, test.path, test.expectedCode, response.Code, response.Body.String())
+		}
+	}
+}
+
 func TestResearchUploadRejectsDisguisedPDF(t *testing.T) {
 	handler, _, _ := researchHandler(t)
 	workspaceID := createTestResearchWorkspace(t, handler, "dev:user_research")
@@ -167,4 +196,44 @@ func createTestResearchWorkspace(t *testing.T, handler http.Handler, authorizati
 		t.Fatal(err)
 	}
 	return created.Data.ID
+}
+
+func uploadTestTextDocument(
+	t *testing.T,
+	handler http.Handler,
+	workspaceID string,
+	authorization string,
+) string {
+	t.Helper()
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	part, err := writer.CreateFormFile("file", "owner-evidence.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := part.Write([]byte("Owner-scoped source evidence.")); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	request := httptest.NewRequest(
+		http.MethodPost,
+		"/v1/research/workspaces/"+workspaceID+"/documents",
+		&body,
+	)
+	request.Header.Set("Authorization", "Bearer "+authorization)
+	request.Header.Set("Content-Type", writer.FormDataContentType())
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusAccepted {
+		t.Fatalf("expected upload 202, got %d: %s", response.Code, response.Body.String())
+	}
+	var uploaded struct {
+		Data research.Document `json:"data"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &uploaded); err != nil {
+		t.Fatal(err)
+	}
+	return uploaded.Data.ID
 }
