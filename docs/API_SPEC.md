@@ -28,9 +28,14 @@ The Go service exposes versioned REST APIs under `/v1`. Next.js may wrap selecte
 | `GET` | `/v1/watchlists` | List user watchlists |
 | `POST` | `/v1/watchlists` | Create watchlist |
 | `POST` | `/v1/watchlists/:id/items` | Add watchlist item |
-| `POST` | `/v1/research/brief` | Create research brief request |
-| `POST` | `/v1/research/documents` | Ingest research document |
-| `GET` | `/v1/research/documents/:id/chunks` | Retrieve document chunks |
+| `GET` | `/v1/research/workspaces` | List owner-scoped research workspaces |
+| `POST` | `/v1/research/workspaces` | Create an owner-scoped research workspace |
+| `GET` | `/v1/research/workspaces/:workspaceId` | Get an owner-scoped research workspace |
+| `GET` | `/v1/research/workspaces/:workspaceId/documents` | List workspace documents and processing state |
+| `POST` | `/v1/research/workspaces/:workspaceId/documents` | Validate, privately store, and queue a PDF or text document |
+| `GET` | `/v1/research/workspaces/:workspaceId/documents/:documentId` | Get document processing state |
+| `POST` | `/v1/research/workspaces/:workspaceId/documents/:documentId/retry` | Idempotently retry a failed document |
+| `GET` | `/v1/research/workspaces/:workspaceId/documents/:documentId/pages` | List page-aware parsed records |
 | `POST` | `/v1/goals` | Create goal scenario |
 | `POST` | `/v1/goals/:id/generate-plan` | Generate safe goal draft |
 | `GET` | `/v1/ai/context/portfolio/:portfolioId` | AI tool-safe portfolio snapshot |
@@ -48,6 +53,9 @@ The Go service exposes versioned REST APIs under `/v1`. Next.js may wrap selecte
 | `GET` | `/api/finance/intraday` | Same-origin intraday chart proxy backed by the finance API |
 | `POST` | `/api/finance/portfolio` | Same-origin provider-backed portfolio fixture route for local demo flows |
 | `POST` | `/api/research/saves` | Research-room save route with entitlement and usage checks |
+| `GET` | `/api/research/workspaces/:workspaceId/documents` | Authenticated document-status BFF proxy |
+| `POST` | `/api/research/workspaces/:workspaceId/documents` | Authenticated multipart upload BFF proxy |
+| `POST` | `/api/research/workspaces/:workspaceId/documents/:documentId/retry` | Authenticated retry BFF proxy |
 | `POST` | `/api/webhooks/stripe` | Stripe webhook with signature verification |
 | `POST` | `/api/webhooks/clerk` | Clerk webhook with signature verification |
 
@@ -90,6 +98,7 @@ Route-level implementation files:
 - AI routes: `apps/web/src/app/api/ai/*/route.ts`
 - Finance BFF routes: `apps/web/src/app/api/finance/*/route.ts`
 - Research save route: `apps/web/src/app/api/research/saves/route.ts`
+- Research document routes: `apps/web/src/app/api/research/workspaces/*`
 - Webhooks: `apps/web/src/app/api/webhooks/*/route.ts`
 
 Verification commands:

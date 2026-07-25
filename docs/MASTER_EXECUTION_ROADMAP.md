@@ -403,7 +403,7 @@ Acceptance gate:
 
 ### Upgrade Phase 1: Document Foundation
 
-Status: pending.
+Status: complete.
 
 Primary skills: `go-finance-api`, `supabase-finance-schema`.
 
@@ -426,6 +426,8 @@ Acceptance gate:
 - Parsed pages retain document, page, and source metadata.
 - Cross-workspace list, read, download, retry, and delete attempts fail.
 - No external model call is required.
+
+Completion evidence: `docs/UPGRADE_PHASE_1_COMPLETION.md`.
 
 ### Upgrade Phase 2: Retrieval
 

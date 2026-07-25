@@ -6,7 +6,7 @@ This project is not a trading bot, brokerage product, robo-advisor, return-predi
 
 ## Current Status
 
-Roadmap phase: Phase 9 local completion pass is complete. The linked public and app routes now present finished portfolio-demo surfaces; public deployment, live Stripe/Clerk webhook delivery, remote Supabase persistence checks, and paid live AI/provider verification remain environment-dependent follow-on work.
+Roadmap phase: Evidence Workspace Upgrade Phase 1 is complete. Aperture now has an owner-scoped, durable document foundation with private storage, page-aware parsing, processing jobs, retry behavior, and a real research upload/status UI. Retrieval and model-backed document analysis begin in Upgrade Phase 2 and later; external model calls remain disabled.
 
 Phase 0 control-plane assets through Phase 9 local completion are in place:
 - [Agent instructions](AGENTS.md)
@@ -26,6 +26,7 @@ Phase 0 control-plane assets through Phase 9 local completion are in place:
 - Phase 8 local case-study package: brand/media notes, architecture diagram, walkthrough script, screenshot capture set, README updates, and API docs
 - Phase 9 completion audit in [docs/UNFINISHED_SURFACES_AUDIT.md](docs/UNFINISHED_SURFACES_AUDIT.md)
 - Watchlist, settings, research, goals, risk, blog, privacy, and terms surfaces with local demo interactions and completion-copy cleanup
+- Upgrade Phase 1 private document research flow: Next.js BFF, Go upload/status/retry APIs, Supabase Storage, Postgres jobs, page-aware parsing, and owner-isolation verification
 
 Current AI working mode:
 - Deterministic fixture mode is the default for local development and review.
@@ -143,6 +144,38 @@ Local development defaults to deterministic fixture mode even when an AI Gateway
 or OpenAI key is present. Set `AI_EXTERNAL_CALLS_ENABLED=true` and
 `AI_PORTFOLIO_BRIEF_MODE=live` only when manually testing the route outside the
 verifier with an explicit live provider.
+
+Document research defaults to in-memory metadata plus private local files during
+development. The API runs an embedded processor in that mode:
+
+```bash
+RESEARCH_PERSISTENCE_MODE=memory
+DOCUMENT_STORAGE_MODE=local
+DOCUMENT_STORAGE_DIR=./var/research-documents
+scripts/dev-local
+```
+
+For the durable local path, start Supabase, apply pending migrations, set
+`RESEARCH_PERSISTENCE_MODE=postgres`, then run the API and worker separately:
+
+```bash
+supabase start
+supabase migration up --local
+
+# Terminal 1
+cd services/api
+set -a; source .env; set +a
+go run ./cmd/api
+
+# Terminal 2
+cd services/api
+set -a; source .env; set +a
+go run ./cmd/worker
+```
+
+Production uses Postgres persistence and the private `research-documents`
+Supabase Storage bucket. `SUPABASE_SERVICE_ROLE_KEY` remains server-only and must
+never use a `NEXT_PUBLIC_` prefix.
 
 ## Local Demo Path
 
