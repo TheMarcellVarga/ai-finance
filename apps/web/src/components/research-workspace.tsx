@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { StructuredResearchPanel } from "@/components/structured-research-panel";
 import type {
   ResearchDocument,
   ResearchMeta,
@@ -400,6 +401,11 @@ export function ResearchWorkspace({
           </div>
         ) : null}
       </div>
+
+      <StructuredResearchPanel
+        workspaceId={workspace.id}
+        readyDocuments={readyDocuments}
+      />
 
       <section className="glass-surface overflow-hidden rounded-[1.25rem]">
         <div className="border-b border-white/7 p-5 sm:p-6">
