@@ -192,7 +192,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   const usageGate = await checkUsageLimit({
     authToken,
-    feature: "filing_summary",
+    feature: "structured_research",
   });
   if (!usageGate.allowed) {
     return NextResponse.json(
@@ -501,7 +501,7 @@ export async function POST(request: Request, context: RouteContext) {
 
         const persistenceStartedAt = await beginStage(
           "persistence",
-          terminalStatus,
+          "persisting",
         );
         const totalLatencyMs = Math.max(
           0,
@@ -528,7 +528,7 @@ export async function POST(request: Request, context: RouteContext) {
         });
         await recordUsageEvent({
           authToken,
-          feature: "filing_summary",
+          feature: "structured_research",
           metadata: {
             workflow: "earnings_review",
             runId,

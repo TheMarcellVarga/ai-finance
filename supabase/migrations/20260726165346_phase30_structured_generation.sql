@@ -13,6 +13,7 @@ create table public.research_analysis_runs (
         'generating',
         'validating',
         'repairing',
+        'persisting',
         'completed',
         'partial',
         'cancelled',
@@ -76,7 +77,7 @@ create index research_analysis_runs_retry_of_run_idx
 
 create index research_analysis_runs_active_idx
   on public.research_analysis_runs(user_id, updated_at desc)
-  where status in ('queued', 'retrieving', 'generating', 'validating', 'repairing');
+  where status in ('queued', 'retrieving', 'generating', 'validating', 'repairing', 'persisting');
 
 create trigger research_analysis_runs_updated_at
   before update on public.research_analysis_runs

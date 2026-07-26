@@ -21,6 +21,7 @@ export type AnalysisRunStatus =
   | "generating"
   | "validating"
   | "repairing"
+  | "persisting"
   | "completed"
   | "partial"
   | "cancelled"
@@ -436,4 +437,3 @@ export async function analysisCancellationRequested(input: {
   const run = await readAnalysisRun(input);
   return !run || Boolean(run.cancelRequestedAt) || run.status === "cancelled";
 }
-

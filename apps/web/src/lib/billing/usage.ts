@@ -22,9 +22,16 @@ type UsageRow = {
   count: number;
 };
 
-const aiBriefFeatures = new Set(["portfolio_brief", "filing_summary", "goal_plan", "risk_explainer"]);
+const aiBriefFeatures = new Set([
+  "portfolio_brief",
+  "structured_research",
+  "filing_summary",
+  "goal_plan",
+  "risk_explainer",
+]);
 const usageFeatures: UsageFeature[] = [
   "portfolio_brief",
+  "structured_research",
   "filing_summary",
   "goal_plan",
   "risk_explainer",

@@ -7,6 +7,7 @@ export type UsageFeature =
   | "holding"
   | "watchlist"
   | "portfolio_brief"
+  | "structured_research"
   | "filing_summary"
   | "goal_plan"
   | "risk_explainer"
@@ -129,6 +130,7 @@ export function limitForFeature(entitlements: EntitlementSet, feature: UsageFeat
     case "filing_summary":
       return entitlements.filingSummaries ? entitlements.aiBriefsPerMonth : 0;
     case "portfolio_brief":
+    case "structured_research":
     case "goal_plan":
     case "risk_explainer":
       return entitlements.aiBriefsPerMonth;
