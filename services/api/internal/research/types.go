@@ -61,6 +61,29 @@ type Page struct {
 	SourceMetadata map[string]any `json:"sourceMetadata"`
 }
 
+type Chunk struct {
+	ID                  string    `json:"id"`
+	DocumentID          string    `json:"documentId"`
+	WorkspaceID         string    `json:"workspaceId"`
+	PageNumber          int       `json:"pageNumber"`
+	Sequence            int       `json:"sequence"`
+	ChunkText           string    `json:"chunkText"`
+	SourceLocator       string    `json:"sourceLocator"`
+	SectionLabel        string    `json:"sectionLabel,omitempty"`
+	HeadingPath         []string  `json:"headingPath"`
+	CharacterStart      int       `json:"characterStart"`
+	CharacterEnd        int       `json:"characterEnd"`
+	StableKey           string    `json:"stableKey"`
+	ContentSHA256       string    `json:"contentSha256"`
+	ChunkerVersion      string    `json:"chunkerVersion"`
+	Embedding           []float32 `json:"-"`
+	EmbeddingStatus     string    `json:"embeddingStatus"`
+	EmbeddingProvider   string    `json:"embeddingProvider"`
+	EmbeddingModel      string    `json:"embeddingModel"`
+	EmbeddingVersion    string    `json:"embeddingVersion"`
+	EmbeddingDimensions int       `json:"embeddingDimensions"`
+}
+
 type ProcessingJob struct {
 	ID          string
 	Document    Document
@@ -104,4 +127,9 @@ type ObjectStorage interface {
 
 type DocumentParser interface {
 	Parse(context.Context, io.Reader, string) ([]Page, error)
+}
+
+type DocumentChunker interface {
+	Version() string
+	Chunk(Document, []Page) ([]Chunk, error)
 }
