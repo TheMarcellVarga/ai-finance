@@ -31,6 +31,49 @@ export type ResearchMeta = {
   storage?: string;
 };
 
+export type EvidenceResult = {
+  chunkId: string;
+  documentId: string;
+  documentTitle: string;
+  pageNumber: number;
+  sequence: number;
+  snippet: string;
+  sourceLocator: string;
+  sectionLabel?: string;
+  headingPath: string[];
+  chunkerVersion: string;
+  embeddingProvider: string;
+  embeddingModel: string;
+  embeddingVersion: string;
+  vectorSimilarity: number;
+  lexicalScore: number;
+  combinedScore: number;
+};
+
+export type RetrievalDiagnostics = {
+  runId: string;
+  querySha256: string;
+  filters: { workspaceId: string; documentIds: string[] };
+  chunkerVersion: string;
+  embedding: {
+    provider: string;
+    model: string;
+    version: string;
+    dimensions: number;
+    externalCalls: boolean;
+  };
+  requestedLimit: number;
+  candidateCount: number;
+  resultCount: number;
+  duplicatesSuppressed: number;
+  stageTimingsMs: Record<string, number>;
+};
+
+export type ResearchSearchResponse = {
+  results: EvidenceResult[];
+  diagnostics: RetrievalDiagnostics;
+};
+
 export type ResearchResponse<T> = {
   data: T;
   meta: ResearchMeta;
@@ -149,5 +192,21 @@ export function retryResearchDocument(
     `/v1/research/workspaces/${encodeURIComponent(workspaceId)}/documents/${encodeURIComponent(documentId)}/retry`,
     authToken,
     { method: "POST" },
+  );
+}
+
+export function searchResearchEvidence(
+  workspaceId: string,
+  authToken: string,
+  request: { query: string; limit?: number; documentIds?: string[] },
+) {
+  return researchRequest<ResearchSearchResponse>(
+    `/v1/research/workspaces/${encodeURIComponent(workspaceId)}/search`,
+    authToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    },
   );
 }
