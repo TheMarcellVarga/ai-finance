@@ -431,7 +431,7 @@ Completion evidence: `docs/UPGRADE_PHASE_1_COMPLETION.md`.
 
 ### Upgrade Phase 2: Retrieval
 
-Status: pending.
+Status: complete.
 
 Primary skills: `ai-research-features`, `supabase-finance-schema`.
 
@@ -451,6 +451,8 @@ Acceptance gate:
 - Duplicate or near-duplicate context is suppressed.
 - Cross-workspace retrieval tests pass.
 - Retrieved chunk IDs, filters, model version, and stage latency are recorded.
+
+Completion evidence: `docs/UPGRADE_PHASE_2_COMPLETION.md`.
 
 ### Upgrade Phase 3: Structured Generation
 

@@ -67,8 +67,21 @@ Feature-specific outputs:
 
 ## Retrieval And Citations
 - Ingest SEC filings and other allowed research documents into `research_documents`.
-- Split documents into `research_chunks` with source URL, filing accession, section label, character offsets where possible, token count, and embedding status.
-- Retrieve chunks through server-side search using user intent, ticker, document type, and freshness filters.
+- Uploaded documents are split with deterministic `page-window-v1` chunking.
+  Chunks never cross pages and retain stable IDs, page-local sequence, character
+  offsets, content hashes, source locators, and chunker version.
+- A provider-independent Go embedding boundary stores provider, model,
+  implementation version, and dimensions with every ready chunk.
+- Development and CI use deterministic `hash-embedding-v1` at 1,536 dimensions
+  with no external call. Direct OpenAI embeddings remain dormant behind the
+  exact `AI_EXTERNAL_CALLS_ENABLED=true` kill switch.
+- `POST /v1/research/workspaces/{workspaceID}/search` performs owner-filtered
+  hybrid full-text and cosine-vector retrieval with optional document filters.
+- Exact and near-duplicate passages are suppressed before the response limit is
+  applied.
+- Retrieval runs store the query hash, filters, result chunk IDs, chunker and
+  embedding versions, candidate/result counts, and stage latency. Raw query
+  text is not copied into diagnostics.
 - AI answers must cite retrieved chunks or structured market-data sources.
 - If citations are unavailable, the UI must show the answer as uncited and lower confidence.
 - If market data is stale, the AI must state the stale timestamp instead of implying real-time awareness.

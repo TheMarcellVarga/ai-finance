@@ -54,6 +54,9 @@ Never expose service-role keys, provider keys, webhook secrets, raw JWTs, or pri
 - `AI_MODEL_PROVIDER`, optional; use `openai` for direct OpenAI or `gateway` for Vercel AI Gateway. Defaults to `openai` only when live calls are explicitly enabled.
 - `OPENAI_API_KEY`, optional for direct OpenAI testing
 - `OPENAI_MODEL`, optional for direct OpenAI testing; defaults to `gpt-5-mini`
+- `RESEARCH_EMBEDDING_PROVIDER`, defaults to `local`; use `openai` only when external calls are explicitly enabled
+- `RESEARCH_EMBEDDING_MODEL`, optional live embedding model override; direct OpenAI defaults to `text-embedding-3-small`
+- `ALLOW_LOCAL_RESEARCH_EMBEDDINGS_IN_PRODUCTION`, optional deliberate production override; production rejects deterministic local embeddings by default
 - `FINANCE_API_DEV_TOKEN`, optional local token for Next.js server routes when the Go API runs in dev auth mode
 - `FMP_API_KEY`
 - `TWELVE_DATA_API_KEY`
@@ -99,6 +102,17 @@ Manual live route testing remains possible outside the verifier. With
 or billing-gated providers such as Vercel AI Gateway and direct OpenAI should
 stay disabled until the product is otherwise complete and the user explicitly
 approves enabling spend.
+
+Research retrieval uses the deterministic `hash-embedding-v1` implementation
+in development and CI. It exercises the complete 1,536-dimension indexing and
+hybrid-search path without a network call or model spend. It must not be
+represented as live model-generated semantic intelligence.
+
+The dormant live research embedding path requires
+`RESEARCH_EMBEDDING_PROVIDER=openai`, `AI_EXTERNAL_CALLS_ENABLED=true`, and a
+server-only `OPENAI_API_KEY`. Production startup rejects the local embedder
+unless `ALLOW_LOCAL_RESEARCH_EMBEDDINGS_IN_PRODUCTION=true` is deliberately
+configured.
 
 ## Provider Notes
 
