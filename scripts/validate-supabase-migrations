@@ -102,4 +102,29 @@ for requirement in \
   fi
 done
 
+PHASE3_MIGRATION="$(find "$MIGRATIONS_DIR" -name '*_phase30_structured_generation.sql' -print -quit)"
+if [[ -z "$PHASE3_MIGRATION" ]]; then
+  echo "Missing Phase 3 structured generation migration." >&2
+  exit 1
+fi
+
+for requirement in \
+  "create table public.research_analysis_runs" \
+  "prompt_sha256" \
+  "prompt_version" \
+  "schema_version" \
+  "retrieved_chunk_ids" \
+  "repair_attempted" \
+  "cancel_requested_at" \
+  "estimated_cost_usd" \
+  "research_analysis_runs_active_idx" \
+  "research_analysis_runs_own_rows" \
+  "alter table public.research_analysis_runs force row level security" \
+  "grant select, insert, update on public.research_analysis_runs to service_role"; do
+  if ! grep -qi "$requirement" "$PHASE3_MIGRATION"; then
+    echo "Missing Phase 3 structured generation requirement: $requirement" >&2
+    exit 1
+  fi
+done
+
 echo "Supabase migration static validation passed."
