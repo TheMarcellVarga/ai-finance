@@ -456,7 +456,7 @@ Completion evidence: `docs/UPGRADE_PHASE_2_COMPLETION.md`.
 
 ### Upgrade Phase 3: Structured Generation
 
-Status: pending.
+Status: complete.
 
 Primary skill: `ai-research-features`.
 
@@ -476,6 +476,8 @@ Acceptance gate:
 - Invalid output is repaired once or preserved as an explicit partial result.
 - User cancellation stops downstream work and is stored.
 - Model, provider, prompt/schema versions, tokens, cost, latency, and retrieved chunks are stored.
+
+Completion evidence: `docs/UPGRADE_PHASE_3_COMPLETION.md`.
 
 ### Upgrade Phase 4: Citations And Trust
 

@@ -21,6 +21,7 @@
 | Goal planner | Educational milestones, contribution scenarios, safe challenges, assumptions |
 | Risk explainer | Concentration, volatility proxy, drawdown, diversification, limitations |
 | Research room assistant | Saved cited briefs and follow-up research |
+| Structured earnings review | Retrieved evidence streamed into validated sections with repair, partial, cancellation, and run telemetry states |
 
 ## Tool Registry
 
@@ -41,6 +42,19 @@ Phase 5 implementation:
 - `getPortfolioSnapshot` calls the application finance API with the request/server auth token and does not expose raw database credentials to the model.
 - Supabase persistence records threads, messages, tool runs, briefs, citations, usage events, model, token usage, and latency when server-side Supabase credentials are configured.
 - The route includes a deterministic safety precheck for direct trading, guaranteed returns, prompt extraction, secret exposure, and cross-user portfolio prompts.
+
+Upgrade Phase 3 implementation:
+
+- `/api/research/workspaces/:workspaceId/analyses` streams typed NDJSON events
+  for run creation, stage progress, completed sections, and terminal state.
+- `earnings_review` output is validated against a Zod contract whose citations
+  and section evidence IDs are restricted to the retrieved chunk allow-list.
+- Invalid output receives one repair attempt. A failed repair becomes an
+  explicit evidence-only partial result rather than unvalidated prose.
+- Cancellation is owner-scoped, aborts the registered generator, prevents
+  downstream section emission, and persists a terminal cancelled run.
+- External calls remain disabled by default. Deterministic mode exercises the
+  complete retrieval, validation, streaming, usage, and persistence lifecycle.
 
 Forbidden tools:
 - Brokerage order placement.

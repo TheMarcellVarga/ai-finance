@@ -36,6 +36,7 @@ Supabase Postgres is the relational system of record. Use SQL migrations, `pgx`,
 | --- | --- |
 | `research_documents` | Source documents, filing metadata, fetch status |
 | `research_chunks` | Chunk text, source locators, token count, embeddings |
+| `research_analysis_runs` | Owner-scoped structured-generation runs, retry links, versions, retrieved chunks, validation/repair state, normalized usage, stage timing, cancellation, and terminal output |
 | `ai_threads` | User-owned AI conversations by product surface |
 | `ai_messages` | Messages, tool calls, citations, safety labels |
 | `ai_briefs` | Structured saved AI outputs and usage metadata |
@@ -56,6 +57,9 @@ Use Supabase `pgvector` for v1:
 - Policies must restrict by `auth.uid()` mapping where Supabase Auth is used, or by a controlled service-layer user context where Go owns access.
 - Service-role access is server-only.
 - No service-role key can appear in browser bundles or public env.
+- `research_analysis_runs` has forced RLS, an `aperture_api` ownership policy,
+  and explicit server-role grants. Raw research questions are represented only
+  by a SHA-256 digest in this ledger.
 
 ## Migration Rules
 

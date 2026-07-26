@@ -65,6 +65,25 @@ Feature-specific outputs:
 - Goal plan: milestones, contribution scenarios, educational challenges, progress metrics.
 - Risk explanation: metric definitions, user-specific observations, limitations, suggested review areas.
 
+### Structured earnings review
+
+`POST /api/research/workspaces/{workspaceId}/analyses` is the first
+retrieval-to-generation workflow. It retrieves owner-filtered document chunks,
+streams typed NDJSON lifecycle and section events, validates the complete
+`earnings_review` object, and performs at most one repair attempt. If repair
+does not produce a valid result, the route stores and streams an explicit
+evidence-only partial result.
+
+`GET /api/research/workspaces/{workspaceId}/analyses/{runId}` reads the
+owner-scoped stored run. The matching `/cancel` route records a cancellation
+request and aborts an in-process generator. A retry creates a new immutable run
+linked through `retry_of_run_id`.
+
+The local deterministic generator is the default and makes no external calls.
+The dormant live path uses the Vercel AI SDK with direct OpenAI only after both
+the structured-generation mode and the global external-call kill switch are
+enabled.
+
 ## Retrieval And Citations
 - Ingest SEC filings and other allowed research documents into `research_documents`.
 - Uploaded documents are split with deterministic `page-window-v1` chunking.
@@ -97,6 +116,7 @@ Feature-specific outputs:
 
 ## Usage, Billing, And Cost Controls
 - Every AI request consumes a metered usage event tied to the user and billing period.
+- Structured research consumes the general monthly AI brief entitlement.
 - Entitlements control monthly AI briefs, filing summaries, watchlist digests, research-room saves, and team usage.
 - Store model, provider, prompt hash, token usage, latency, cache hit/miss, and estimated cost.
 - Rate-limit by user, organization, route, and feature.

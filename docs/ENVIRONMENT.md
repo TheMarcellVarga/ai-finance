@@ -50,6 +50,9 @@ Never expose service-role keys, provider keys, webhook secrets, raw JWTs, or pri
 - `AI_GATEWAY_MODEL`, optional, defaults to `amazon/nova-micro` for the Phase 5 portfolio brief route
 - `AI_GATEWAY_API_KEY`, optional local alias for `VERCEL_AI_GATEWAY_API_KEY`
 - `AI_PORTFOLIO_BRIEF_MODE`, optional; use `fixture` to avoid model calls during local development or `live` to request the selected external provider
+- `AI_RESEARCH_GENERATION_MODE`, optional; defaults to deterministic and must be `live` to select the structured-research live provider
+- `AI_RESEARCH_FIXTURE_SCENARIO`, development/test only; `valid`, `repair`, `partial`, or `provider_failure`
+- `AI_RESEARCH_FIXTURE_DELAY_MS`, development/test only; abortable deterministic delay capped at 30 seconds for cancellation verification
 - `AI_EXTERNAL_CALLS_ENABLED`, optional kill switch; must be exactly `true` before any live external AI provider is called
 - `AI_MODEL_PROVIDER`, optional; use `openai` for direct OpenAI or `gateway` for Vercel AI Gateway. Defaults to `openai` only when live calls are explicitly enabled.
 - `OPENAI_API_KEY`, optional for direct OpenAI testing
@@ -113,6 +116,11 @@ The dormant live research embedding path requires
 server-only `OPENAI_API_KEY`. Production startup rejects the local embedder
 unless `ALLOW_LOCAL_RESEARCH_EMBEDDINGS_IN_PRODUCTION=true` is deliberately
 configured.
+
+Structured earnings review also defaults to deterministic mode. The dormant
+live generation path requires `AI_RESEARCH_GENERATION_MODE=live`,
+`AI_EXTERNAL_CALLS_ENABLED=true`, `AI_MODEL_PROVIDER=openai`, and a server-only
+OpenAI key. Production ignores deterministic failure/delay fixture variables.
 
 ## Provider Notes
 

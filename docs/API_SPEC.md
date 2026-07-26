@@ -56,6 +56,9 @@ The Go service exposes versioned REST APIs under `/v1`. Next.js may wrap selecte
 | `GET` | `/api/research/workspaces/:workspaceId/documents` | Authenticated document-status BFF proxy |
 | `POST` | `/api/research/workspaces/:workspaceId/documents` | Authenticated multipart upload BFF proxy |
 | `POST` | `/api/research/workspaces/:workspaceId/documents/:documentId/retry` | Authenticated retry BFF proxy |
+| `POST` | `/api/research/workspaces/:workspaceId/analyses` | Start an owner-scoped structured earnings review and stream typed NDJSON events |
+| `GET` | `/api/research/workspaces/:workspaceId/analyses/:runId` | Read an owner-scoped stored structured-generation run |
+| `POST` | `/api/research/workspaces/:workspaceId/analyses/:runId/cancel` | Persist cancellation and abort the in-process generation run |
 | `POST` | `/api/webhooks/stripe` | Stripe webhook with signature verification |
 | `POST` | `/api/webhooks/clerk` | Clerk webhook with signature verification |
 
