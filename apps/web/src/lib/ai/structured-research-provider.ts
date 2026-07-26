@@ -22,6 +22,27 @@ function deterministicScenario() {
   return process.env.AI_RESEARCH_FIXTURE_SCENARIO ?? "valid";
 }
 
+async function deterministicFixtureDelay(signal: AbortSignal) {
+  if (process.env.NODE_ENV === "production") return;
+  const requestedDelay = Number(process.env.AI_RESEARCH_FIXTURE_DELAY_MS ?? 0);
+  const delayMs = Number.isFinite(requestedDelay)
+    ? Math.min(Math.max(requestedDelay, 0), 30_000)
+    : 0;
+  if (delayMs === 0) return;
+
+  await new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(resolve, delayMs);
+    signal.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(timer);
+        reject(new DOMException("Research run cancelled.", "AbortError"));
+      },
+      { once: true },
+    );
+  });
+}
+
 class DeterministicEvidenceGenerator implements StructuredResearchGenerator {
   descriptor = {
     provider: "aperture-local",
@@ -35,6 +56,7 @@ class DeterministicEvidenceGenerator implements StructuredResearchGenerator {
     signal: AbortSignal,
   ): Promise<GenerationCandidate> {
     signal.throwIfAborted();
+    await deterministicFixtureDelay(signal);
     const scenario = deterministicScenario();
     if (scenario === "provider_failure") {
       throw new Error("The deterministic generation failure fixture was selected.");
