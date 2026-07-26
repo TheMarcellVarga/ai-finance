@@ -114,7 +114,7 @@ type Store interface {
 	RetryDocument(context.Context, string, string, string) (Document, error)
 	ListPages(context.Context, string, string, string) ([]Page, error)
 	ClaimProcessingJob(context.Context, string, time.Duration) (ProcessingJob, bool, error)
-	CompleteProcessingJob(context.Context, string, []Page, map[string]int64) (Document, error)
+	CompleteProcessingJob(context.Context, string, []Page, []Chunk, map[string]int64) (Document, error)
 	FailProcessingJob(context.Context, string, string, string, bool) error
 }
 

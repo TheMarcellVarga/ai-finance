@@ -154,6 +154,18 @@ func TestMemoryStoreEnforcesOwnershipAndProcessorCompletes(t *testing.T) {
 		pages[0].SourceMetadata["pageNumber"] != 1 {
 		t.Fatalf("expected source metadata provenance, got %#v", pages[0].SourceMetadata)
 	}
+	indexedChunks := store.chunks[document.ID]
+	if len(indexedChunks) != 2 {
+		t.Fatalf("expected one indexed chunk per short page, got %#v", indexedChunks)
+	}
+	for _, chunk := range indexedChunks {
+		if chunk.EmbeddingStatus != "ready" ||
+			chunk.EmbeddingProvider != HashEmbeddingProvider ||
+			chunk.EmbeddingVersion != HashEmbeddingVersion ||
+			len(chunk.Embedding) != DefaultEmbeddingDimensions {
+			t.Fatalf("expected versioned ready embedding, got %#v", chunk)
+		}
+	}
 	if _, err := store.GetDocument(ctx, "user-b", workspace.ID, document.ID); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("expected cross-user document denial, got %v", err)
 	}

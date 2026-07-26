@@ -36,6 +36,7 @@ type MemoryStore struct {
 	workspaces map[string]*memoryWorkspace
 	documents  map[string]*memoryDocument
 	pages      map[string][]Page
+	chunks     map[string][]Chunk
 	jobs       map[string]*memoryJob
 	profiles   map[string]string
 }
@@ -45,6 +46,7 @@ func NewMemoryStore() *MemoryStore {
 		workspaces: map[string]*memoryWorkspace{},
 		documents:  map[string]*memoryDocument{},
 		pages:      map[string][]Page{},
+		chunks:     map[string][]Chunk{},
 		jobs:       map[string]*memoryJob{},
 		profiles:   map[string]string{},
 	}
@@ -288,7 +290,7 @@ func (s *MemoryStore) ClaimProcessingJob(_ context.Context, workerID string, lea
 	}, true, nil
 }
 
-func (s *MemoryStore) CompleteProcessingJob(_ context.Context, jobID string, pages []Page, _ map[string]int64) (Document, error) {
+func (s *MemoryStore) CompleteProcessingJob(_ context.Context, jobID string, pages []Page, chunks []Chunk, _ map[string]int64) (Document, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	job := s.jobs[jobID]
@@ -307,6 +309,7 @@ func (s *MemoryStore) CompleteProcessingJob(_ context.Context, jobID string, pag
 		normalizedPages[index].WorkspaceID = document.WorkspaceID
 	}
 	s.pages[document.ID] = normalizedPages
+	s.chunks[document.ID] = cloneChunks(chunks)
 	job.Status = "succeeded"
 	job.LeaseOwner = ""
 	job.LeaseExpiresAt = time.Time{}
@@ -317,6 +320,16 @@ func (s *MemoryStore) CompleteProcessingJob(_ context.Context, jobID string, pag
 	document.ParsedAt = &now
 	document.UpdatedAt = now
 	return document.Document, nil
+}
+
+func cloneChunks(chunks []Chunk) []Chunk {
+	result := make([]Chunk, len(chunks))
+	for index, chunk := range chunks {
+		result[index] = chunk
+		result[index].HeadingPath = append([]string(nil), chunk.HeadingPath...)
+		result[index].Embedding = append([]float32(nil), chunk.Embedding...)
+	}
+	return result
 }
 
 func (s *MemoryStore) FailProcessingJob(_ context.Context, jobID, code, message string, retryable bool) error {

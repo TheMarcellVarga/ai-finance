@@ -27,12 +27,18 @@ func main() {
 		os.Exit(1)
 	}
 	researchRuntime, err := research.OpenRuntime(context.Background(), research.RuntimeConfig{
-		PersistenceMode: cfg.ResearchPersistence,
-		DatabaseURL:     cfg.DatabaseURL,
-		StorageMode:     cfg.DocumentStorage,
-		StorageDir:      cfg.DocumentStorageDir,
-		SupabaseURL:     cfg.SupabaseURL,
-		SupabaseKey:     cfg.SupabaseServiceKey,
+		PersistenceMode:                  cfg.ResearchPersistence,
+		DatabaseURL:                      cfg.DatabaseURL,
+		StorageMode:                      cfg.DocumentStorage,
+		StorageDir:                       cfg.DocumentStorageDir,
+		SupabaseURL:                      cfg.SupabaseURL,
+		SupabaseKey:                      cfg.SupabaseServiceKey,
+		EmbeddingProvider:                cfg.ResearchEmbeddingProvider,
+		EmbeddingModel:                   cfg.ResearchEmbeddingModel,
+		OpenAIAPIKey:                     cfg.OpenAIAPIKey,
+		ExternalCallsEnabled:             cfg.AIExternalCallsEnabled,
+		Production:                       cfg.Environment == "production",
+		AllowLocalEmbeddingsInProduction: cfg.AllowLocalEmbeddingsInProduction,
 	})
 	if err != nil {
 		logger.Error("failed to configure research runtime", "error", err)
@@ -72,7 +78,8 @@ func main() {
 			ctx,
 			&research.Processor{
 				Store: researchRuntime.Store, Storage: researchRuntime.Storage,
-				Parser: parser, Logger: logger,
+				Parser: parser, Chunker: research.NewPageWindowChunker(),
+				Embedder: researchRuntime.Embedder, Logger: logger,
 			},
 			"embedded-document-worker",
 			cfg.WorkerPollInterval,

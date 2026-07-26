@@ -9,10 +9,12 @@ import (
 )
 
 type Processor struct {
-	Store   Store
-	Storage ObjectStorage
-	Parser  DocumentParser
-	Logger  *slog.Logger
+	Store    Store
+	Storage  ObjectStorage
+	Parser   DocumentParser
+	Chunker  DocumentChunker
+	Embedder Embedder
+	Logger   *slog.Logger
 }
 
 func (p *Processor) ProcessNext(ctx context.Context, workerID string) (bool, error) {
@@ -21,6 +23,12 @@ func (p *Processor) ProcessNext(ctx context.Context, workerID string) (bool, err
 	}
 	if p.Logger == nil {
 		p.Logger = slog.Default()
+	}
+	if p.Chunker == nil {
+		p.Chunker = NewPageWindowChunker()
+	}
+	if p.Embedder == nil {
+		p.Embedder = NewHashEmbedder(DefaultEmbeddingDimensions)
 	}
 	job, ok, err := p.Store.ClaimProcessingJob(ctx, cleanText(workerID, "worker", 120), 2*time.Minute)
 	if err != nil || !ok {
@@ -57,11 +65,57 @@ func (p *Processor) ProcessNext(ctx context.Context, workerID string) (bool, err
 		pages[index].SourceMetadata["pageNumber"] = pages[index].PageNumber
 	}
 
-	timings := map[string]int64{"parseMs": time.Since(startedAt).Milliseconds()}
-	if _, err := p.Store.CompleteProcessingJob(ctx, job.ID, pages, timings); err != nil {
+	parseCompletedAt := time.Now()
+	chunks, err := p.Chunker.Chunk(job.Document, pages)
+	if err != nil {
+		_ = p.Store.FailProcessingJob(ctx, job.ID, "chunking_failed", "The document could not be indexed.", false)
+		p.Logger.Warn("document chunking failed", "documentId", job.Document.ID, "errorType", "chunking_failed")
+		return true, nil
+	}
+	chunkCompletedAt := time.Now()
+	texts := make([]string, len(chunks))
+	for index := range chunks {
+		texts[index] = chunks[index].ChunkText
+	}
+	embeddings, err := p.Embedder.Embed(ctx, texts)
+	if err != nil || len(embeddings) != len(chunks) {
+		_ = p.Store.FailProcessingJob(ctx, job.ID, "embedding_failed", "The document could not be indexed.", true)
+		p.Logger.Warn("document embedding failed", "documentId", job.Document.ID, "errorType", "embedding_failed")
+		return true, nil
+	}
+	descriptor := p.Embedder.Descriptor()
+	for index := range chunks {
+		if len(embeddings[index]) != descriptor.Dimensions {
+			_ = p.Store.FailProcessingJob(ctx, job.ID, "embedding_invalid", "The document could not be indexed.", false)
+			p.Logger.Warn("document embedding dimensions invalid", "documentId", job.Document.ID, "errorType", "embedding_invalid")
+			return true, nil
+		}
+		chunks[index].Embedding = embeddings[index]
+		chunks[index].EmbeddingStatus = "ready"
+		chunks[index].EmbeddingProvider = descriptor.Provider
+		chunks[index].EmbeddingModel = descriptor.Model
+		chunks[index].EmbeddingVersion = descriptor.Version
+		chunks[index].EmbeddingDimensions = descriptor.Dimensions
+	}
+	embeddingCompletedAt := time.Now()
+	timings := map[string]int64{
+		"parseMs": parseCompletedAt.Sub(startedAt).Milliseconds(),
+		"chunkMs": chunkCompletedAt.Sub(parseCompletedAt).Milliseconds(),
+		"embedMs": embeddingCompletedAt.Sub(chunkCompletedAt).Milliseconds(),
+		"totalMs": embeddingCompletedAt.Sub(startedAt).Milliseconds(),
+	}
+	if _, err := p.Store.CompleteProcessingJob(ctx, job.ID, pages, chunks, timings); err != nil {
 		return true, err
 	}
-	p.Logger.Info("document processing completed", "documentId", job.Document.ID, "pageCount", len(pages), "parseMs", timings["parseMs"])
+	p.Logger.Info(
+		"document processing completed",
+		"documentId", job.Document.ID,
+		"pageCount", len(pages),
+		"chunkCount", len(chunks),
+		"embeddingProvider", descriptor.Provider,
+		"embeddingModel", descriptor.Model,
+		"totalMs", timings["totalMs"],
+	)
 	return true, nil
 }
 

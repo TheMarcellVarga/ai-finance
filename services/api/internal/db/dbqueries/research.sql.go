@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/pgvector/pgvector-go"
 )
 
 const activeDocumentProcessingJobCount = `-- name: ActiveDocumentProcessingJobCount :one
@@ -377,6 +378,16 @@ func (q *Queries) CreateResearchWorkspace(ctx context.Context, arg CreateResearc
 	return i, err
 }
 
+const deleteResearchDocumentChunks = `-- name: DeleteResearchDocumentChunks :exec
+delete from public.research_chunks
+where document_id = $1
+`
+
+func (q *Queries) DeleteResearchDocumentChunks(ctx context.Context, documentID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteResearchDocumentChunks, documentID)
+	return err
+}
+
 const deleteResearchDocumentPages = `-- name: DeleteResearchDocumentPages :exec
 delete from public.document_pages
 where document_id = $1
@@ -663,6 +674,102 @@ func (q *Queries) GetResearchWorkspace(ctx context.Context, arg GetResearchWorks
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const insertResearchDocumentChunk = `-- name: InsertResearchDocumentChunk :exec
+insert into public.research_chunks (
+  id,
+  document_id,
+  workspace_id,
+  page_number,
+  sequence,
+  chunk_text,
+  source_locator,
+  section_label,
+  heading_path,
+  character_start,
+  character_end,
+  stable_key,
+  content_sha256,
+  chunker_version,
+  embedding,
+  embedding_status,
+  embedding_provider,
+  embedding_model,
+  embedding_version,
+  embedding_dimensions,
+  embedded_at
+)
+values (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8,
+  $9,
+  $10,
+  $11,
+  $12,
+  $13,
+  $14,
+  $15,
+  'ready',
+  $16,
+  $17,
+  $18,
+  $19,
+  now()
+)
+`
+
+type InsertResearchDocumentChunkParams struct {
+	ID                  pgtype.UUID     `json:"id"`
+	DocumentID          pgtype.UUID     `json:"document_id"`
+	WorkspaceID         pgtype.UUID     `json:"workspace_id"`
+	PageNumber          pgtype.Int4     `json:"page_number"`
+	Sequence            pgtype.Int4     `json:"sequence"`
+	ChunkText           string          `json:"chunk_text"`
+	SourceLocator       pgtype.Text     `json:"source_locator"`
+	SectionLabel        pgtype.Text     `json:"section_label"`
+	HeadingPath         []string        `json:"heading_path"`
+	CharacterStart      pgtype.Int4     `json:"character_start"`
+	CharacterEnd        pgtype.Int4     `json:"character_end"`
+	StableKey           pgtype.Text     `json:"stable_key"`
+	ContentSha256       pgtype.Text     `json:"content_sha256"`
+	ChunkerVersion      pgtype.Text     `json:"chunker_version"`
+	Embedding           pgvector.Vector `json:"embedding"`
+	EmbeddingProvider   pgtype.Text     `json:"embedding_provider"`
+	EmbeddingModel      pgtype.Text     `json:"embedding_model"`
+	EmbeddingVersion    pgtype.Text     `json:"embedding_version"`
+	EmbeddingDimensions pgtype.Int4     `json:"embedding_dimensions"`
+}
+
+func (q *Queries) InsertResearchDocumentChunk(ctx context.Context, arg InsertResearchDocumentChunkParams) error {
+	_, err := q.db.Exec(ctx, insertResearchDocumentChunk,
+		arg.ID,
+		arg.DocumentID,
+		arg.WorkspaceID,
+		arg.PageNumber,
+		arg.Sequence,
+		arg.ChunkText,
+		arg.SourceLocator,
+		arg.SectionLabel,
+		arg.HeadingPath,
+		arg.CharacterStart,
+		arg.CharacterEnd,
+		arg.StableKey,
+		arg.ContentSha256,
+		arg.ChunkerVersion,
+		arg.Embedding,
+		arg.EmbeddingProvider,
+		arg.EmbeddingModel,
+		arg.EmbeddingVersion,
+		arg.EmbeddingDimensions,
+	)
+	return err
 }
 
 const insertResearchDocumentPage = `-- name: InsertResearchDocumentPage :exec

@@ -237,6 +237,10 @@ where id = sqlc.arg(id);
 delete from public.document_pages
 where document_id = sqlc.arg(document_id);
 
+-- name: DeleteResearchDocumentChunks :exec
+delete from public.research_chunks
+where document_id = sqlc.arg(document_id);
+
 -- name: InsertResearchDocumentPage :exec
 insert into public.document_pages (
   id,
@@ -257,6 +261,54 @@ values (
   sqlc.arg(text_sha256),
   sqlc.arg(character_count),
   sqlc.arg(source_metadata)
+);
+
+-- name: InsertResearchDocumentChunk :exec
+insert into public.research_chunks (
+  id,
+  document_id,
+  workspace_id,
+  page_number,
+  sequence,
+  chunk_text,
+  source_locator,
+  section_label,
+  heading_path,
+  character_start,
+  character_end,
+  stable_key,
+  content_sha256,
+  chunker_version,
+  embedding,
+  embedding_status,
+  embedding_provider,
+  embedding_model,
+  embedding_version,
+  embedding_dimensions,
+  embedded_at
+)
+values (
+  sqlc.arg(id),
+  sqlc.arg(document_id),
+  sqlc.arg(workspace_id),
+  sqlc.arg(page_number),
+  sqlc.arg(sequence),
+  sqlc.arg(chunk_text),
+  sqlc.arg(source_locator),
+  sqlc.arg(section_label),
+  sqlc.arg(heading_path),
+  sqlc.arg(character_start),
+  sqlc.arg(character_end),
+  sqlc.arg(stable_key),
+  sqlc.arg(content_sha256),
+  sqlc.arg(chunker_version),
+  sqlc.arg(embedding),
+  'ready',
+  sqlc.arg(embedding_provider),
+  sqlc.arg(embedding_model),
+  sqlc.arg(embedding_version),
+  sqlc.arg(embedding_dimensions),
+  now()
 );
 
 -- name: CompleteDocumentProcessingJob :exec

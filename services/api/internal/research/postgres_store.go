@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/marcellvarga/ai-finance/services/api/internal/db/dbqueries"
+	"github.com/pgvector/pgvector-go"
 )
 
 const researchBucket = "research-documents"
@@ -303,7 +304,7 @@ func (s *PostgresStore) ClaimProcessingJob(ctx context.Context, workerID string,
 	}, true, nil
 }
 
-func (s *PostgresStore) CompleteProcessingJob(ctx context.Context, jobID string, pages []Page, timings map[string]int64) (Document, error) {
+func (s *PostgresStore) CompleteProcessingJob(ctx context.Context, jobID string, pages []Page, chunks []Chunk, timings map[string]int64) (Document, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return Document{}, err
@@ -317,6 +318,9 @@ func (s *PostgresStore) CompleteProcessingJob(ctx context.Context, jobID string,
 	if err := q.DeleteResearchDocumentPages(ctx, job.DocumentID); err != nil {
 		return Document{}, err
 	}
+	if err := q.DeleteResearchDocumentChunks(ctx, job.DocumentID); err != nil {
+		return Document{}, err
+	}
 	for _, page := range pages {
 		metadata, err := json.Marshal(page.SourceMetadata)
 		if err != nil {
@@ -327,6 +331,29 @@ func (s *PostgresStore) CompleteProcessingJob(ctx context.Context, jobID string,
 			PageNumber: int32(page.PageNumber), NormalizedText: page.NormalizedText,
 			TextSha256: page.TextSHA256, CharacterCount: int32(page.CharacterCount),
 			SourceMetadata: metadata,
+		}); err != nil {
+			return Document{}, err
+		}
+	}
+	for _, chunk := range chunks {
+		if err := q.InsertResearchDocumentChunk(ctx, dbqueries.InsertResearchDocumentChunkParams{
+			ID: uuidValue(chunk.ID), DocumentID: job.DocumentID,
+			WorkspaceID: uuidValue(chunk.WorkspaceID),
+			PageNumber:  pgtype.Int4{Int32: int32(chunk.PageNumber), Valid: true},
+			Sequence:    pgtype.Int4{Int32: int32(chunk.Sequence), Valid: true},
+			ChunkText:   chunk.ChunkText, SourceLocator: textValue(chunk.SourceLocator),
+			SectionLabel: textValue(chunk.SectionLabel), HeadingPath: chunk.HeadingPath,
+			CharacterStart: pgtype.Int4{Int32: int32(chunk.CharacterStart), Valid: true},
+			CharacterEnd:   pgtype.Int4{Int32: int32(chunk.CharacterEnd), Valid: true},
+			StableKey:      textValue(chunk.StableKey), ContentSha256: textValue(chunk.ContentSHA256),
+			ChunkerVersion:    textValue(chunk.ChunkerVersion),
+			Embedding:         pgvector.NewVector(chunk.Embedding),
+			EmbeddingProvider: textValue(chunk.EmbeddingProvider),
+			EmbeddingModel:    textValue(chunk.EmbeddingModel),
+			EmbeddingVersion:  textValue(chunk.EmbeddingVersion),
+			EmbeddingDimensions: pgtype.Int4{
+				Int32: int32(chunk.EmbeddingDimensions), Valid: true,
+			},
 		}); err != nil {
 			return Document{}, err
 		}

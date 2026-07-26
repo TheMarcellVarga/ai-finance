@@ -236,6 +236,13 @@ type ResearchChunk struct {
 	EmbeddingModel      pgtype.Text        `json:"embedding_model"`
 	EmbeddingDimensions pgtype.Int4        `json:"embedding_dimensions"`
 	UpdatedAt           pgtype.Timestamptz `json:"updated_at"`
+	ChunkerVersion      pgtype.Text        `json:"chunker_version"`
+	CharacterStart      pgtype.Int4        `json:"character_start"`
+	CharacterEnd        pgtype.Int4        `json:"character_end"`
+	EmbeddingProvider   pgtype.Text        `json:"embedding_provider"`
+	EmbeddingVersion    pgtype.Text        `json:"embedding_version"`
+	EmbeddedAt          pgtype.Timestamptz `json:"embedded_at"`
+	SearchVector        interface{}        `json:"search_vector"`
 }
 
 type ResearchDocument struct {
@@ -265,6 +272,26 @@ type ResearchDocument struct {
 	PageCount        pgtype.Int4        `json:"page_count"`
 	UploadedAt       pgtype.Timestamptz `json:"uploaded_at"`
 	ParsedAt         pgtype.Timestamptz `json:"parsed_at"`
+}
+
+type ResearchRetrievalRun struct {
+	ID                  pgtype.UUID        `json:"id"`
+	UserID              pgtype.UUID        `json:"user_id"`
+	WorkspaceID         pgtype.UUID        `json:"workspace_id"`
+	QuerySha256         string             `json:"query_sha256"`
+	SelectedDocumentIds []pgtype.UUID      `json:"selected_document_ids"`
+	RequestedLimit      int32              `json:"requested_limit"`
+	CandidateCount      int32              `json:"candidate_count"`
+	ReturnedCount       int32              `json:"returned_count"`
+	ResultChunkIds      []pgtype.UUID      `json:"result_chunk_ids"`
+	ChunkerVersion      string             `json:"chunker_version"`
+	EmbeddingProvider   string             `json:"embedding_provider"`
+	EmbeddingModel      string             `json:"embedding_model"`
+	EmbeddingVersion    string             `json:"embedding_version"`
+	EmbeddingDimensions int32              `json:"embedding_dimensions"`
+	Filters             []byte             `json:"filters"`
+	StageTimings        []byte             `json:"stage_timings"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
 }
 
 type ResearchWorkspace struct {

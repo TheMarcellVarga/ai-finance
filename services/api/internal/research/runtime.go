@@ -10,18 +10,25 @@ import (
 )
 
 type RuntimeConfig struct {
-	PersistenceMode string
-	DatabaseURL     string
-	StorageMode     string
-	StorageDir      string
-	SupabaseURL     string
-	SupabaseKey     string
+	PersistenceMode                  string
+	DatabaseURL                      string
+	StorageMode                      string
+	StorageDir                       string
+	SupabaseURL                      string
+	SupabaseKey                      string
+	EmbeddingProvider                string
+	EmbeddingModel                   string
+	OpenAIAPIKey                     string
+	ExternalCallsEnabled             bool
+	Production                       bool
+	AllowLocalEmbeddingsInProduction bool
 }
 
 type Runtime struct {
-	Store   Store
-	Storage ObjectStorage
-	pool    *pgxpool.Pool
+	Store    Store
+	Storage  ObjectStorage
+	Embedder Embedder
+	pool     *pgxpool.Pool
 }
 
 func OpenRuntime(ctx context.Context, cfg RuntimeConfig) (*Runtime, error) {
@@ -68,6 +75,19 @@ func OpenRuntime(ctx context.Context, cfg RuntimeConfig) (*Runtime, error) {
 		runtime.Close()
 		return nil, fmt.Errorf("unsupported DOCUMENT_STORAGE_MODE %q", cfg.StorageMode)
 	}
+	embedder, err := NewEmbedder(EmbedderConfig{
+		Provider:             cfg.EmbeddingProvider,
+		Model:                cfg.EmbeddingModel,
+		OpenAIAPIKey:         cfg.OpenAIAPIKey,
+		ExternalCallsEnabled: cfg.ExternalCallsEnabled,
+		Production:           cfg.Production,
+		AllowLocalProduction: cfg.AllowLocalEmbeddingsInProduction,
+	})
+	if err != nil {
+		runtime.Close()
+		return nil, fmt.Errorf("configure research embeddings: %w", err)
+	}
+	runtime.Embedder = embedder
 	return runtime, nil
 }
 

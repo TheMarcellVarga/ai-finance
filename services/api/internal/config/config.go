@@ -11,23 +11,29 @@ import (
 )
 
 type Config struct {
-	Host                 string
-	Port                 string
-	LogLevel             slog.Level
-	Auth                 auth.Config
-	FMPAPIKey            string
-	TwelveDataAPIKey     string
-	FinnhubAPIKey        string
-	FinnhubWebhookSecret string
-	SECUserAgent         string
-	DatabaseURL          string
-	ResearchPersistence  string
-	DocumentStorage      string
-	DocumentStorageDir   string
-	SupabaseURL          string
-	SupabaseServiceKey   string
-	PDFToTextPath        string
-	WorkerPollInterval   time.Duration
+	Environment                      string
+	Host                             string
+	Port                             string
+	LogLevel                         slog.Level
+	Auth                             auth.Config
+	FMPAPIKey                        string
+	TwelveDataAPIKey                 string
+	FinnhubAPIKey                    string
+	FinnhubWebhookSecret             string
+	SECUserAgent                     string
+	DatabaseURL                      string
+	ResearchPersistence              string
+	DocumentStorage                  string
+	DocumentStorageDir               string
+	SupabaseURL                      string
+	SupabaseServiceKey               string
+	PDFToTextPath                    string
+	WorkerPollInterval               time.Duration
+	ResearchEmbeddingProvider        string
+	ResearchEmbeddingModel           string
+	AIExternalCallsEnabled           bool
+	AllowLocalEmbeddingsInProduction bool
+	OpenAIAPIKey                     string
 }
 
 func FromEnv() Config {
@@ -56,9 +62,10 @@ func FromEnv() Config {
 	}
 
 	return Config{
-		Host:     getenv("HOST", "127.0.0.1"),
-		Port:     getenv("PORT", "8080"),
-		LogLevel: parseLogLevel(getenv("LOG_LEVEL", "info")),
+		Environment: env,
+		Host:        getenv("HOST", "127.0.0.1"),
+		Port:        getenv("PORT", "8080"),
+		LogLevel:    parseLogLevel(getenv("LOG_LEVEL", "info")),
 		Auth: auth.Config{
 			Mode:      authMode,
 			Env:       env,
@@ -67,20 +74,29 @@ func FromEnv() Config {
 			JWKSURL:   os.Getenv("CLERK_JWKS_URL"),
 			DevPrefix: getenv("API_DEV_AUTH_PREFIX", "dev:"),
 		},
-		FMPAPIKey:            os.Getenv("FMP_API_KEY"),
-		TwelveDataAPIKey:     os.Getenv("TWELVE_DATA_API_KEY"),
-		FinnhubAPIKey:        os.Getenv("FINNHUB_API_KEY"),
-		FinnhubWebhookSecret: os.Getenv("FINNHUB_WEBHOOK_SECRET"),
-		SECUserAgent:         os.Getenv("SEC_USER_AGENT"),
-		DatabaseURL:          os.Getenv("DATABASE_URL"),
-		ResearchPersistence:  strings.ToLower(researchPersistence),
-		DocumentStorage:      strings.ToLower(documentStorage),
-		DocumentStorageDir:   getenv("DOCUMENT_STORAGE_DIR", "./var/research-documents"),
-		SupabaseURL:          os.Getenv("SUPABASE_URL"),
-		SupabaseServiceKey:   os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
-		PDFToTextPath:        os.Getenv("PDFTOTEXT_PATH"),
-		WorkerPollInterval:   parseDuration(getenv("DOCUMENT_WORKER_POLL_INTERVAL", "2s"), 2*time.Second),
+		FMPAPIKey:                        os.Getenv("FMP_API_KEY"),
+		TwelveDataAPIKey:                 os.Getenv("TWELVE_DATA_API_KEY"),
+		FinnhubAPIKey:                    os.Getenv("FINNHUB_API_KEY"),
+		FinnhubWebhookSecret:             os.Getenv("FINNHUB_WEBHOOK_SECRET"),
+		SECUserAgent:                     os.Getenv("SEC_USER_AGENT"),
+		DatabaseURL:                      os.Getenv("DATABASE_URL"),
+		ResearchPersistence:              strings.ToLower(researchPersistence),
+		DocumentStorage:                  strings.ToLower(documentStorage),
+		DocumentStorageDir:               getenv("DOCUMENT_STORAGE_DIR", "./var/research-documents"),
+		SupabaseURL:                      os.Getenv("SUPABASE_URL"),
+		SupabaseServiceKey:               os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
+		PDFToTextPath:                    os.Getenv("PDFTOTEXT_PATH"),
+		WorkerPollInterval:               parseDuration(getenv("DOCUMENT_WORKER_POLL_INTERVAL", "2s"), 2*time.Second),
+		ResearchEmbeddingProvider:        strings.ToLower(getenv("RESEARCH_EMBEDDING_PROVIDER", "local")),
+		ResearchEmbeddingModel:           os.Getenv("RESEARCH_EMBEDDING_MODEL"),
+		AIExternalCallsEnabled:           envBool("AI_EXTERNAL_CALLS_ENABLED"),
+		AllowLocalEmbeddingsInProduction: envBool("ALLOW_LOCAL_RESEARCH_EMBEDDINGS_IN_PRODUCTION"),
+		OpenAIAPIKey:                     os.Getenv("OPENAI_API_KEY"),
 	}
+}
+
+func envBool(key string) bool {
+	return strings.EqualFold(strings.TrimSpace(os.Getenv(key)), "true")
 }
 
 func parseDuration(value string, fallback time.Duration) time.Duration {

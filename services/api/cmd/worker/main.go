@@ -18,12 +18,18 @@ func main() {
 	defer stop()
 
 	runtime, err := research.OpenRuntime(ctx, research.RuntimeConfig{
-		PersistenceMode: cfg.ResearchPersistence,
-		DatabaseURL:     cfg.DatabaseURL,
-		StorageMode:     cfg.DocumentStorage,
-		StorageDir:      cfg.DocumentStorageDir,
-		SupabaseURL:     cfg.SupabaseURL,
-		SupabaseKey:     cfg.SupabaseServiceKey,
+		PersistenceMode:                  cfg.ResearchPersistence,
+		DatabaseURL:                      cfg.DatabaseURL,
+		StorageMode:                      cfg.DocumentStorage,
+		StorageDir:                       cfg.DocumentStorageDir,
+		SupabaseURL:                      cfg.SupabaseURL,
+		SupabaseKey:                      cfg.SupabaseServiceKey,
+		EmbeddingProvider:                cfg.ResearchEmbeddingProvider,
+		EmbeddingModel:                   cfg.ResearchEmbeddingModel,
+		OpenAIAPIKey:                     cfg.OpenAIAPIKey,
+		ExternalCallsEnabled:             cfg.AIExternalCallsEnabled,
+		Production:                       cfg.Environment == "production",
+		AllowLocalEmbeddingsInProduction: cfg.AllowLocalEmbeddingsInProduction,
 	})
 	if err != nil {
 		logger.Error("failed to configure research runtime", "error", err)
@@ -42,7 +48,8 @@ func main() {
 	hostname, _ := os.Hostname()
 	workerID := "document-worker:" + hostname
 	processor := &research.Processor{
-		Store: runtime.Store, Storage: runtime.Storage, Parser: parser, Logger: logger,
+		Store: runtime.Store, Storage: runtime.Storage, Parser: parser,
+		Chunker: research.NewPageWindowChunker(), Embedder: runtime.Embedder, Logger: logger,
 	}
 
 	research.RunWorker(ctx, processor, workerID, cfg.WorkerPollInterval, logger)
