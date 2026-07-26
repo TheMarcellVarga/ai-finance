@@ -29,7 +29,7 @@ if ! grep -Rqi 'create extension if not exists vector' "$MIGRATIONS_DIR"; then
   exit 1
 fi
 
-for table in profiles portfolios holdings watchlists ai_threads ai_messages usage_events audit_logs webhook_events research_workspaces document_pages document_processing_jobs; do
+for table in profiles portfolios holdings watchlists ai_threads ai_messages usage_events audit_logs webhook_events research_workspaces document_pages document_processing_jobs research_retrieval_runs; do
   if ! grep -Rqi "create table if not exists public.$table" "$MIGRATIONS_DIR"; then
     echo "Missing required table: $table" >&2
     exit 1
@@ -75,6 +75,29 @@ done
 for retired_policy in research_documents_read_all research_chunks_read_all; do
   if ! grep -qi "drop policy if exists $retired_policy" "$PHASE1_MIGRATION"; then
     echo "Phase 1 must remove global policy: $retired_policy" >&2
+    exit 1
+  fi
+done
+
+PHASE2_MIGRATION="$(find "$MIGRATIONS_DIR" -name '*_phase20_retrieval_foundation.sql' -print -quit)"
+if [[ -z "$PHASE2_MIGRATION" ]]; then
+  echo "Missing Phase 2 retrieval foundation migration." >&2
+  exit 1
+fi
+
+for requirement in \
+  "chunker_version" \
+  "embedding_provider" \
+  "embedding_version" \
+  "generated always as" \
+  "using gin(search_vector)" \
+  "using hnsw (embedding vector_cosine_ops)" \
+  "research_chunks_stable_version_idx" \
+  "research_retrieval_runs_own_rows" \
+  "alter table public.research_retrieval_runs force row level security" \
+  "query_sha256"; do
+  if ! grep -qi "$requirement" "$PHASE2_MIGRATION"; then
+    echo "Missing Phase 2 retrieval requirement: $requirement" >&2
     exit 1
   fi
 done
