@@ -76,3 +76,7 @@ export function resolveLivePortfolioBriefModel(): LiveAiModelConfig {
     usesGateway: true,
   };
 }
+
+export function resolveLiveStructuredResearchModel(): LiveAiModelConfig {
+  return resolveLivePortfolioBriefModel();
+}

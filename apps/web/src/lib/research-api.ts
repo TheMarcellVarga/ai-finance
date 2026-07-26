@@ -164,6 +164,18 @@ export async function listResearchDocuments(workspaceId: string, authToken: stri
   );
 }
 
+export async function getResearchWorkspace(
+  workspaceId: string,
+  authToken: string,
+) {
+  return requireData(
+    await researchRequest<ResearchWorkspace>(
+      `/v1/research/workspaces/${encodeURIComponent(workspaceId)}`,
+      authToken,
+    ),
+  );
+}
+
 export function proxyResearchDocuments(workspaceId: string, authToken: string) {
   return researchRequest<ResearchDocument[]>(
     `/v1/research/workspaces/${encodeURIComponent(workspaceId)}/documents`,

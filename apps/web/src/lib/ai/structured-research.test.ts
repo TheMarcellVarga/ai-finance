@@ -137,6 +137,24 @@ test("failed repair can degrade to an explicit partial result", async () => {
   assert.equal(structuredResearchResultSchema.safeParse(partial).success, true);
 });
 
+test("repair provider failure is recorded without a second attempt", async () => {
+  let attempts = 0;
+  const outcome = await validateWithOneRepair(
+    { value: {}, usage: zeroGenerationUsage },
+    async () => {
+      attempts += 1;
+      throw new Error("provider unavailable");
+    },
+  );
+  assert.equal(attempts, 1);
+  assert.equal(outcome.status, "invalid");
+  assert.equal(outcome.repairAttempted, true);
+  assert.equal(
+    outcome.issues.some((issue) => issue.code === "repair_failed"),
+    true,
+  );
+});
+
 test("unsafe trade and prompt-extraction requests are rejected", () => {
   assert.equal(classifyStructuredResearchPrompt("Should I buy this now?").safe, false);
   assert.equal(

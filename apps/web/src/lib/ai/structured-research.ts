@@ -503,6 +503,7 @@ export async function validateWithOneRepair(
     invalidCandidate: unknown,
     issues: ValidationIssue[],
   ) => Promise<GenerationCandidate>,
+  onRepair?: (issues: ValidationIssue[]) => Promise<void> | void,
 ): Promise<ValidationOutcome> {
   const first = structuredResearchResultSchema.safeParse(initial.value);
   if (first.success) {
@@ -517,7 +518,23 @@ export async function validateWithOneRepair(
   }
 
   const firstIssues = normalizedIssues(first.error);
-  const repaired = await repair(initial.value, firstIssues);
+  await onRepair?.(firstIssues);
+  let repaired: GenerationCandidate;
+  try {
+    repaired = await repair(initial.value, firstIssues);
+  } catch {
+    return {
+      status: "invalid",
+      candidate: initial.value,
+      repairAttempted: true,
+      repairSucceeded: false,
+      issues: [
+        ...firstIssues,
+        { path: "repair", code: "repair_failed" },
+      ].slice(0, 20),
+      usage: initial.usage,
+    };
+  }
   const second = structuredResearchResultSchema.safeParse(repaired.value);
   const usage = addUsage(initial.usage, repaired.usage);
   if (second.success) {
@@ -576,4 +593,3 @@ export const zeroGenerationUsage: GenerationUsage = {
   totalTokens: 0,
   estimatedCostUsd: 0,
 };
-
