@@ -84,6 +84,69 @@ type Chunk struct {
 	EmbeddingDimensions int       `json:"embeddingDimensions"`
 }
 
+type SearchRequest struct {
+	Query       string   `json:"query"`
+	Limit       int      `json:"limit,omitempty"`
+	DocumentIDs []string `json:"documentIds,omitempty"`
+}
+
+type EvidenceResult struct {
+	ChunkID           string   `json:"chunkId"`
+	DocumentID        string   `json:"documentId"`
+	DocumentTitle     string   `json:"documentTitle"`
+	PageNumber        int      `json:"pageNumber"`
+	Sequence          int      `json:"sequence"`
+	Snippet           string   `json:"snippet"`
+	SourceLocator     string   `json:"sourceLocator"`
+	SectionLabel      string   `json:"sectionLabel,omitempty"`
+	HeadingPath       []string `json:"headingPath"`
+	ChunkerVersion    string   `json:"chunkerVersion"`
+	EmbeddingProvider string   `json:"embeddingProvider"`
+	EmbeddingModel    string   `json:"embeddingModel"`
+	EmbeddingVersion  string   `json:"embeddingVersion"`
+	VectorSimilarity  float64  `json:"vectorSimilarity"`
+	LexicalScore      float64  `json:"lexicalScore"`
+	CombinedScore     float64  `json:"combinedScore"`
+	ContentSHA256     string   `json:"-"`
+}
+
+type RetrievalFilters struct {
+	WorkspaceID string   `json:"workspaceId"`
+	DocumentIDs []string `json:"documentIds"`
+}
+
+type RetrievalDiagnostics struct {
+	RunID                string              `json:"runId"`
+	QuerySHA256          string              `json:"querySha256"`
+	Filters              RetrievalFilters    `json:"filters"`
+	ChunkerVersion       string              `json:"chunkerVersion"`
+	Embedding            EmbeddingDescriptor `json:"embedding"`
+	RequestedLimit       int                 `json:"requestedLimit"`
+	CandidateCount       int                 `json:"candidateCount"`
+	ResultCount          int                 `json:"resultCount"`
+	DuplicatesSuppressed int                 `json:"duplicatesSuppressed"`
+	StageTimings         map[string]int64    `json:"stageTimingsMs"`
+}
+
+type SearchResponse struct {
+	Results     []EvidenceResult     `json:"results"`
+	Diagnostics RetrievalDiagnostics `json:"diagnostics"`
+}
+
+type RetrievalRun struct {
+	ID             string
+	WorkspaceID    string
+	QuerySHA256    string
+	DocumentIDs    []string
+	RequestedLimit int
+	CandidateCount int
+	ResultChunkIDs []string
+	ChunkerVersion string
+	Embedding      EmbeddingDescriptor
+	Filters        RetrievalFilters
+	StageTimings   map[string]int64
+}
+
 type ProcessingJob struct {
 	ID          string
 	Document    Document
@@ -113,6 +176,8 @@ type Store interface {
 	FailUpload(context.Context, string, string, string, string) error
 	RetryDocument(context.Context, string, string, string) (Document, error)
 	ListPages(context.Context, string, string, string) ([]Page, error)
+	SearchEvidenceCandidates(context.Context, string, string, SearchRequest, []float32, EmbeddingDescriptor, int) ([]EvidenceResult, error)
+	RecordRetrievalRun(context.Context, string, RetrievalRun) error
 	ClaimProcessingJob(context.Context, string, time.Duration) (ProcessingJob, bool, error)
 	CompleteProcessingJob(context.Context, string, []Page, []Chunk, map[string]int64) (Document, error)
 	FailProcessingJob(context.Context, string, string, string, bool) error

@@ -252,6 +252,57 @@ export type ResearchDocumentListResponse = { data: ResearchDocument[]; meta: Res
 export type ResearchDocumentResponse = { data: ResearchDocument; meta: ResearchMeta };
 export type ResearchPageListResponse = { data: ResearchPage[]; meta: ResearchMeta };
 
+export type ResearchSearchRequest = {
+  query: string;
+  limit?: number;
+  documentIds?: string[];
+};
+
+export type EvidenceResult = {
+  chunkId: string;
+  documentId: string;
+  documentTitle: string;
+  pageNumber: number;
+  sequence: number;
+  snippet: string;
+  sourceLocator: string;
+  sectionLabel?: string;
+  headingPath: string[];
+  chunkerVersion: string;
+  embeddingProvider: string;
+  embeddingModel: string;
+  embeddingVersion: string;
+  vectorSimilarity: number;
+  lexicalScore: number;
+  combinedScore: number;
+};
+
+export type EmbeddingDescriptor = {
+  provider: string;
+  model: string;
+  version: string;
+  dimensions: number;
+  externalCalls: boolean;
+};
+
+export type RetrievalDiagnostics = {
+  runId: string;
+  querySha256: string;
+  filters: { workspaceId: string; documentIds: string[] };
+  chunkerVersion: string;
+  embedding: EmbeddingDescriptor;
+  requestedLimit: number;
+  candidateCount: number;
+  resultCount: number;
+  duplicatesSuppressed: number;
+  stageTimingsMs: Record<string, number>;
+};
+
+export type ResearchSearchResponse = {
+  data: { results: EvidenceResult[]; diagnostics: RetrievalDiagnostics };
+  meta: ResearchMeta;
+};
+
 export type FinanceApiClientOptions = {
   baseUrl: string;
   getToken?: () => Promise<string | undefined> | string | undefined;
@@ -364,6 +415,14 @@ export class FinanceApiClient {
 
   async listResearchDocumentPages(workspaceId: string, documentId: string): Promise<ResearchPageListResponse> {
     return this.request<ResearchPageListResponse>(`/v1/research/workspaces/${encodeURIComponent(workspaceId)}/documents/${encodeURIComponent(documentId)}/pages`, { auth: true });
+  }
+
+  async searchResearchEvidence(workspaceId: string, body: ResearchSearchRequest): Promise<ResearchSearchResponse> {
+    return this.request<ResearchSearchResponse>(`/v1/research/workspaces/${encodeURIComponent(workspaceId)}/search`, {
+      auth: true,
+      method: "POST",
+      body,
+    });
   }
 
   private async request<T>(

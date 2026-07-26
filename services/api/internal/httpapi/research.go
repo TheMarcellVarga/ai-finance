@@ -89,6 +89,26 @@ func (s *server) getResearchDocument(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"data": document, "meta": s.researchMeta()})
 }
 
+func (s *server) searchResearchEvidence(w http.ResponseWriter, r *http.Request) {
+	principal, _ := auth.PrincipalFromContext(r.Context())
+	if !s.requireResearch(w, r) || !s.enforceMutationRateLimit(w, r, principal) {
+		return
+	}
+	var request research.SearchRequest
+	if err := decodeJSON(r, &request); err != nil {
+		writeError(w, r, http.StatusBadRequest, "invalid_json", "Request body must be valid JSON.")
+		return
+	}
+	response, err := s.retriever.Search(
+		r.Context(), principal.ClerkUserID, r.PathValue("workspaceID"), request,
+	)
+	if err != nil {
+		s.writeResearchError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": response, "meta": s.researchMeta()})
+}
+
 func (s *server) uploadResearchDocument(w http.ResponseWriter, r *http.Request) {
 	principal, _ := auth.PrincipalFromContext(r.Context())
 	if !s.requireResearch(w, r) || !s.enforceMutationRateLimit(w, r, principal) {

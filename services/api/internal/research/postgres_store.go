@@ -270,6 +270,91 @@ func (s *PostgresStore) ListPages(ctx context.Context, userID, workspaceID, docu
 	return result, mapStoreError(err)
 }
 
+func (s *PostgresStore) SearchEvidenceCandidates(
+	ctx context.Context,
+	userID, workspaceID string,
+	request SearchRequest,
+	queryEmbedding []float32,
+	descriptor EmbeddingDescriptor,
+	candidateLimit int,
+) ([]EvidenceResult, error) {
+	var result []EvidenceResult
+	err := s.withUserQueries(ctx, userID, func(q *dbqueries.Queries, profileID pgtype.UUID) error {
+		workspaceUUID := uuidValue(workspaceID)
+		if _, err := q.GetResearchWorkspace(ctx, dbqueries.GetResearchWorkspaceParams{
+			ID: workspaceUUID, UserID: profileID,
+		}); err != nil {
+			return err
+		}
+		documentIDs := uuidValues(request.DocumentIDs)
+		if len(documentIDs) > 0 {
+			count, err := q.CountOwnedResearchDocumentFilters(ctx, dbqueries.CountOwnedResearchDocumentFiltersParams{
+				WorkspaceID: workspaceUUID, UserID: profileID, DocumentIds: documentIDs,
+			})
+			if err != nil {
+				return err
+			}
+			if count != int64(len(documentIDs)) {
+				return pgx.ErrNoRows
+			}
+		}
+		rows, err := q.SearchResearchEvidenceCandidates(ctx, dbqueries.SearchResearchEvidenceCandidatesParams{
+			CandidateLimit: int32(candidateLimit),
+			QueryEmbedding: pgvector.NewVector(queryEmbedding),
+			WorkspaceID:    workspaceUUID, UserID: profileID,
+			EmbeddingProvider:   textValue(descriptor.Provider),
+			EmbeddingModel:      textValue(descriptor.Model),
+			EmbeddingVersion:    textValue(descriptor.Version),
+			EmbeddingDimensions: pgtype.Int4{Int32: int32(descriptor.Dimensions), Valid: true},
+			DocumentIds:         documentIDs, SearchQuery: request.Query,
+		})
+		if err != nil {
+			return err
+		}
+		result = make([]EvidenceResult, 0, len(rows))
+		for _, row := range rows {
+			result = append(result, EvidenceResult{
+				ChunkID: uuidString(row.ID), DocumentID: uuidString(row.DocumentID),
+				DocumentTitle: row.DocumentTitle, PageNumber: int(row.PageNumber.Int32),
+				Sequence: int(row.Sequence.Int32), Snippet: row.ChunkText,
+				SourceLocator: row.SourceLocator.String, SectionLabel: row.SectionLabel.String,
+				HeadingPath: row.HeadingPath, ChunkerVersion: row.ChunkerVersion.String,
+				EmbeddingProvider: row.EmbeddingProvider.String,
+				EmbeddingModel:    row.EmbeddingModel.String,
+				EmbeddingVersion:  row.EmbeddingVersion.String,
+				VectorSimilarity:  row.VectorSimilarity, LexicalScore: row.LexicalScore,
+				CombinedScore: row.CombinedScore, ContentSHA256: row.ContentSha256.String,
+			})
+		}
+		return nil
+	})
+	return result, mapStoreError(err)
+}
+
+func (s *PostgresStore) RecordRetrievalRun(ctx context.Context, userID string, run RetrievalRun) error {
+	err := s.withUserQueries(ctx, userID, func(q *dbqueries.Queries, profileID pgtype.UUID) error {
+		filters, err := json.Marshal(run.Filters)
+		if err != nil {
+			return err
+		}
+		timings, err := json.Marshal(run.StageTimings)
+		if err != nil {
+			return err
+		}
+		return q.InsertResearchRetrievalRun(ctx, dbqueries.InsertResearchRetrievalRunParams{
+			ID: uuidValue(run.ID), UserID: profileID, WorkspaceID: uuidValue(run.WorkspaceID),
+			QuerySha256: run.QuerySHA256, SelectedDocumentIds: uuidValues(run.DocumentIDs),
+			RequestedLimit: int32(run.RequestedLimit), CandidateCount: int32(run.CandidateCount),
+			ReturnedCount: int32(len(run.ResultChunkIDs)), ResultChunkIds: uuidValues(run.ResultChunkIDs),
+			ChunkerVersion: run.ChunkerVersion, EmbeddingProvider: run.Embedding.Provider,
+			EmbeddingModel: run.Embedding.Model, EmbeddingVersion: run.Embedding.Version,
+			EmbeddingDimensions: int32(run.Embedding.Dimensions),
+			Filters:             filters, StageTimings: timings,
+		})
+	})
+	return mapStoreError(err)
+}
+
 func (s *PostgresStore) ClaimProcessingJob(ctx context.Context, workerID string, lease time.Duration) (ProcessingJob, bool, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -450,6 +535,14 @@ func (s *PostgresStore) withUserQueries(
 func uuidValue(value string) pgtype.UUID {
 	var result pgtype.UUID
 	_ = result.Scan(value)
+	return result
+}
+
+func uuidValues(values []string) []pgtype.UUID {
+	result := make([]pgtype.UUID, len(values))
+	for index, value := range values {
+		result[index] = uuidValue(value)
+	}
 	return result
 }
 

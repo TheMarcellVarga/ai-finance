@@ -2,6 +2,7 @@ package research
 
 import (
 	"context"
+	"math"
 	"sort"
 	"strings"
 	"sync"
@@ -32,23 +33,25 @@ type memoryJob struct {
 }
 
 type MemoryStore struct {
-	mu         sync.Mutex
-	workspaces map[string]*memoryWorkspace
-	documents  map[string]*memoryDocument
-	pages      map[string][]Page
-	chunks     map[string][]Chunk
-	jobs       map[string]*memoryJob
-	profiles   map[string]string
+	mu            sync.Mutex
+	workspaces    map[string]*memoryWorkspace
+	documents     map[string]*memoryDocument
+	pages         map[string][]Page
+	chunks        map[string][]Chunk
+	jobs          map[string]*memoryJob
+	profiles      map[string]string
+	retrievalRuns map[string]RetrievalRun
 }
 
 func NewMemoryStore() *MemoryStore {
 	return &MemoryStore{
-		workspaces: map[string]*memoryWorkspace{},
-		documents:  map[string]*memoryDocument{},
-		pages:      map[string][]Page{},
-		chunks:     map[string][]Chunk{},
-		jobs:       map[string]*memoryJob{},
-		profiles:   map[string]string{},
+		workspaces:    map[string]*memoryWorkspace{},
+		documents:     map[string]*memoryDocument{},
+		pages:         map[string][]Page{},
+		chunks:        map[string][]Chunk{},
+		jobs:          map[string]*memoryJob{},
+		profiles:      map[string]string{},
+		retrievalRuns: map[string]RetrievalRun{},
 	}
 }
 
@@ -253,6 +256,90 @@ func (s *MemoryStore) ListPages(_ context.Context, userID, workspaceID, document
 	return clonePages(s.pages[documentID]), nil
 }
 
+func (s *MemoryStore) SearchEvidenceCandidates(
+	_ context.Context,
+	userID, workspaceID string,
+	request SearchRequest,
+	queryEmbedding []float32,
+	descriptor EmbeddingDescriptor,
+	candidateLimit int,
+) ([]EvidenceResult, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.ownsWorkspace(userID, workspaceID) {
+		return nil, ErrNotFound
+	}
+	selected := make(map[string]struct{}, len(request.DocumentIDs))
+	for _, documentID := range request.DocumentIDs {
+		document := s.documents[documentID]
+		if document == nil || document.UserID != userID || document.WorkspaceID != workspaceID || document.Status == "deleted" {
+			return nil, ErrNotFound
+		}
+		selected[documentID] = struct{}{}
+	}
+	queryTerms := make(map[string]struct{})
+	for _, term := range embeddingTokens(request.Query) {
+		queryTerms[term] = struct{}{}
+	}
+	result := make([]EvidenceResult, 0)
+	for documentID, chunks := range s.chunks {
+		document := s.documents[documentID]
+		if document == nil || document.UserID != userID || document.WorkspaceID != workspaceID || document.Status != "ready" {
+			continue
+		}
+		if len(selected) > 0 {
+			if _, ok := selected[documentID]; !ok {
+				continue
+			}
+		}
+		for _, chunk := range chunks {
+			if chunk.EmbeddingStatus != "ready" ||
+				chunk.EmbeddingProvider != descriptor.Provider ||
+				chunk.EmbeddingModel != descriptor.Model ||
+				chunk.EmbeddingVersion != descriptor.Version ||
+				chunk.EmbeddingDimensions != descriptor.Dimensions {
+				continue
+			}
+			vectorScore := cosineSimilarity(queryEmbedding, chunk.Embedding)
+			lexicalScore := lexicalOverlap(queryTerms, chunk.ChunkText)
+			result = append(result, EvidenceResult{
+				ChunkID: chunk.ID, DocumentID: documentID, DocumentTitle: document.Title,
+				PageNumber: chunk.PageNumber, Sequence: chunk.Sequence,
+				Snippet: chunk.ChunkText, SourceLocator: chunk.SourceLocator,
+				SectionLabel: chunk.SectionLabel, HeadingPath: append([]string(nil), chunk.HeadingPath...),
+				ChunkerVersion:    chunk.ChunkerVersion,
+				EmbeddingProvider: chunk.EmbeddingProvider, EmbeddingModel: chunk.EmbeddingModel,
+				EmbeddingVersion: chunk.EmbeddingVersion,
+				VectorSimilarity: vectorScore, LexicalScore: lexicalScore,
+				CombinedScore: 0.55*vectorScore + 0.45*lexicalScore,
+				ContentSHA256: chunk.ContentSHA256,
+			})
+		}
+	}
+	sort.SliceStable(result, func(left, right int) bool {
+		if result[left].CombinedScore == result[right].CombinedScore {
+			return result[left].ChunkID < result[right].ChunkID
+		}
+		return result[left].CombinedScore > result[right].CombinedScore
+	})
+	if len(result) > candidateLimit {
+		result = result[:candidateLimit]
+	}
+	return result, nil
+}
+
+func (s *MemoryStore) RecordRetrievalRun(_ context.Context, userID string, run RetrievalRun) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.ownsWorkspace(userID, run.WorkspaceID) {
+		return ErrNotFound
+	}
+	run.DocumentIDs = append([]string(nil), run.DocumentIDs...)
+	run.ResultChunkIDs = append([]string(nil), run.ResultChunkIDs...)
+	s.retrievalRuns[run.ID] = run
+	return nil
+}
+
 func (s *MemoryStore) ClaimProcessingJob(_ context.Context, workerID string, lease time.Duration) (ProcessingJob, bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -330,6 +417,40 @@ func cloneChunks(chunks []Chunk) []Chunk {
 		result[index].Embedding = append([]float32(nil), chunk.Embedding...)
 	}
 	return result
+}
+
+func cosineSimilarity(left, right []float32) float64 {
+	if len(left) == 0 || len(left) != len(right) {
+		return 0
+	}
+	var dot, leftSquared, rightSquared float64
+	for index := range left {
+		dot += float64(left[index] * right[index])
+		leftSquared += float64(left[index] * left[index])
+		rightSquared += float64(right[index] * right[index])
+	}
+	if leftSquared == 0 || rightSquared == 0 {
+		return 0
+	}
+	return dot / (math.Sqrt(leftSquared) * math.Sqrt(rightSquared))
+}
+
+func lexicalOverlap(queryTerms map[string]struct{}, value string) float64 {
+	if len(queryTerms) == 0 {
+		return 0
+	}
+	matches := 0
+	seen := make(map[string]struct{})
+	for _, term := range embeddingTokens(value) {
+		if _, duplicate := seen[term]; duplicate {
+			continue
+		}
+		seen[term] = struct{}{}
+		if _, match := queryTerms[term]; match {
+			matches++
+		}
+	}
+	return float64(matches) / float64(len(queryTerms))
 }
 
 func (s *MemoryStore) FailProcessingJob(_ context.Context, jobID, code, message string, retryable bool) error {

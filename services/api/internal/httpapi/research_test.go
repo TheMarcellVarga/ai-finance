@@ -26,8 +26,9 @@ func researchHandler(t *testing.T) (http.Handler, *research.MemoryStore, *resear
 	documentStore := research.NewMemoryStorage()
 	handler := NewHandler(Options{
 		Authenticator: authenticator,
-		Research:      researchStore, DocumentStore: documentStore,
-		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Research:      researchStore, ResearchEmbedder: research.NewHashEmbedder(research.DefaultEmbeddingDimensions),
+		DocumentStore: documentStore,
+		Logger:        slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
 	return handler, researchStore, documentStore
 }
@@ -103,6 +104,32 @@ func TestResearchUploadProcessesPageAwareText(t *testing.T) {
 	if len(pages.Data) != 2 || pages.Data[1].PageNumber != 2 {
 		t.Fatalf("expected two page-aware records, got %#v", pages.Data)
 	}
+
+	searchRequest := httptest.NewRequest(
+		http.MethodPost,
+		"/v1/research/workspaces/"+workspaceID+"/search",
+		bytes.NewBufferString(`{"query":"page two evidence","limit":5}`),
+	)
+	searchRequest.Header.Set("Authorization", "Bearer dev:user_research")
+	searchRequest.Header.Set("Content-Type", "application/json")
+	searchResponse := httptest.NewRecorder()
+	handler.ServeHTTP(searchResponse, searchRequest)
+	if searchResponse.Code != http.StatusOK {
+		t.Fatalf("expected search 200, got %d: %s", searchResponse.Code, searchResponse.Body.String())
+	}
+	var search struct {
+		Data research.SearchResponse `json:"data"`
+	}
+	if err := json.Unmarshal(searchResponse.Body.Bytes(), &search); err != nil {
+		t.Fatal(err)
+	}
+	if len(search.Data.Results) == 0 || search.Data.Results[0].PageNumber != 2 {
+		t.Fatalf("expected page two evidence first, got %#v", search.Data.Results)
+	}
+	if search.Data.Diagnostics.RunID == "" ||
+		search.Data.Diagnostics.Embedding.Version != research.HashEmbeddingVersion {
+		t.Fatalf("expected versioned retrieval diagnostics, got %#v", search.Data.Diagnostics)
+	}
 }
 
 func TestResearchDocumentsAreOwnerScoped(t *testing.T) {
@@ -145,6 +172,23 @@ func TestResearchCrossOwnerOperationsAreOpaque(t *testing.T) {
 		if response.Code != test.expectedCode {
 			t.Errorf("%s %s: expected %d, got %d: %s", test.method, test.path, test.expectedCode, response.Code, response.Body.String())
 		}
+	}
+}
+
+func TestResearchSearchRejectsCrossOwnerWorkspace(t *testing.T) {
+	handler, _, _ := researchHandler(t)
+	workspaceID := createTestResearchWorkspace(t, handler, "dev:user_owner")
+	request := httptest.NewRequest(
+		http.MethodPost,
+		"/v1/research/workspaces/"+workspaceID+"/search",
+		bytes.NewBufferString(`{"query":"owner evidence"}`),
+	)
+	request.Header.Set("Authorization", "Bearer dev:user_other")
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusNotFound {
+		t.Fatalf("expected opaque cross-owner 404, got %d: %s", response.Code, response.Body.String())
 	}
 }
 

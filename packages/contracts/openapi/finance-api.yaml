@@ -340,6 +340,32 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           $ref: "#/components/responses/NotFound"
+  /v1/research/workspaces/{workspaceId}/search:
+    post:
+      operationId: searchResearchEvidence
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResearchSearchRequest"
+      responses:
+        "200":
+          description: Owner-filtered evidence results with retrieval diagnostics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchSearchResponse"
+        "400":
+          description: Invalid query, limit, or document filters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /v1/research/workspaces/{workspaceId}/documents/{documentId}:
     get:
       operationId: getResearchDocument
@@ -926,6 +952,124 @@ components:
         sourceMetadata:
           type: object
           additionalProperties: true
+    ResearchSearchRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+          minLength: 2
+          maxLength: 500
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 8
+        documentIds:
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+    EvidenceResult:
+      type: object
+      required:
+        [chunkId, documentId, documentTitle, pageNumber, sequence, snippet, sourceLocator, headingPath, chunkerVersion, embeddingProvider, embeddingModel, embeddingVersion, vectorSimilarity, lexicalScore, combinedScore]
+      properties:
+        chunkId:
+          type: string
+          format: uuid
+        documentId:
+          type: string
+          format: uuid
+        documentTitle:
+          type: string
+        pageNumber:
+          type: integer
+          minimum: 1
+        sequence:
+          type: integer
+          minimum: 0
+        snippet:
+          type: string
+        sourceLocator:
+          type: string
+        sectionLabel:
+          type: string
+        headingPath:
+          type: array
+          items:
+            type: string
+        chunkerVersion:
+          type: string
+        embeddingProvider:
+          type: string
+        embeddingModel:
+          type: string
+        embeddingVersion:
+          type: string
+        vectorSimilarity:
+          type: number
+          format: double
+        lexicalScore:
+          type: number
+          format: double
+        combinedScore:
+          type: number
+          format: double
+    EmbeddingDescriptor:
+      type: object
+      required: [provider, model, version, dimensions, externalCalls]
+      properties:
+        provider:
+          type: string
+        model:
+          type: string
+        version:
+          type: string
+        dimensions:
+          type: integer
+        externalCalls:
+          type: boolean
+    RetrievalDiagnostics:
+      type: object
+      required:
+        [runId, querySha256, filters, chunkerVersion, embedding, requestedLimit, candidateCount, resultCount, duplicatesSuppressed, stageTimingsMs]
+      properties:
+        runId:
+          type: string
+          format: uuid
+        querySha256:
+          type: string
+        filters:
+          type: object
+          required: [workspaceId, documentIds]
+          properties:
+            workspaceId:
+              type: string
+              format: uuid
+            documentIds:
+              type: array
+              items:
+                type: string
+                format: uuid
+        chunkerVersion:
+          type: string
+        embedding:
+          $ref: "#/components/schemas/EmbeddingDescriptor"
+        requestedLimit:
+          type: integer
+        candidateCount:
+          type: integer
+        resultCount:
+          type: integer
+        duplicatesSuppressed:
+          type: integer
+        stageTimingsMs:
+          type: object
+          additionalProperties:
+            type: integer
     CreateResearchWorkspaceRequest:
       type: object
       properties:
@@ -979,6 +1123,22 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ResearchPage"
+        meta:
+          $ref: "#/components/schemas/ResearchMeta"
+    ResearchSearchResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [results, diagnostics]
+          properties:
+            results:
+              type: array
+              items:
+                $ref: "#/components/schemas/EvidenceResult"
+            diagnostics:
+              $ref: "#/components/schemas/RetrievalDiagnostics"
         meta:
           $ref: "#/components/schemas/ResearchMeta"
     ErrorResponse:

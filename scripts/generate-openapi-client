@@ -10,7 +10,7 @@ if [[ ! -f "$SPEC" ]]; then
   exit 1
 fi
 
-for operation in getHealth searchAssets getAssetQuote getAssetIntraday getCurrentPrincipal getUsage listPortfolios createPortfolio getPortfolio updatePortfolio deletePortfolio addHolding listWatchlists createWatchlist addWatchlistItem listResearchWorkspaces createResearchWorkspace getResearchWorkspace listResearchDocuments uploadResearchDocument getResearchDocument retryResearchDocument listResearchDocumentPages; do
+for operation in getHealth searchAssets getAssetQuote getAssetIntraday getCurrentPrincipal getUsage listPortfolios createPortfolio getPortfolio updatePortfolio deletePortfolio addHolding listWatchlists createWatchlist addWatchlistItem listResearchWorkspaces createResearchWorkspace getResearchWorkspace listResearchDocuments uploadResearchDocument getResearchDocument retryResearchDocument listResearchDocumentPages searchResearchEvidence; do
   if ! grep -q "operationId: $operation" "$SPEC"; then
     echo "OpenAPI spec is missing operationId: $operation" >&2
     exit 1

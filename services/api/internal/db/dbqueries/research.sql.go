@@ -229,6 +229,29 @@ func (q *Queries) CompleteResearchDocumentProcessing(ctx context.Context, arg Co
 	return i, err
 }
 
+const countOwnedResearchDocumentFilters = `-- name: CountOwnedResearchDocumentFilters :one
+select count(*)
+from public.research_documents document
+join public.research_workspaces workspace on workspace.id = document.workspace_id
+where document.workspace_id = $1
+  and workspace.user_id = $2
+  and document.status <> 'deleted'
+  and document.id = any($3::uuid[])
+`
+
+type CountOwnedResearchDocumentFiltersParams struct {
+	WorkspaceID pgtype.UUID   `json:"workspace_id"`
+	UserID      pgtype.UUID   `json:"user_id"`
+	DocumentIds []pgtype.UUID `json:"document_ids"`
+}
+
+func (q *Queries) CountOwnedResearchDocumentFilters(ctx context.Context, arg CountOwnedResearchDocumentFiltersParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countOwnedResearchDocumentFilters, arg.WorkspaceID, arg.UserID, arg.DocumentIds)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createResearchDocument = `-- name: CreateResearchDocument :one
 insert into public.research_documents (
   id,
@@ -820,6 +843,86 @@ func (q *Queries) InsertResearchDocumentPage(ctx context.Context, arg InsertRese
 	return err
 }
 
+const insertResearchRetrievalRun = `-- name: InsertResearchRetrievalRun :exec
+insert into public.research_retrieval_runs (
+  id,
+  user_id,
+  workspace_id,
+  query_sha256,
+  selected_document_ids,
+  requested_limit,
+  candidate_count,
+  returned_count,
+  result_chunk_ids,
+  chunker_version,
+  embedding_provider,
+  embedding_model,
+  embedding_version,
+  embedding_dimensions,
+  filters,
+  stage_timings
+)
+values (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8,
+  $9,
+  $10,
+  $11,
+  $12,
+  $13,
+  $14,
+  $15,
+  $16
+)
+`
+
+type InsertResearchRetrievalRunParams struct {
+	ID                  pgtype.UUID   `json:"id"`
+	UserID              pgtype.UUID   `json:"user_id"`
+	WorkspaceID         pgtype.UUID   `json:"workspace_id"`
+	QuerySha256         string        `json:"query_sha256"`
+	SelectedDocumentIds []pgtype.UUID `json:"selected_document_ids"`
+	RequestedLimit      int32         `json:"requested_limit"`
+	CandidateCount      int32         `json:"candidate_count"`
+	ReturnedCount       int32         `json:"returned_count"`
+	ResultChunkIds      []pgtype.UUID `json:"result_chunk_ids"`
+	ChunkerVersion      string        `json:"chunker_version"`
+	EmbeddingProvider   string        `json:"embedding_provider"`
+	EmbeddingModel      string        `json:"embedding_model"`
+	EmbeddingVersion    string        `json:"embedding_version"`
+	EmbeddingDimensions int32         `json:"embedding_dimensions"`
+	Filters             []byte        `json:"filters"`
+	StageTimings        []byte        `json:"stage_timings"`
+}
+
+func (q *Queries) InsertResearchRetrievalRun(ctx context.Context, arg InsertResearchRetrievalRunParams) error {
+	_, err := q.db.Exec(ctx, insertResearchRetrievalRun,
+		arg.ID,
+		arg.UserID,
+		arg.WorkspaceID,
+		arg.QuerySha256,
+		arg.SelectedDocumentIds,
+		arg.RequestedLimit,
+		arg.CandidateCount,
+		arg.ReturnedCount,
+		arg.ResultChunkIds,
+		arg.ChunkerVersion,
+		arg.EmbeddingProvider,
+		arg.EmbeddingModel,
+		arg.EmbeddingVersion,
+		arg.EmbeddingDimensions,
+		arg.Filters,
+		arg.StageTimings,
+	)
+	return err
+}
+
 const listResearchDocumentPages = `-- name: ListResearchDocumentPages :many
 select
   page.id, page.document_id, page.workspace_id, page.page_number,
@@ -1155,4 +1258,176 @@ func (q *Queries) RetryResearchDocument(ctx context.Context, arg RetryResearchDo
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const searchResearchEvidenceCandidates = `-- name: SearchResearchEvidenceCandidates :many
+with vector_candidates as (
+  select
+    chunk.id,
+    row_number() over (order by chunk.embedding <=> $2::vector) as vector_rank,
+    cast(greatest(
+      -1.0::double precision,
+      least(1.0::double precision, 1.0::double precision - (chunk.embedding <=> $2::vector))
+    ) as double precision) as vector_similarity
+  from public.research_chunks chunk
+  join public.research_documents document on document.id = chunk.document_id
+  join public.research_workspaces workspace on workspace.id = chunk.workspace_id
+  where chunk.workspace_id = $3
+    and workspace.user_id = $4
+    and document.workspace_id = workspace.id
+    and document.status = 'ready'
+    and chunk.embedding_status = 'ready'
+    and chunk.embedding_provider = $5
+    and chunk.embedding_model = $6
+    and chunk.embedding_version = $7
+    and chunk.embedding_dimensions = $8
+    and (
+      cardinality($9::uuid[]) = 0
+      or chunk.document_id = any($9::uuid[])
+    )
+  order by chunk.embedding <=> $2::vector
+  limit $1::integer
+),
+lexical_candidates as (
+  select
+    chunk.id,
+    row_number() over (
+      order by ts_rank_cd(chunk.search_vector, websearch_to_tsquery('english', $10)) desc
+    ) as lexical_rank,
+    ts_rank_cd(chunk.search_vector, websearch_to_tsquery('english', $10))::double precision as lexical_score
+  from public.research_chunks chunk
+  join public.research_documents document on document.id = chunk.document_id
+  join public.research_workspaces workspace on workspace.id = chunk.workspace_id
+  where chunk.workspace_id = $3
+    and workspace.user_id = $4
+    and document.workspace_id = workspace.id
+    and document.status = 'ready'
+    and chunk.embedding_status = 'ready'
+    and chunk.embedding_provider = $5
+    and chunk.embedding_model = $6
+    and chunk.embedding_version = $7
+    and chunk.embedding_dimensions = $8
+    and chunk.search_vector @@ websearch_to_tsquery('english', $10)
+    and (
+      cardinality($9::uuid[]) = 0
+      or chunk.document_id = any($9::uuid[])
+    )
+  order by lexical_score desc
+  limit $1::integer
+),
+candidate_ids as (
+  select id from vector_candidates
+  union
+  select id from lexical_candidates
+)
+select
+  chunk.id,
+  chunk.document_id,
+  document.title as document_title,
+  chunk.page_number,
+  chunk.sequence,
+  chunk.chunk_text,
+  chunk.source_locator,
+  chunk.section_label,
+  chunk.heading_path,
+  chunk.chunker_version,
+  chunk.embedding_provider,
+  chunk.embedding_model,
+  chunk.embedding_version,
+  coalesce(vector_candidates.vector_similarity, 0.0::double precision) as vector_similarity,
+  coalesce(lexical_candidates.lexical_score, 0.0::double precision) as lexical_score,
+  cast((
+    coalesce(1.0::double precision / (60.0::double precision + vector_candidates.vector_rank), 0.0::double precision)
+    + coalesce(1.0::double precision / (60.0::double precision + lexical_candidates.lexical_rank), 0.0::double precision)
+  ) as double precision) as combined_score,
+  chunk.content_sha256
+from candidate_ids
+join public.research_chunks chunk on chunk.id = candidate_ids.id
+join public.research_documents document on document.id = chunk.document_id
+left join vector_candidates on vector_candidates.id = chunk.id
+left join lexical_candidates on lexical_candidates.id = chunk.id
+order by combined_score desc, chunk.id
+limit $1::integer
+`
+
+type SearchResearchEvidenceCandidatesParams struct {
+	CandidateLimit      int32           `json:"candidate_limit"`
+	QueryEmbedding      pgvector.Vector `json:"query_embedding"`
+	WorkspaceID         pgtype.UUID     `json:"workspace_id"`
+	UserID              pgtype.UUID     `json:"user_id"`
+	EmbeddingProvider   pgtype.Text     `json:"embedding_provider"`
+	EmbeddingModel      pgtype.Text     `json:"embedding_model"`
+	EmbeddingVersion    pgtype.Text     `json:"embedding_version"`
+	EmbeddingDimensions pgtype.Int4     `json:"embedding_dimensions"`
+	DocumentIds         []pgtype.UUID   `json:"document_ids"`
+	SearchQuery         string          `json:"search_query"`
+}
+
+type SearchResearchEvidenceCandidatesRow struct {
+	ID                pgtype.UUID `json:"id"`
+	DocumentID        pgtype.UUID `json:"document_id"`
+	DocumentTitle     string      `json:"document_title"`
+	PageNumber        pgtype.Int4 `json:"page_number"`
+	Sequence          pgtype.Int4 `json:"sequence"`
+	ChunkText         string      `json:"chunk_text"`
+	SourceLocator     pgtype.Text `json:"source_locator"`
+	SectionLabel      pgtype.Text `json:"section_label"`
+	HeadingPath       []string    `json:"heading_path"`
+	ChunkerVersion    pgtype.Text `json:"chunker_version"`
+	EmbeddingProvider pgtype.Text `json:"embedding_provider"`
+	EmbeddingModel    pgtype.Text `json:"embedding_model"`
+	EmbeddingVersion  pgtype.Text `json:"embedding_version"`
+	VectorSimilarity  float64     `json:"vector_similarity"`
+	LexicalScore      float64     `json:"lexical_score"`
+	CombinedScore     float64     `json:"combined_score"`
+	ContentSha256     pgtype.Text `json:"content_sha256"`
+}
+
+func (q *Queries) SearchResearchEvidenceCandidates(ctx context.Context, arg SearchResearchEvidenceCandidatesParams) ([]SearchResearchEvidenceCandidatesRow, error) {
+	rows, err := q.db.Query(ctx, searchResearchEvidenceCandidates,
+		arg.CandidateLimit,
+		arg.QueryEmbedding,
+		arg.WorkspaceID,
+		arg.UserID,
+		arg.EmbeddingProvider,
+		arg.EmbeddingModel,
+		arg.EmbeddingVersion,
+		arg.EmbeddingDimensions,
+		arg.DocumentIds,
+		arg.SearchQuery,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SearchResearchEvidenceCandidatesRow
+	for rows.Next() {
+		var i SearchResearchEvidenceCandidatesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.DocumentID,
+			&i.DocumentTitle,
+			&i.PageNumber,
+			&i.Sequence,
+			&i.ChunkText,
+			&i.SourceLocator,
+			&i.SectionLabel,
+			&i.HeadingPath,
+			&i.ChunkerVersion,
+			&i.EmbeddingProvider,
+			&i.EmbeddingModel,
+			&i.EmbeddingVersion,
+			&i.VectorSimilarity,
+			&i.LexicalScore,
+			&i.CombinedScore,
+			&i.ContentSha256,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

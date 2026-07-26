@@ -363,3 +363,139 @@ set
   error_code = sqlc.arg(error_code),
   error_message = sqlc.arg(error_message)
 where id = sqlc.arg(id);
+
+-- name: CountOwnedResearchDocumentFilters :one
+select count(*)
+from public.research_documents document
+join public.research_workspaces workspace on workspace.id = document.workspace_id
+where document.workspace_id = sqlc.arg(workspace_id)
+  and workspace.user_id = sqlc.arg(user_id)
+  and document.status <> 'deleted'
+  and document.id = any(sqlc.arg(document_ids)::uuid[]);
+
+-- name: SearchResearchEvidenceCandidates :many
+with vector_candidates as (
+  select
+    chunk.id,
+    row_number() over (order by chunk.embedding <=> sqlc.arg(query_embedding)::vector) as vector_rank,
+    cast(greatest(
+      -1.0::double precision,
+      least(1.0::double precision, 1.0::double precision - (chunk.embedding <=> sqlc.arg(query_embedding)::vector))
+    ) as double precision) as vector_similarity
+  from public.research_chunks chunk
+  join public.research_documents document on document.id = chunk.document_id
+  join public.research_workspaces workspace on workspace.id = chunk.workspace_id
+  where chunk.workspace_id = sqlc.arg(workspace_id)
+    and workspace.user_id = sqlc.arg(user_id)
+    and document.workspace_id = workspace.id
+    and document.status = 'ready'
+    and chunk.embedding_status = 'ready'
+    and chunk.embedding_provider = sqlc.arg(embedding_provider)
+    and chunk.embedding_model = sqlc.arg(embedding_model)
+    and chunk.embedding_version = sqlc.arg(embedding_version)
+    and chunk.embedding_dimensions = sqlc.arg(embedding_dimensions)
+    and (
+      cardinality(sqlc.arg(document_ids)::uuid[]) = 0
+      or chunk.document_id = any(sqlc.arg(document_ids)::uuid[])
+    )
+  order by chunk.embedding <=> sqlc.arg(query_embedding)::vector
+  limit sqlc.arg(candidate_limit)::integer
+),
+lexical_candidates as (
+  select
+    chunk.id,
+    row_number() over (
+      order by ts_rank_cd(chunk.search_vector, websearch_to_tsquery('english', sqlc.arg(search_query))) desc
+    ) as lexical_rank,
+    ts_rank_cd(chunk.search_vector, websearch_to_tsquery('english', sqlc.arg(search_query)))::double precision as lexical_score
+  from public.research_chunks chunk
+  join public.research_documents document on document.id = chunk.document_id
+  join public.research_workspaces workspace on workspace.id = chunk.workspace_id
+  where chunk.workspace_id = sqlc.arg(workspace_id)
+    and workspace.user_id = sqlc.arg(user_id)
+    and document.workspace_id = workspace.id
+    and document.status = 'ready'
+    and chunk.embedding_status = 'ready'
+    and chunk.embedding_provider = sqlc.arg(embedding_provider)
+    and chunk.embedding_model = sqlc.arg(embedding_model)
+    and chunk.embedding_version = sqlc.arg(embedding_version)
+    and chunk.embedding_dimensions = sqlc.arg(embedding_dimensions)
+    and chunk.search_vector @@ websearch_to_tsquery('english', sqlc.arg(search_query))
+    and (
+      cardinality(sqlc.arg(document_ids)::uuid[]) = 0
+      or chunk.document_id = any(sqlc.arg(document_ids)::uuid[])
+    )
+  order by lexical_score desc
+  limit sqlc.arg(candidate_limit)::integer
+),
+candidate_ids as (
+  select id from vector_candidates
+  union
+  select id from lexical_candidates
+)
+select
+  chunk.id,
+  chunk.document_id,
+  document.title as document_title,
+  chunk.page_number,
+  chunk.sequence,
+  chunk.chunk_text,
+  chunk.source_locator,
+  chunk.section_label,
+  chunk.heading_path,
+  chunk.chunker_version,
+  chunk.embedding_provider,
+  chunk.embedding_model,
+  chunk.embedding_version,
+  coalesce(vector_candidates.vector_similarity, 0.0::double precision) as vector_similarity,
+  coalesce(lexical_candidates.lexical_score, 0.0::double precision) as lexical_score,
+  cast((
+    coalesce(1.0::double precision / (60.0::double precision + vector_candidates.vector_rank), 0.0::double precision)
+    + coalesce(1.0::double precision / (60.0::double precision + lexical_candidates.lexical_rank), 0.0::double precision)
+  ) as double precision) as combined_score,
+  chunk.content_sha256
+from candidate_ids
+join public.research_chunks chunk on chunk.id = candidate_ids.id
+join public.research_documents document on document.id = chunk.document_id
+left join vector_candidates on vector_candidates.id = chunk.id
+left join lexical_candidates on lexical_candidates.id = chunk.id
+order by combined_score desc, chunk.id
+limit sqlc.arg(candidate_limit)::integer;
+
+-- name: InsertResearchRetrievalRun :exec
+insert into public.research_retrieval_runs (
+  id,
+  user_id,
+  workspace_id,
+  query_sha256,
+  selected_document_ids,
+  requested_limit,
+  candidate_count,
+  returned_count,
+  result_chunk_ids,
+  chunker_version,
+  embedding_provider,
+  embedding_model,
+  embedding_version,
+  embedding_dimensions,
+  filters,
+  stage_timings
+)
+values (
+  sqlc.arg(id),
+  sqlc.arg(user_id),
+  sqlc.arg(workspace_id),
+  sqlc.arg(query_sha256),
+  sqlc.arg(selected_document_ids),
+  sqlc.arg(requested_limit),
+  sqlc.arg(candidate_count),
+  sqlc.arg(returned_count),
+  sqlc.arg(result_chunk_ids),
+  sqlc.arg(chunker_version),
+  sqlc.arg(embedding_provider),
+  sqlc.arg(embedding_model),
+  sqlc.arg(embedding_version),
+  sqlc.arg(embedding_dimensions),
+  sqlc.arg(filters),
+  sqlc.arg(stage_timings)
+);

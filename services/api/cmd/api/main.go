@@ -50,13 +50,14 @@ func main() {
 	twelveData := providers.TwelveDataProvider{APIKey: cfg.TwelveDataAPIKey}
 	marketData := providers.FallbackMarketProvider{Primary: fmp, Secondary: twelveData}
 	handler := httpapi.NewHandler(httpapi.Options{
-		Authenticator: authenticator,
-		AssetProvider: marketData,
-		QuoteProvider: marketData,
-		ChartProvider: twelveData,
-		Research:      researchRuntime.Store,
-		DocumentStore: researchRuntime.Storage,
-		Logger:        logger,
+		Authenticator:    authenticator,
+		AssetProvider:    marketData,
+		QuoteProvider:    marketData,
+		ChartProvider:    twelveData,
+		Research:         researchRuntime.Store,
+		ResearchEmbedder: researchRuntime.Embedder,
+		DocumentStore:    researchRuntime.Storage,
+		Logger:           logger,
 	})
 
 	server := &http.Server{
