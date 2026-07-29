@@ -456,6 +456,7 @@ export async function POST(request: Request, context: RouteContext) {
               repairStartedAt = await beginStage("repair", "repairing");
             },
             generationInput.evidence,
+            generationInput.diagnostics.runId,
           );
 
           if (repairStartedAt !== null) {

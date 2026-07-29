@@ -141,6 +141,7 @@ export const structuredResearchResultSchema = z
   .superRefine((result, context) => {
     const allowedChunks = new Set(result.retrieval.chunkIds);
     const citedChunks = new Set(result.citations.map((citation) => citation.chunkId));
+    const seenCitationChunks = new Set<string>();
     const sectionKeys = new Set<string>();
     const claimIds = new Set<string>();
     const materialClaimTexts = new Set<string>();
@@ -148,6 +149,14 @@ export const structuredResearchResultSchema = z
     let supportedMaterialClaims = 0;
 
     for (const citation of result.citations) {
+      if (seenCitationChunks.has(citation.chunkId)) {
+        context.addIssue({
+          code: "custom",
+          path: ["citations", citation.chunkId],
+          message: "Citation targets must be unique within a run.",
+        });
+      }
+      seenCitationChunks.add(citation.chunkId);
       if (!allowedChunks.has(citation.chunkId)) {
         context.addIssue({
           code: "custom",
@@ -203,6 +212,18 @@ export const structuredResearchResultSchema = z
               message: "Claim evidence must be retrieved and cited.",
             });
           }
+        }
+        if (
+          claim.supportStatus === "supported" &&
+          claim.evidenceStrength !==
+            strengthForEvidence(claim.evidenceChunkIds, result.citations)
+        ) {
+          context.addIssue({
+            code: "custom",
+            path: ["sections", section.key, "claims", claim.id],
+            message:
+              "Qualitative evidence strength must match the cited source set.",
+          });
         }
       }
     }
@@ -729,11 +750,33 @@ function normalizedIssues(error: z.ZodError): ValidationIssue[] {
 function citationTrustIssues(
   result: StructuredResearchResult,
   evidence: EvidenceResult[],
+  expectedRetrievalRunId?: string,
 ): ValidationIssue[] {
   const evidenceByChunk = new Map(
     evidence.map((item) => [item.chunkId, item]),
   );
   const issues: ValidationIssue[] = [];
+  const expectedChunkIds = new Set(evidence.map((item) => item.chunkId));
+  const resultChunkIds = new Set(result.retrieval.chunkIds);
+
+  if (
+    result.retrieval.chunkIds.length !== evidence.length ||
+    [...expectedChunkIds].some((chunkId) => !resultChunkIds.has(chunkId))
+  ) {
+    issues.push({
+      path: "retrieval.chunkIds",
+      code: "retrieval_allowlist_mismatch",
+    });
+  }
+  if (
+    expectedRetrievalRunId &&
+    result.retrieval.runId !== expectedRetrievalRunId
+  ) {
+    issues.push({
+      path: "retrieval.runId",
+      code: "retrieval_run_mismatch",
+    });
+  }
 
   for (const citation of result.citations) {
     const source = evidenceByChunk.get(citation.chunkId);
@@ -767,6 +810,7 @@ function citationTrustIssues(
 function validateCandidate(
   candidate: unknown,
   evidence?: EvidenceResult[],
+  expectedRetrievalRunId?: string,
 ):
   | { success: true; data: StructuredResearchResult }
   | { success: false; issues: ValidationIssue[] } {
@@ -775,7 +819,11 @@ function validateCandidate(
     return { success: false, issues: normalizedIssues(parsed.error) };
   }
   const trustIssues = evidence
-    ? citationTrustIssues(parsed.data, evidence)
+    ? citationTrustIssues(
+        parsed.data,
+        evidence,
+        expectedRetrievalRunId,
+      )
     : [];
   return trustIssues.length === 0
     ? { success: true, data: parsed.data }
@@ -785,8 +833,9 @@ function validateCandidate(
 export function validateCitationTrust(
   result: StructuredResearchResult,
   evidence: EvidenceResult[],
+  expectedRetrievalRunId?: string,
 ) {
-  return citationTrustIssues(result, evidence);
+  return citationTrustIssues(result, evidence, expectedRetrievalRunId);
 }
 
 function addUsage(left: GenerationUsage, right: GenerationUsage): GenerationUsage {
@@ -811,8 +860,13 @@ export async function validateWithOneRepair(
   ) => Promise<GenerationCandidate>,
   onRepair?: (issues: ValidationIssue[]) => Promise<void> | void,
   evidence?: EvidenceResult[],
+  expectedRetrievalRunId?: string,
 ): Promise<ValidationOutcome> {
-  const first = validateCandidate(initial.value, evidence);
+  const first = validateCandidate(
+    initial.value,
+    evidence,
+    expectedRetrievalRunId,
+  );
   if (first.success) {
     return {
       status: "valid",
@@ -842,7 +896,11 @@ export async function validateWithOneRepair(
       usage: initial.usage,
     };
   }
-  const second = validateCandidate(repaired.value, evidence);
+  const second = validateCandidate(
+    repaired.value,
+    evidence,
+    expectedRetrievalRunId,
+  );
   const usage = addUsage(initial.usage, repaired.usage);
   if (second.success) {
     return {

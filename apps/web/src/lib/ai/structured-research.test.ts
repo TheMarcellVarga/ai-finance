@@ -131,6 +131,30 @@ test("citation metadata must match the active retrieval evidence", () => {
   ]);
 });
 
+test("citation trust is bound to the active retrieval run and complete allow-list", () => {
+  const result = createDeterministicEarningsReview(input);
+  const forged = {
+    ...result,
+    retrieval: {
+      runId: "77777777-7777-4777-8777-777777777777",
+      chunkIds: [chunkA],
+    },
+  };
+  assert.deepEqual(
+    validateCitationTrust(forged, evidence, diagnostics.runId),
+    [
+      {
+        path: "retrieval.chunkIds",
+        code: "retrieval_allowlist_mismatch",
+      },
+      {
+        path: "retrieval.runId",
+        code: "retrieval_run_mismatch",
+      },
+    ],
+  );
+});
+
 test("material findings must map to explicit supported or unsupported claims", () => {
   const result = createDeterministicEarningsReview(input);
   const invalid = {
@@ -151,6 +175,7 @@ test("invalid output is repaired at most once", async () => {
     },
     undefined,
     evidence,
+    diagnostics.runId,
   );
   assert.equal(attempts, 1);
   assert.equal(outcome.status, "valid");
