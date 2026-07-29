@@ -9,11 +9,15 @@ import {
 import {
   AlertTriangle,
   Ban,
+  BookOpenCheck,
   Check,
   CircleStop,
   FileSearch,
+  Link2,
   LoaderCircle,
+  Minus,
   RotateCcw,
+  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 
@@ -98,6 +102,19 @@ function formatTokenCount(value: unknown) {
   return typeof value === "number" ? value.toLocaleString() : "Not reported";
 }
 
+const evidenceStrengthLabels = {
+  strong: "Strong source coverage",
+  moderate: "Multiple passages",
+  limited: "Single passage",
+  unsupported: "Unsupported",
+} as const;
+
+const coverageLabels = {
+  complete: "All material findings mapped",
+  partial: "Some material findings unsupported",
+  none: "No material findings supported",
+} as const;
+
 export function StructuredResearchPanel({
   workspaceId,
   readyDocuments,
@@ -113,6 +130,7 @@ export function StructuredResearchPanel({
     StructuredResearchResult["sections"]
   >([]);
   const [result, setResult] = useState<StructuredResearchResult | null>(null);
+  const [activeCitationId, setActiveCitationId] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<RunMetadata>({});
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -125,6 +143,15 @@ export function StructuredResearchPanel({
             selectedDocumentIds.includes(document.id),
           ),
     [readyDocuments, selectedDocumentIds],
+  );
+  const activeCitation = useMemo(
+    () =>
+      result?.citations.find(
+        (citation) => citation.chunkId === activeCitationId,
+      ) ??
+      result?.citations[0] ??
+      null,
+    [activeCitationId, result],
   );
 
   function toggleDocument(documentId: string) {
@@ -178,6 +205,7 @@ export function StructuredResearchPanel({
     }
     if (event.type === "run.completed") {
       setResult(event.result);
+      setActiveCitationId(event.result.citations[0]?.chunkId ?? null);
       setStages((current) =>
         current.map((stage) =>
           stage.name === "repair" && stage.status === "waiting"
@@ -194,6 +222,7 @@ export function StructuredResearchPanel({
     }
     if (event.type === "run.partial") {
       setResult(event.result);
+      setActiveCitationId(event.result.citations[0]?.chunkId ?? null);
       setMetadata((current) => ({
         ...current,
         mode: "degraded",
@@ -222,6 +251,7 @@ export function StructuredResearchPanel({
     setStages(initialStages);
     setSections([]);
     setResult(null);
+    setActiveCitationId(null);
     setMetadata({});
     setError(null);
 
@@ -536,9 +566,7 @@ export function StructuredResearchPanel({
                         {stage.status === "complete" ? (
                           <Check className="size-3.5 text-emerald-200" />
                         ) : stage.status === "skipped" ? (
-                          <span className="text-[0.62rem] text-zinc-500">
-                            —
-                          </span>
+                          <Minus className="size-3.5 text-zinc-600" />
                         ) : stage.status === "active" ? (
                           <LoaderCircle className="size-3.5 animate-spin text-cyan-100" />
                         ) : (
@@ -601,11 +629,89 @@ export function StructuredResearchPanel({
                       <p className="mt-3 whitespace-pre-line text-sm leading-7 text-zinc-300">
                         {section.body}
                       </p>
-                      <p className="mt-3 text-xs text-zinc-600">
-                        {section.evidenceChunkIds.length} evidence reference
-                        {section.evidenceChunkIds.length === 1 ? "" : "s"}{" "}
-                        retained
-                      </p>
+                      {section.claims.length > 0 ? (
+                        <div className="mt-5 space-y-4">
+                          {section.claims.map((claim) => (
+                            <div
+                              key={claim.id}
+                              className={
+                                claim.supportStatus === "unsupported"
+                                  ? "border-l-2 border-amber-300/55 pl-4"
+                                  : "border-l-2 border-cyan-200/25 pl-4"
+                              }
+                            >
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                <span
+                                  className={
+                                    claim.supportStatus === "unsupported"
+                                      ? "inline-flex items-center gap-1.5 text-[0.68rem] font-medium text-amber-100"
+                                      : "inline-flex items-center gap-1.5 text-[0.68rem] font-medium text-cyan-100"
+                                  }
+                                >
+                                  {claim.supportStatus === "unsupported" ? (
+                                    <AlertTriangle className="size-3.5" />
+                                  ) : (
+                                    <ShieldCheck className="size-3.5" />
+                                  )}
+                                  {
+                                    evidenceStrengthLabels[
+                                      claim.evidenceStrength
+                                    ]
+                                  }
+                                </span>
+                                {claim.material ? (
+                                  <span className="text-[0.65rem] text-zinc-600">
+                                    Material finding
+                                  </span>
+                                ) : null}
+                              </div>
+                              <p className="mt-2 text-sm leading-7 text-zinc-200">
+                                {claim.text}
+                              </p>
+                              {claim.supportStatus === "supported" ? (
+                                <div
+                                  aria-label={`Citations for ${claim.id}`}
+                                  className="mt-3 flex flex-wrap gap-2"
+                                >
+                                  {claim.evidenceChunkIds.map(
+                                    (chunkId, index) => {
+                                      const citation = result?.citations.find(
+                                        (item) => item.chunkId === chunkId,
+                                      );
+                                      return (
+                                        <button
+                                          key={chunkId}
+                                          type="button"
+                                          aria-controls="structured-evidence-inspector"
+                                          aria-pressed={
+                                            activeCitation?.chunkId === chunkId
+                                          }
+                                          disabled={!citation}
+                                          onClick={() =>
+                                            setActiveCitationId(chunkId)
+                                          }
+                                          className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.025] px-2.5 text-[0.68rem] text-zinc-300 transition-colors hover:border-cyan-200/30 hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/65 disabled:cursor-not-allowed disabled:opacity-45 aria-pressed:border-cyan-200/45 aria-pressed:bg-cyan-200/8 aria-pressed:text-cyan-50"
+                                        >
+                                          <Link2 className="size-3" />
+                                          {citation
+                                            ? `${citation.documentTitle}, p.${citation.pageNumber}`
+                                            : `Evidence ${index + 1}`}
+                                        </button>
+                                      );
+                                    },
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="mt-3 inline-flex items-center gap-2 text-xs leading-5 text-amber-100">
+                                  <AlertTriangle className="size-3.5 shrink-0" />
+                                  Unsupported material finding. Do not treat
+                                  this statement as established.
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
                     </article>
                   ))}
                 </div>
@@ -627,28 +733,103 @@ export function StructuredResearchPanel({
               ) : null}
 
               {result ? (
-                <div className="grid gap-px border-t border-white/7 bg-white/7 sm:grid-cols-2">
-                  <div className="bg-zinc-950/95 p-5">
-                    <h3 className="text-xs font-medium text-zinc-300">
-                      Evidence references
-                    </h3>
-                    <div className="mt-3 max-h-52 space-y-3 overflow-y-auto">
-                      {result.citations.map((citation) => (
-                        <div key={citation.chunkId}>
-                          <p className="truncate text-xs text-zinc-300">
-                            {citation.documentTitle}
-                          </p>
-                          <p className="mt-1 text-[0.68rem] text-zinc-600">
-                            Page {citation.pageNumber} | {citation.sourceLocator}
-                          </p>
-                        </div>
+                <div className="grid gap-px border-t border-white/7 bg-white/7 md:grid-cols-[minmax(0,1.25fr)_minmax(15rem,0.75fr)]">
+                  <div
+                    id="structured-evidence-inspector"
+                    aria-live="polite"
+                    className="bg-zinc-950/95 p-5 sm:p-6"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h3 className="inline-flex items-center gap-2 text-sm font-medium text-zinc-100">
+                          <BookOpenCheck className="size-4 text-cyan-100" />
+                          Evidence inspector
+                        </h3>
+                        <p className="mt-1 text-xs leading-5 text-zinc-500">
+                          Select a claim citation to inspect its stored source
+                          excerpt and page.
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-mono text-lg text-white">
+                          {result.citationCoverage.percentage}%
+                        </p>
+                        <p className="text-[0.65rem] text-zinc-500">
+                          claim coverage
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex snap-x gap-2 overflow-x-auto pb-1">
+                      {result.citations.map((citation, index) => (
+                        <button
+                          key={citation.chunkId}
+                          type="button"
+                          aria-pressed={
+                            activeCitation?.chunkId === citation.chunkId
+                          }
+                          onClick={() =>
+                            setActiveCitationId(citation.chunkId)
+                          }
+                          className="shrink-0 snap-start rounded-md border border-white/10 bg-white/[0.025] px-3 py-2 text-left transition-colors hover:border-cyan-200/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/65 aria-pressed:border-cyan-200/45 aria-pressed:bg-cyan-200/8"
+                        >
+                          <span className="block text-[0.68rem] text-zinc-300">
+                            Source {index + 1}
+                          </span>
+                          <span className="mt-0.5 block max-w-48 truncate text-[0.62rem] text-zinc-600">
+                            {citation.documentTitle}, page{" "}
+                            {citation.pageNumber}
+                          </span>
+                        </button>
                       ))}
                     </div>
+
+                    {activeCitation ? (
+                      <figure className="mt-4 border-l-2 border-cyan-200/30 pl-4">
+                        <figcaption>
+                          <p className="text-xs font-medium text-zinc-200">
+                            {activeCitation.documentTitle}
+                          </p>
+                          <p className="mt-1 text-[0.68rem] text-zinc-500">
+                            Page {activeCitation.pageNumber}
+                            {activeCitation.sectionLabel
+                              ? ` | ${activeCitation.sectionLabel}`
+                              : ""}{" "}
+                            | {activeCitation.sourceLocator}
+                          </p>
+                        </figcaption>
+                        <blockquote className="mt-3 text-sm leading-7 text-zinc-300">
+                          “{activeCitation.excerpt}”
+                        </blockquote>
+                        <p className="mt-3 text-[0.65rem] leading-5 text-zinc-600">
+                          This excerpt is the bounded evidence snapshot stored
+                          with the active analysis run.
+                        </p>
+                      </figure>
+                    ) : null}
                   </div>
                   <div className="bg-zinc-950/95 p-5">
-                    <h3 className="text-xs font-medium text-zinc-300">
-                      Run telemetry
+                    <h3 className="text-xs font-medium text-zinc-200">
+                      Trust and run details
                     </h3>
+                    <div className="mt-3 border-b border-white/7 pb-4">
+                      <p
+                        className={
+                          result.citationCoverage.state === "complete"
+                            ? "text-xs text-emerald-100"
+                            : "text-xs text-amber-100"
+                        }
+                      >
+                        {coverageLabels[result.citationCoverage.state]}
+                      </p>
+                      <p className="mt-1 text-[0.68rem] leading-5 text-zinc-600">
+                        {
+                          result.citationCoverage.supportedMaterialClaims
+                        }{" "}
+                        of {result.citationCoverage.materialClaims} material
+                        findings have retrieved support.
+                      </p>
+                    </div>
                     <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[0.68rem]">
                       <dt className="text-zinc-600">Provider</dt>
                       <dd className="truncate text-right font-mono text-zinc-300">
