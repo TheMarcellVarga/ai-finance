@@ -8,6 +8,7 @@ import {
   createEvidenceOnlyPartial,
   researchStreamEventSchema,
   structuredResearchResultSchema,
+  validateCitationTrust,
   validateWithOneRepair,
   zeroGenerationUsage,
 } from "./structured-research";
@@ -85,6 +86,14 @@ test("deterministic workflow produces a complete schema-valid result", () => {
   const result = createDeterministicEarningsReview(input);
   assert.equal(result.status, "completed");
   assert.equal(result.sections.length, 4);
+  assert.equal(result.citationCoverage.percentage, 100);
+  assert.equal(result.citationCoverage.state, "complete");
+  assert.equal(
+    result.sections
+      .flatMap((section) => section.claims)
+      .every((claim) => claim.supportStatus === "supported"),
+    true,
+  );
   assert.equal(structuredResearchResultSchema.safeParse(result).success, true);
 });
 
@@ -103,6 +112,34 @@ test("schema rejects evidence outside the retrieval allow-list", () => {
   assert.equal(structuredResearchResultSchema.safeParse(invalid).success, false);
 });
 
+test("citation metadata must match the active retrieval evidence", () => {
+  const result = createDeterministicEarningsReview(input);
+  const forged = {
+    ...result,
+    citations: result.citations.map((citation, index) =>
+      index === 0
+        ? { ...citation, pageNumber: 99, excerpt: "Different source text." }
+        : citation,
+    ),
+  };
+  const parsed = structuredResearchResultSchema.parse(forged);
+  assert.deepEqual(validateCitationTrust(parsed, evidence), [
+    {
+      path: `citations.${chunkA}`,
+      code: "citation_metadata_mismatch",
+    },
+  ]);
+});
+
+test("material findings must map to explicit supported or unsupported claims", () => {
+  const result = createDeterministicEarningsReview(input);
+  const invalid = {
+    ...result,
+    keyFacts: ["A material finding without a claim mapping."],
+  };
+  assert.equal(structuredResearchResultSchema.safeParse(invalid).success, false);
+});
+
 test("invalid output is repaired at most once", async () => {
   let attempts = 0;
   const valid = createDeterministicEarningsReview(input);
@@ -112,6 +149,8 @@ test("invalid output is repaired at most once", async () => {
       attempts += 1;
       return { value: valid, usage: zeroGenerationUsage };
     },
+    undefined,
+    evidence,
   );
   assert.equal(attempts, 1);
   assert.equal(outcome.status, "valid");
@@ -134,6 +173,14 @@ test("failed repair can degrade to an explicit partial result", async () => {
   const partial = createEvidenceOnlyPartial(input, "Schema repair did not succeed.");
   assert.equal(partial.status, "partial");
   assert.equal(partial.safetyLabel, "needs_human_review");
+  assert.equal(partial.citationCoverage.state, "partial");
+  assert.equal(partial.citationCoverage.unsupportedMaterialClaims, 1);
+  assert.equal(
+    partial.sections
+      .flatMap((section) => section.claims)
+      .some((claim) => claim.supportStatus === "unsupported"),
+    true,
+  );
   assert.equal(structuredResearchResultSchema.safeParse(partial).success, true);
 });
 
