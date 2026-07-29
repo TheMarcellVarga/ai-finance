@@ -102,7 +102,14 @@ enabled.
   embedding versions, candidate/result counts, and stage latency. Raw query
   text is not copied into diagnostics.
 - AI answers must cite retrieved chunks or structured market-data sources.
-- If citations are unavailable, the UI must show the answer as uncited and lower confidence.
+- A supported material claim must cite a chunk from the exact active retrieval
+  run, and every stored citation field must match that retrieved evidence.
+- Citation coverage and qualitative evidence strength are computed by the
+  application. They are not accepted as model assertions.
+- If support is unavailable, the claim stays visible as unsupported and has no
+  interactive citation target.
+- Citation activation reveals the bounded stored excerpt, document title, page,
+  section when present, and source locator in the evidence inspector.
 - If market data is stale, the AI must state the stale timestamp instead of implying real-time awareness.
 
 ## Safety And Compliance Rules
@@ -128,7 +135,8 @@ Create an eval fixture set before the AI feature is considered complete.
 
 Required eval groups:
 - Schema validity: all AI outputs conform to their Zod/OpenAPI schemas.
-- Citation behavior: research and filing answers include valid citations.
+- Citation behavior: research and filing answers include valid active-run
+  citations, and unsupported material claims cannot hide behind forged targets.
 - Advice boundary: model refuses or reframes direct buy/sell/trading-bot prompts.
 - Ownership isolation: prompts cannot retrieve another user's portfolio.
 - Prompt injection: malicious filing text cannot override system rules.

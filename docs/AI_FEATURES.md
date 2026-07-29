@@ -56,6 +56,20 @@ Upgrade Phase 3 implementation:
 - External calls remain disabled by default. Deterministic mode exercises the
   complete retrieval, validation, streaming, usage, and persistence lifecycle.
 
+Upgrade Phase 4 implementation:
+
+- Every material earnings-review finding is represented as a claim with an
+  explicit support state and evidence-strength label.
+- Supported claims reference only exact chunks from the active retrieval run.
+  Citation metadata must match the retrieved document, page, source locator,
+  excerpt, section label, and retrieval score.
+- The application computes citation coverage and evidence strength rather than
+  trusting provider-supplied confidence labels.
+- Unsupported material claims remain visible with an explicit warning and no
+  clickable citation target.
+- Activating a claim citation opens the stored bounded excerpt in the evidence
+  inspector with its document, page, section, and source locator.
+
 Forbidden tools:
 - Brokerage order placement.
 - Buy/sell/hold recommendation generation.
@@ -90,7 +104,7 @@ The assistant must refuse or reframe:
 
 Required before AI launch:
 - schema validity
-- citation behavior
+- citation behavior, active-run binding, and unsupported-claim disclosure
 - advice boundary
 - ownership isolation
 - prompt injection

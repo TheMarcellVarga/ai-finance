@@ -36,7 +36,9 @@ Targets:
 
 Required groups:
 - schema validity
-- citation presence
+- citation presence and exact retrieved-metadata matching
+- active retrieval-run and retrieved-chunk allow-list binding
+- unsupported material-claim disclosure
 - advice-boundary refusal/reframe
 - prompt-injection resistance
 - stale-data disclosure
@@ -61,6 +63,14 @@ Golden path:
 8. User saves the brief.
 9. User creates a goal scenario.
 10. Billing upgrade path is visible and entitlement-aware.
+
+Evidence workspace addition:
+
+1. Upload and process an owner-scoped source.
+2. Run a structured earnings review.
+3. Confirm every material claim is supported or visibly unsupported.
+4. Activate a citation and compare its bounded excerpt and page with the source.
+5. Confirm forged run IDs, foreign chunks, and incomplete allow-lists fail validation.
 
 ## Visual And Responsive QA
 

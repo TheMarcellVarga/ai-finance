@@ -36,7 +36,7 @@ Supabase Postgres is the relational system of record. Use SQL migrations, `pgx`,
 | --- | --- |
 | `research_documents` | Source documents, filing metadata, fetch status |
 | `research_chunks` | Chunk text, source locators, token count, embeddings |
-| `research_analysis_runs` | Owner-scoped structured-generation runs, retry links, versions, retrieved chunks, validation/repair state, normalized usage, stage timing, cancellation, and terminal output |
+| `research_analysis_runs` | Owner-scoped structured-generation runs, retry links, versions, retrieved chunks, validation/repair state, claim-level citation trust artifacts, normalized usage, stage timing, cancellation, and terminal output |
 | `ai_threads` | User-owned AI conversations by product surface |
 | `ai_messages` | Messages, tool calls, citations, safety labels |
 | `ai_briefs` | Structured saved AI outputs and usage metadata |
@@ -60,6 +60,10 @@ Use Supabase `pgvector` for v1:
 - `research_analysis_runs` has forced RLS, an `aperture_api` ownership policy,
   and explicit server-role grants. Raw research questions are represented only
   by a SHA-256 digest in this ledger.
+- Phase 4 stores the validated claim map, exact citation snapshots, unsupported
+  states, and computed coverage inside the immutable `output_json` for the
+  analysis run. The existing `retrieval_run_id` and `retrieved_chunk_ids`
+  remain the authoritative allow-list, avoiding a second partial-write path.
 
 ## Migration Rules
 

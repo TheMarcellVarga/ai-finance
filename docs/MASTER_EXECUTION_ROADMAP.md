@@ -481,7 +481,7 @@ Completion evidence: `docs/UPGRADE_PHASE_3_COMPLETION.md`.
 
 ### Upgrade Phase 4: Citations And Trust
 
-Status: pending.
+Status: complete.
 
 Primary skills: `ai-research-features`, `nextjs-fintech-ui`.
 
@@ -500,6 +500,8 @@ Acceptance gate:
 - Every material finding has valid support or a visible unsupported warning.
 - Citation activation reveals the correct source excerpt and page.
 - Citation targets cannot escape the active workspace or analysis run.
+
+Completion evidence: `docs/UPGRADE_PHASE_4_COMPLETION.md`.
 
 ### Upgrade Phase 5: Review And Approval
 
