@@ -87,6 +87,40 @@ const validGoalPlan = {
   disclaimer: "This is not financial advice and should be used for research and risk review only.",
 };
 
+const validCitationTrust = {
+  claims: [
+    {
+      id: "executive_summary:1",
+      material: true,
+      supportStatus: "supported",
+      evidenceStrength: "limited",
+      evidenceChunkIds: ["chunk-1"],
+    },
+    {
+      id: "risk_factors:1",
+      material: true,
+      supportStatus: "unsupported",
+      evidenceStrength: "unsupported",
+      evidenceChunkIds: [],
+    },
+  ],
+  citations: [
+    {
+      chunkId: "chunk-1",
+      documentId: "document-1",
+      pageNumber: 4,
+      excerpt: "Revenue increased while regional demand remained uneven.",
+    },
+  ],
+  citationCoverage: {
+    materialClaims: 2,
+    supportedMaterialClaims: 1,
+    unsupportedMaterialClaims: 1,
+    percentage: 50,
+    state: "partial",
+  },
+};
+
 function validateBriefSchema(brief) {
   if (!brief || typeof brief !== "object") return false;
   if (requiredFields.some((field) => !(field in brief))) return false;
@@ -115,6 +149,26 @@ function validateGoalPlanSafety(plan) {
   if (!Array.isArray(plan.educationalChallenges) || plan.educationalChallenges.length < 2) return false;
   if (/\bguarantee|\bbeat the market|\bprofit streak|\bbuy now|\bsell immediately/.test(serialized)) return false;
   return plan.disclaimer.includes("not financial advice");
+}
+
+function validateCitationTrust(result) {
+  const citationIds = new Set(result.citations.map((citation) => citation.chunkId));
+  const material = result.claims.filter((claim) => claim.material);
+  const supported = material.filter((claim) => claim.supportStatus === "supported");
+  const unsupported = material.filter((claim) => claim.supportStatus === "unsupported");
+  const mappingsValid = result.claims.every((claim) => {
+    if (claim.supportStatus === "unsupported") {
+      return claim.evidenceStrength === "unsupported" && claim.evidenceChunkIds.length === 0;
+    }
+    return claim.evidenceStrength !== "unsupported"
+      && claim.evidenceChunkIds.length > 0
+      && claim.evidenceChunkIds.every((chunkId) => citationIds.has(chunkId));
+  });
+  return mappingsValid
+    && result.citationCoverage.materialClaims === material.length
+    && result.citationCoverage.supportedMaterialClaims === supported.length
+    && result.citationCoverage.unsupportedMaterialClaims === unsupported.length
+    && result.citationCoverage.percentage === Math.round((supported.length / material.length) * 100);
 }
 
 const forbiddenPromptPatterns = [
@@ -173,6 +227,18 @@ const cases = [
   {
     name: "phase6_goal_plan_rejects_profit_challenge_language",
     pass: !validateGoalPlanSafety({ ...validGoalPlan, educationalChallenges: ["Build a profit streak", "Beat the market"] }),
+  },
+  {
+    name: "phase4_claims_map_to_active_citations_or_visible_unsupported_state",
+    pass: validateCitationTrust(validCitationTrust),
+  },
+  {
+    name: "phase4_rejects_unsupported_claim_with_hidden_evidence_target",
+    pass: !validateCitationTrust({
+      ...validCitationTrust,
+      claims: validCitationTrust.claims.map((claim, index) =>
+        index === 1 ? { ...claim, evidenceChunkIds: ["chunk-1"] } : claim),
+    }),
   },
 ];
 

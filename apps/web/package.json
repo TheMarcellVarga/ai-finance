@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:phase3": "node --import tsx --test src/lib/ai/structured-research.test.ts"
+    "test:structured-research": "node --import tsx --test src/lib/ai/structured-research.test.ts",
+    "test:phase3": "npm run test:structured-research",
+    "test:phase4": "npm run test:structured-research"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.65",
