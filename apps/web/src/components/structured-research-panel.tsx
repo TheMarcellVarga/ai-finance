@@ -2,6 +2,7 @@
 
 import {
   FormEvent,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -22,6 +23,12 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { SectionReviewControls } from "@/components/section-review-controls";
+import {
+  analysisReviewEventSchema,
+  deriveSectionReviewStates,
+  type AnalysisReviewEvent,
+} from "@/lib/ai/research-review";
 import type {
   ResearchStreamEvent,
   StructuredResearchResult,
@@ -133,6 +140,8 @@ export function StructuredResearchPanel({
   const [activeCitationId, setActiveCitationId] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<RunMetadata>({});
   const [error, setError] = useState<string | null>(null);
+  const [reviewEvents, setReviewEvents] = useState<AnalysisReviewEvent[]>([]);
+  const [reviewLoadError, setReviewLoadError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const selectedDocuments = useMemo(
@@ -153,6 +162,55 @@ export function StructuredResearchPanel({
       null,
     [activeCitationId, result],
   );
+  const sectionReviewStates = useMemo(
+    () => deriveSectionReviewStates(reviewEvents),
+    [reviewEvents],
+  );
+  const acceptedSectionCount = useMemo(
+    () =>
+      result?.sections.filter(
+        (section) =>
+          sectionReviewStates.get(section.key)?.decision === "accepted",
+      ).length ?? 0,
+    [result, sectionReviewStates],
+  );
+
+  useEffect(() => {
+    if (!runId || !result) return;
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const response = await fetch(
+          `/api/research/workspaces/${encodeURIComponent(workspaceId)}/analyses/${encodeURIComponent(runId)}/reviews`,
+          { cache: "no-store", signal: controller.signal },
+        );
+        const payload = (await response.json()) as {
+          data?: unknown;
+          error?: { message?: string };
+        };
+        if (!response.ok || !payload.data) {
+          throw new Error(
+            payload.error?.message ?? "Human review history could not be loaded.",
+          );
+        }
+        setReviewEvents(analysisReviewEventSchema.array().parse(payload.data));
+        setReviewLoadError(null);
+      } catch (requestError) {
+        if (
+          requestError instanceof DOMException &&
+          requestError.name === "AbortError"
+        ) {
+          return;
+        }
+        setReviewLoadError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Human review history could not be loaded.",
+        );
+      }
+    })();
+    return () => controller.abort();
+  }, [result, runId, workspaceId]);
 
   function toggleDocument(documentId: string) {
     setSelectedDocumentIds((current) =>
@@ -244,6 +302,7 @@ export function StructuredResearchPanel({
 
   async function runAnalysis(
     retryOfRunId?: string,
+    regenerateSectionKey?: StructuredResearchResult["sections"][number]["key"],
   ) {
     if (query.trim().length < 2 || readyDocuments.length === 0) return;
     setRunState("running");
@@ -254,6 +313,8 @@ export function StructuredResearchPanel({
     setActiveCitationId(null);
     setMetadata({});
     setError(null);
+    setReviewEvents([]);
+    setReviewLoadError(null);
 
     const abortController = new AbortController();
     abortRef.current = abortController;
@@ -269,6 +330,7 @@ export function StructuredResearchPanel({
             query: query.trim(),
             documentIds: selectedDocumentIds,
             retryOfRunId,
+            regenerateSectionKey,
           }),
           signal: abortController.signal,
         },
@@ -362,6 +424,13 @@ export function StructuredResearchPanel({
     (runState === "partial" ||
       runState === "cancelled" ||
       runState === "failed");
+
+  function addReviewEvent(event: AnalysisReviewEvent) {
+    setReviewEvents((current) => [
+      ...current.filter((item) => item.id !== event.id),
+      event,
+    ]);
+  }
 
   return (
     <section className="glass-surface overflow-hidden rounded-[1.25rem]">
@@ -712,6 +781,20 @@ export function StructuredResearchPanel({
                           ))}
                         </div>
                       ) : null}
+                      {runId && result ? (
+                        <SectionReviewControls
+                          key={`${runId}:${section.key}`}
+                          workspaceId={workspaceId}
+                          runId={runId}
+                          section={section}
+                          events={reviewEvents}
+                          disabled={runState === "running"}
+                          onEvent={addReviewEvent}
+                          onRegenerate={(sectionKey) =>
+                            void runAnalysis(runId, sectionKey)
+                          }
+                        />
+                      ) : null}
                     </article>
                   ))}
                 </div>
@@ -851,7 +934,16 @@ export function StructuredResearchPanel({
                       <dd className="text-right font-mono text-zinc-300">
                         {metadata.persistence ?? "Not reported"}
                       </dd>
+                      <dt className="text-zinc-600">Human review</dt>
+                      <dd className="text-right font-mono text-zinc-300">
+                        {acceptedSectionCount}/{result.sections.length} accepted
+                      </dd>
                     </dl>
+                    {reviewLoadError ? (
+                      <p role="alert" className="mt-4 text-xs leading-5 text-rose-100">
+                        {reviewLoadError}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               ) : null}

@@ -97,6 +97,22 @@ test("deterministic workflow produces a complete schema-valid result", () => {
   assert.equal(structuredResearchResultSchema.safeParse(result).success, true);
 });
 
+test("human-requested section regeneration refreshes the target without implying approval", () => {
+  const result = createDeterministicEarningsReview({
+    ...input,
+    regenerateSectionKey: "risk_factors",
+  });
+  const regenerated = result.sections.find(
+    (section) => section.key === "risk_factors",
+  );
+  assert.match(regenerated?.body ?? "", /^Regenerated from the active retrieval evidence\./);
+  assert.equal(result.safetyLabel, "research_only");
+  assert.equal(
+    "approval" in (result as unknown as Record<string, unknown>),
+    false,
+  );
+});
+
 test("schema rejects evidence outside the retrieval allow-list", () => {
   const result = createDeterministicEarningsReview(input);
   const invalid = {

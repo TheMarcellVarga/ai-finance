@@ -256,7 +256,9 @@ export async function POST(request: Request, context: RouteContext) {
       authToken,
       workspaceId,
       retryOfRunId: parsedRequest.data.retryOfRunId,
-      prompt: parsedRequest.data.query,
+      prompt: parsedRequest.data.regenerateSectionKey
+        ? `${parsedRequest.data.query}\nRegeneration target: ${parsedRequest.data.regenerateSectionKey}`
+        : parsedRequest.data.query,
       workflowVersion: RESEARCH_WORKFLOW_VERSION,
       promptVersion: RESEARCH_PROMPT_VERSION,
       schemaVersion: RESEARCH_SCHEMA_VERSION,
@@ -408,6 +410,7 @@ export async function POST(request: Request, context: RouteContext) {
           evidence: search.results,
           diagnostics: search.diagnostics,
           retrievedAt: new Date().toISOString(),
+          regenerateSectionKey: parsedRequest.data.regenerateSectionKey,
         };
 
         let result;
