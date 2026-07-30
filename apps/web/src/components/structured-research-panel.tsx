@@ -13,6 +13,7 @@ import {
   BookOpenCheck,
   Check,
   CircleStop,
+  Download,
   FileSearch,
   Link2,
   LoaderCircle,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { CitationFeedbackControl } from "@/components/citation-feedback-control";
 import { SectionReviewControls } from "@/components/section-review-controls";
 import {
   analysisReviewEventSchema,
@@ -122,6 +124,23 @@ const coverageLabels = {
   none: "No material findings supported",
 } as const;
 
+function firstCitationSelection(result: StructuredResearchResult) {
+  for (const section of result.sections) {
+    for (const claim of section.claims) {
+      if (claim.evidenceChunkIds[0]) {
+        return {
+          chunkId: claim.evidenceChunkIds[0],
+          sectionKey: section.key,
+        };
+      }
+    }
+  }
+  return {
+    chunkId: result.citations[0]?.chunkId ?? null,
+    sectionKey: null,
+  };
+}
+
 export function StructuredResearchPanel({
   workspaceId,
   readyDocuments,
@@ -138,6 +157,9 @@ export function StructuredResearchPanel({
   >([]);
   const [result, setResult] = useState<StructuredResearchResult | null>(null);
   const [activeCitationId, setActiveCitationId] = useState<string | null>(null);
+  const [activeCitationSectionKey, setActiveCitationSectionKey] = useState<
+    StructuredResearchResult["sections"][number]["key"] | null
+  >(null);
   const [metadata, setMetadata] = useState<RunMetadata>({});
   const [error, setError] = useState<string | null>(null);
   const [reviewEvents, setReviewEvents] = useState<AnalysisReviewEvent[]>([]);
@@ -263,7 +285,9 @@ export function StructuredResearchPanel({
     }
     if (event.type === "run.completed") {
       setResult(event.result);
-      setActiveCitationId(event.result.citations[0]?.chunkId ?? null);
+      const citation = firstCitationSelection(event.result);
+      setActiveCitationId(citation.chunkId);
+      setActiveCitationSectionKey(citation.sectionKey);
       setStages((current) =>
         current.map((stage) =>
           stage.name === "repair" && stage.status === "waiting"
@@ -280,7 +304,9 @@ export function StructuredResearchPanel({
     }
     if (event.type === "run.partial") {
       setResult(event.result);
-      setActiveCitationId(event.result.citations[0]?.chunkId ?? null);
+      const citation = firstCitationSelection(event.result);
+      setActiveCitationId(citation.chunkId);
+      setActiveCitationSectionKey(citation.sectionKey);
       setMetadata((current) => ({
         ...current,
         mode: "degraded",
@@ -311,6 +337,7 @@ export function StructuredResearchPanel({
     setSections([]);
     setResult(null);
     setActiveCitationId(null);
+    setActiveCitationSectionKey(null);
     setMetadata({});
     setError(null);
     setReviewEvents([]);
@@ -756,9 +783,12 @@ export function StructuredResearchPanel({
                                             activeCitation?.chunkId === chunkId
                                           }
                                           disabled={!citation}
-                                          onClick={() =>
-                                            setActiveCitationId(chunkId)
-                                          }
+                                          onClick={() => {
+                                            setActiveCitationId(chunkId);
+                                            setActiveCitationSectionKey(
+                                              section.key,
+                                            );
+                                          }}
                                           className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.025] px-2.5 text-[0.68rem] text-zinc-300 transition-colors hover:border-cyan-200/30 hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/65 disabled:cursor-not-allowed disabled:opacity-45 aria-pressed:border-cyan-200/45 aria-pressed:bg-cyan-200/8 aria-pressed:text-cyan-50"
                                         >
                                           <Link2 className="size-3" />
@@ -851,9 +881,18 @@ export function StructuredResearchPanel({
                           aria-pressed={
                             activeCitation?.chunkId === citation.chunkId
                           }
-                          onClick={() =>
-                            setActiveCitationId(citation.chunkId)
-                          }
+                          onClick={() => {
+                            setActiveCitationId(citation.chunkId);
+                            setActiveCitationSectionKey(
+                              result.sections.find((section) =>
+                                section.claims.some((claim) =>
+                                  claim.evidenceChunkIds.includes(
+                                    citation.chunkId,
+                                  ),
+                                ),
+                              )?.key ?? null,
+                            );
+                          }}
                           className="shrink-0 snap-start rounded-md border border-white/10 bg-white/[0.025] px-3 py-2 text-left transition-colors hover:border-cyan-200/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/65 aria-pressed:border-cyan-200/45 aria-pressed:bg-cyan-200/8"
                         >
                           <span className="block text-[0.68rem] text-zinc-300">
@@ -888,6 +927,24 @@ export function StructuredResearchPanel({
                           This excerpt is the bounded evidence snapshot stored
                           with the active analysis run.
                         </p>
+                        {runId ? (
+                          <CitationFeedbackControl
+                            key={`${runId}:${activeCitation.chunkId}:${activeCitationSectionKey ?? "none"}`}
+                            workspaceId={workspaceId}
+                            runId={runId}
+                            sectionKey={activeCitationSectionKey}
+                            citationChunkId={activeCitation.chunkId}
+                            existingFlags={
+                              reviewEvents.filter(
+                                (event) =>
+                                  event.eventType === "citation_flagged" &&
+                                  event.citationChunkId ===
+                                    activeCitation.chunkId,
+                              ).length
+                            }
+                            onEvent={addReviewEvent}
+                          />
+                        ) : null}
                       </figure>
                     ) : null}
                   </div>
@@ -943,6 +1000,21 @@ export function StructuredResearchPanel({
                       <p role="alert" className="mt-4 text-xs leading-5 text-rose-100">
                         {reviewLoadError}
                       </p>
+                    ) : null}
+                    {runId ? (
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="mt-4 w-full"
+                      >
+                        <a
+                          href={`/api/research/workspaces/${encodeURIComponent(workspaceId)}/analyses/${encodeURIComponent(runId)}/export`}
+                        >
+                          <Download className="size-3.5" />
+                          Export reviewed Markdown
+                        </a>
+                      </Button>
                     ) : null}
                   </div>
                 </div>

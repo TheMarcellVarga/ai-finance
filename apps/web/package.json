@@ -9,9 +9,10 @@
     "lint": "eslint",
     "test:structured-research": "node --import tsx --test src/lib/ai/structured-research.test.ts",
     "test:research-review": "node --import tsx --test src/lib/ai/research-review.test.ts",
+    "test:reviewed-markdown": "node --import tsx --test src/lib/ai/reviewed-markdown.test.ts",
     "test:phase3": "npm run test:structured-research",
     "test:phase4": "npm run test:structured-research",
-    "test:phase5": "npm run test:structured-research && npm run test:research-review"
+    "test:phase5": "npm run test:structured-research && npm run test:research-review && npm run test:reviewed-markdown"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.65",
