@@ -121,6 +121,31 @@ const validCitationTrust = {
   },
 };
 
+const validHumanReview = {
+  runId: "run-1",
+  outputSha256: "sha256:immutable-output-1",
+  sections: ["executive_summary", "operating_signals"],
+  events: [
+    {
+      id: "edit-1",
+      type: "edit_saved",
+      actorType: "human",
+      sectionKey: "executive_summary",
+      outputSha256: "sha256:immutable-output-1",
+      editedTitle: "Human-reviewed summary",
+      editedBody: "Revenue increased while disclosed risks remain subject to source review.",
+    },
+    {
+      id: "decision-1",
+      type: "accepted",
+      actorType: "human",
+      sectionKey: "executive_summary",
+      outputSha256: "sha256:immutable-output-1",
+      editEventId: "edit-1",
+    },
+  ],
+};
+
 function validateBriefSchema(brief) {
   if (!brief || typeof brief !== "object") return false;
   if (requiredFields.some((field) => !(field in brief))) return false;
@@ -169,6 +194,41 @@ function validateCitationTrust(result) {
     && result.citationCoverage.supportedMaterialClaims === supported.length
     && result.citationCoverage.unsupportedMaterialClaims === unsupported.length
     && result.citationCoverage.percentage === Math.round((supported.length / material.length) * 100);
+}
+
+function validateHumanReview(review) {
+  const eventById = new Map();
+  for (const event of review.events) {
+    if (event.actorType !== "human") return false;
+    if (event.outputSha256 !== review.outputSha256) return false;
+    if (!review.sections.includes(event.sectionKey)) return false;
+    if (event.type === "accepted" || event.type === "rejected") {
+      const referencedEdit = event.editEventId ? eventById.get(event.editEventId) : undefined;
+      if (event.editEventId
+        && (!referencedEdit
+          || referencedEdit.type !== "edit_saved"
+          || referencedEdit.sectionKey !== event.sectionKey)) {
+        return false;
+      }
+    }
+    eventById.set(event.id, event);
+  }
+  return true;
+}
+
+function validateReviewedExport(review, exportedSections) {
+  const latestDecisions = new Map();
+  for (const event of review.events) {
+    if (event.type === "accepted" || event.type === "rejected") {
+      latestDecisions.set(event.sectionKey, event.type);
+    }
+  }
+  return exportedSections.every((section) => {
+    const expected = latestDecisions.get(section.sectionKey) ?? "unapproved";
+    return section.reviewState === expected
+      && Array.isArray(section.evidenceReferences)
+      && section.evidenceReferences.length > 0;
+  });
 }
 
 const forbiddenPromptPatterns = [
@@ -239,6 +299,41 @@ const cases = [
       claims: validCitationTrust.claims.map((claim, index) =>
         index === 1 ? { ...claim, evidenceChunkIds: ["chunk-1"] } : claim),
     }),
+  },
+  {
+    name: "phase5_accepts_human_decision_over_distinct_edit",
+    pass: validateHumanReview(validHumanReview),
+  },
+  {
+    name: "phase5_rejects_model_self_approval",
+    pass: !validateHumanReview({
+      ...validHumanReview,
+      events: validHumanReview.events.map((event) =>
+        event.type === "accepted" ? { ...event, actorType: "model" } : event),
+    }),
+  },
+  {
+    name: "phase5_rejects_stale_approval_after_regeneration",
+    pass: !validateHumanReview({
+      ...validHumanReview,
+      runId: "run-2",
+      outputSha256: "sha256:regenerated-output-2",
+    }),
+  },
+  {
+    name: "phase5_reviewed_export_labels_unapproved_and_preserves_evidence",
+    pass: validateReviewedExport(validHumanReview, [
+      {
+        sectionKey: "executive_summary",
+        reviewState: "accepted",
+        evidenceReferences: ["Quarterly evidence, page 1"],
+      },
+      {
+        sectionKey: "operating_signals",
+        reviewState: "unapproved",
+        evidenceReferences: ["Quarterly evidence, page 1"],
+      },
+    ]),
   },
 ];
 
