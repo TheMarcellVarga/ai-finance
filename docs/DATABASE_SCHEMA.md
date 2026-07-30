@@ -37,6 +37,7 @@ Supabase Postgres is the relational system of record. Use SQL migrations, `pgx`,
 | `research_documents` | Source documents, filing metadata, fetch status |
 | `research_chunks` | Chunk text, source locators, token count, embeddings |
 | `research_analysis_runs` | Owner-scoped structured-generation runs, retry links, versions, retrieved chunks, validation/repair state, claim-level citation trust artifacts, normalized usage, stage timing, cancellation, and terminal output |
+| `research_analysis_review_events` | Append-only human edits, accept/reject decisions, and incorrect-citation reports bound to an immutable analysis-output digest |
 | `ai_threads` | User-owned AI conversations by product surface |
 | `ai_messages` | Messages, tool calls, citations, safety labels |
 | `ai_briefs` | Structured saved AI outputs and usage metadata |
@@ -64,6 +65,11 @@ Use Supabase `pgvector` for v1:
   states, and computed coverage inside the immutable `output_json` for the
   analysis run. The existing `retrieval_run_id` and `retrieved_chunk_ids`
   remain the authoritative allow-list, avoiding a second partial-write path.
+- Phase 5 prevents replacement of a non-null analysis `output_json` and forces
+  RLS on `research_analysis_review_events`. Database triggers reject update or
+  delete, stale output digests, non-terminal runs, foreign sections, unrelated
+  edit references, and citation IDs absent from the active output. The API role
+  receives only `SELECT` and `INSERT`.
 
 ## Migration Rules
 

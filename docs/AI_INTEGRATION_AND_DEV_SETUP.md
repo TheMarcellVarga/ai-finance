@@ -84,6 +84,19 @@ The dormant live path uses the Vercel AI SDK with direct OpenAI only after both
 the structured-generation mode and the global external-call kill switch are
 enabled.
 
+### Human review and approval
+
+Completed analysis runs expose owner-scoped review-event routes. Human edits,
+acceptance or rejection decisions, and incorrect-citation reports are stored as
+append-only events against the SHA-256 digest of the immutable raw output. A
+decision may reference a prior edit, but it never replaces the raw AI section.
+
+Section regeneration creates a new immutable analysis run with no inherited
+review state. The reviewed Markdown export labels every section as accepted,
+rejected, or not yet approved; identifies whether accepted content came from a
+human edit or raw output; and preserves evidence pages, locators, excerpts,
+feedback counts, assumptions, limitations, and the financial-advice disclaimer.
+
 ## Retrieval And Citations
 - Ingest SEC filings and other allowed research documents into `research_documents`.
 - Uploaded documents are split with deterministic `page-window-v1` chunking.

@@ -505,7 +505,7 @@ Completion evidence: `docs/UPGRADE_PHASE_4_COMPLETION.md`.
 
 ### Upgrade Phase 5: Review And Approval
 
-Status: pending.
+Status: complete.
 
 Primary skills: `nextjs-fintech-ui`, `go-finance-api`.
 
@@ -524,6 +524,8 @@ Acceptance gate:
 - Raw and user-edited content remain distinct.
 - Regeneration invalidates stale approval.
 - Export distinguishes approved and unapproved content and preserves evidence references.
+
+Completion evidence: `docs/UPGRADE_PHASE_5_COMPLETION.md`.
 
 ### Upgrade Phase 6: Evaluation, Accessibility, And Release Polish
 

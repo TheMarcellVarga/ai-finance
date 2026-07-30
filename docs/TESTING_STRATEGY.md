@@ -39,6 +39,9 @@ Required groups:
 - citation presence and exact retrieved-metadata matching
 - active retrieval-run and retrieved-chunk allow-list binding
 - unsupported material-claim disclosure
+- model self-approval rejection and immutable-output binding
+- stale decision rejection after edit or regeneration
+- reviewed-export status labels and evidence preservation
 - advice-boundary refusal/reframe
 - prompt-injection resistance
 - stale-data disclosure
@@ -71,6 +74,9 @@ Evidence workspace addition:
 3. Confirm every material claim is supported or visibly unsupported.
 4. Activate a citation and compare its bounded excerpt and page with the source.
 5. Confirm forged run IDs, foreign chunks, and incomplete allow-lists fail validation.
+6. Save a human edit and verify the raw AI section remains visible and unchanged.
+7. Accept the edit, report an incorrect citation, and export reviewed Markdown.
+8. Regenerate the accepted section and confirm the new run has no inherited approval.
 
 ## Visual And Responsive QA
 

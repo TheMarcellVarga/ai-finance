@@ -70,6 +70,18 @@ Upgrade Phase 4 implementation:
 - Activating a claim citation opens the stored bounded excerpt in the evidence
   inspector with its document, page, section, and source locator.
 
+Upgrade Phase 5 implementation:
+
+- Human edits, decisions, and citation feedback use an owner-scoped,
+  append-only review ledger bound to the immutable analysis-output digest.
+- Accept and reject actions can only originate from the authenticated human
+  review route; model-controlled or mixed review payloads are rejected.
+- Saving a later edit invalidates an earlier decision for that section, and
+  regeneration creates a new run with no inherited approval.
+- Reviewed Markdown exports label accepted, rejected, and unapproved sections,
+  distinguish accepted user edits from raw AI output, and preserve evidence
+  references, excerpts, limitations, and the not-financial-advice disclaimer.
+
 Forbidden tools:
 - Brokerage order placement.
 - Buy/sell/hold recommendation generation.
@@ -105,6 +117,8 @@ The assistant must refuse or reframe:
 Required before AI launch:
 - schema validity
 - citation behavior, active-run binding, and unsupported-claim disclosure
+- human-only approval, immutable-output binding, and stale-approval rejection
+- reviewed-export status and evidence preservation
 - advice boundary
 - ownership isolation
 - prompt injection

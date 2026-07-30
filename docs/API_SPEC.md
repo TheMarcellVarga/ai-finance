@@ -36,6 +36,8 @@ The Go service exposes versioned REST APIs under `/v1`. Next.js may wrap selecte
 | `GET` | `/v1/research/workspaces/:workspaceId/documents/:documentId` | Get document processing state |
 | `POST` | `/v1/research/workspaces/:workspaceId/documents/:documentId/retry` | Idempotently retry a failed document |
 | `GET` | `/v1/research/workspaces/:workspaceId/documents/:documentId/pages` | List page-aware parsed records |
+| `GET` | `/v1/research/workspaces/:workspaceId/analysis-runs/:runId/review-events` | List append-only owner-scoped human review events |
+| `POST` | `/v1/research/workspaces/:workspaceId/analysis-runs/:runId/review-events` | Append a validated edit, decision, or incorrect-citation event |
 | `POST` | `/v1/goals` | Create goal scenario |
 | `POST` | `/v1/goals/:id/generate-plan` | Generate safe goal draft |
 | `GET` | `/v1/ai/context/portfolio/:portfolioId` | AI tool-safe portfolio snapshot |
@@ -59,6 +61,9 @@ The Go service exposes versioned REST APIs under `/v1`. Next.js may wrap selecte
 | `POST` | `/api/research/workspaces/:workspaceId/analyses` | Start an owner-scoped structured earnings review and stream typed NDJSON events with claim-level citation trust |
 | `GET` | `/api/research/workspaces/:workspaceId/analyses/:runId` | Read an owner-scoped stored structured-generation run and its immutable evidence snapshot |
 | `POST` | `/api/research/workspaces/:workspaceId/analyses/:runId/cancel` | Persist cancellation and abort the in-process generation run |
+| `GET` | `/api/research/workspaces/:workspaceId/analyses/:runId/reviews` | Read typed human review history |
+| `POST` | `/api/research/workspaces/:workspaceId/analyses/:runId/reviews` | Validate and append a human edit, decision, or citation report |
+| `GET` | `/api/research/workspaces/:workspaceId/analyses/:runId/export` | Download a server-rendered reviewed Markdown artifact |
 | `POST` | `/api/webhooks/stripe` | Stripe webhook with signature verification |
 | `POST` | `/api/webhooks/clerk` | Clerk webhook with signature verification |
 
@@ -87,6 +92,15 @@ Supported claims must map to citations whose metadata exactly matches the
 active retrieval result. Unsupported claims have no citation target and remain
 visible to the user. The response also includes application-computed material
 claim coverage counts, percentage, and state.
+
+## Human Review Contract
+
+Review events are append-only and bound to the exact SHA-256 digest of a
+terminal analysis run's immutable output. Supported event types are
+`edit_saved`, `accepted`, `rejected`, and `citation_flagged`. Decisions can
+reference an earlier edit event for the same section; citation feedback must
+reference a citation from the active output. Idempotency keys make safe retries
+return the existing event without granting update or delete permission.
 
 ## Contract Workflow
 
