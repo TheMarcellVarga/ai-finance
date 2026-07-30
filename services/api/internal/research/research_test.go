@@ -48,6 +48,47 @@ func TestValidateUpload(t *testing.T) {
 	})
 }
 
+func TestValidateAnalysisReviewEvent(t *testing.T) {
+	requestID := "11111111-1111-4111-8111-111111111111"
+	contentEventID := "22222222-2222-4222-8222-222222222222"
+	citationChunkID := "33333333-3333-4333-8333-333333333333"
+
+	edit, err := ValidateAnalysisReviewEvent(AppendAnalysisReviewEventInput{
+		RequestID: requestID, SectionKey: "executive_summary", EventType: "edit_saved",
+		SectionTitle: " Edited summary ", SectionBody: " Human-reviewed wording. ",
+	})
+	if err != nil || edit.SectionTitle != "Edited summary" || edit.SectionBody != "Human-reviewed wording." {
+		t.Fatalf("expected normalized edit, got %#v err=%v", edit, err)
+	}
+
+	if _, err := ValidateAnalysisReviewEvent(AppendAnalysisReviewEventInput{
+		RequestID: requestID, SectionKey: "executive_summary", EventType: "accepted",
+		ContentEventID: contentEventID,
+	}); err != nil {
+		t.Fatalf("expected referenced acceptance to validate: %v", err)
+	}
+
+	if _, err := ValidateAnalysisReviewEvent(AppendAnalysisReviewEventInput{
+		RequestID: requestID, SectionKey: "risk_factors", EventType: "citation_flagged",
+		CitationChunkID: citationChunkID, Note: "The excerpt does not support this wording.",
+	}); err != nil {
+		t.Fatalf("expected citation feedback to validate: %v", err)
+	}
+
+	tests := []AppendAnalysisReviewEventInput{
+		{RequestID: "not-a-uuid", SectionKey: "executive_summary", EventType: "accepted"},
+		{RequestID: requestID, SectionKey: "unknown", EventType: "accepted"},
+		{RequestID: requestID, SectionKey: "executive_summary", EventType: "edit_saved", SectionTitle: "Missing body"},
+		{RequestID: requestID, SectionKey: "executive_summary", EventType: "accepted", SectionBody: "Injected content"},
+		{RequestID: requestID, SectionKey: "risk_factors", EventType: "citation_flagged", CitationChunkID: citationChunkID},
+	}
+	for _, input := range tests {
+		if _, err := ValidateAnalysisReviewEvent(input); err == nil {
+			t.Fatalf("expected invalid review payload to fail: %#v", input)
+		}
+	}
+}
+
 func TestPageAwareParserPreservesPageNumbers(t *testing.T) {
 	parser, err := NewPageAwareParser("")
 	if err != nil {

@@ -82,6 +82,8 @@ func NewHandler(opts Options) http.Handler {
 	mux.Handle("GET /v1/research/workspaces/{workspaceID}/documents", s.requireAuth(http.HandlerFunc(s.listResearchDocuments)))
 	mux.Handle("POST /v1/research/workspaces/{workspaceID}/documents", s.requireAuth(http.HandlerFunc(s.uploadResearchDocument)))
 	mux.Handle("POST /v1/research/workspaces/{workspaceID}/search", s.requireAuth(http.HandlerFunc(s.searchResearchEvidence)))
+	mux.Handle("GET /v1/research/workspaces/{workspaceID}/analysis-runs/{runID}/review-events", s.requireAuth(http.HandlerFunc(s.listResearchAnalysisReviewEvents)))
+	mux.Handle("POST /v1/research/workspaces/{workspaceID}/analysis-runs/{runID}/review-events", s.requireAuth(http.HandlerFunc(s.appendResearchAnalysisReviewEvent)))
 	mux.Handle("GET /v1/research/workspaces/{workspaceID}/documents/{documentID}", s.requireAuth(http.HandlerFunc(s.getResearchDocument)))
 	mux.Handle("POST /v1/research/workspaces/{workspaceID}/documents/{documentID}/retry", s.requireAuth(http.HandlerFunc(s.retryResearchDocument)))
 	mux.Handle("GET /v1/research/workspaces/{workspaceID}/documents/{documentID}/pages", s.requireAuth(http.HandlerFunc(s.listResearchDocumentPages)))

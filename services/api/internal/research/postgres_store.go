@@ -355,6 +355,103 @@ func (s *PostgresStore) RecordRetrievalRun(ctx context.Context, userID string, r
 	return mapStoreError(err)
 }
 
+func (s *PostgresStore) ListAnalysisReviewEvents(
+	ctx context.Context,
+	userID, workspaceID, analysisRunID string,
+) ([]AnalysisReviewEvent, error) {
+	var result []AnalysisReviewEvent
+	err := s.withUserQueries(ctx, userID, func(q *dbqueries.Queries, profileID pgtype.UUID) error {
+		if _, err := q.GetOwnedResearchAnalysisRunForReview(ctx, dbqueries.GetOwnedResearchAnalysisRunForReviewParams{
+			ID: uuidValue(analysisRunID), WorkspaceID: uuidValue(workspaceID), UserID: profileID,
+		}); err != nil {
+			return err
+		}
+		rows, err := q.ListResearchAnalysisReviewEvents(ctx, dbqueries.ListResearchAnalysisReviewEventsParams{
+			UserID: profileID, WorkspaceID: uuidValue(workspaceID), AnalysisRunID: uuidValue(analysisRunID),
+		})
+		if err != nil {
+			return err
+		}
+		result = make([]AnalysisReviewEvent, 0, len(rows))
+		for _, row := range rows {
+			result = append(result, reviewEventFromValues(
+				row.ID, row.RequestID, row.AnalysisRunID, row.SectionKey, row.EventType,
+				row.ContentEventID, row.SectionTitle, row.SectionBody, row.Note,
+				row.CitationChunkID, row.OutputSha256, row.CreatedAt,
+			))
+		}
+		return nil
+	})
+	return result, mapStoreError(err)
+}
+
+func (s *PostgresStore) AppendAnalysisReviewEvent(
+	ctx context.Context,
+	userID, workspaceID, analysisRunID string,
+	input AppendAnalysisReviewEventInput,
+) (AnalysisReviewEvent, bool, error) {
+	var result AnalysisReviewEvent
+	replayed := false
+	err := s.withUserQueries(ctx, userID, func(q *dbqueries.Queries, profileID pgtype.UUID) error {
+		run, err := q.GetOwnedResearchAnalysisRunForReview(ctx, dbqueries.GetOwnedResearchAnalysisRunForReviewParams{
+			ID: uuidValue(analysisRunID), WorkspaceID: uuidValue(workspaceID), UserID: profileID,
+		})
+		if err != nil {
+			return err
+		}
+		eventID := NewID()
+		row, err := q.CreateResearchAnalysisReviewEvent(ctx, dbqueries.CreateResearchAnalysisReviewEventParams{
+			ID:              uuidValue(eventID),
+			RequestID:       uuidValue(input.RequestID),
+			UserID:          profileID,
+			WorkspaceID:     uuidValue(workspaceID),
+			AnalysisRunID:   uuidValue(analysisRunID),
+			SectionKey:      input.SectionKey,
+			EventType:       input.EventType,
+			ContentEventID:  uuidValue(input.ContentEventID),
+			SectionTitle:    textValue(input.SectionTitle),
+			SectionBody:     textValue(input.SectionBody),
+			Note:            textValue(input.Note),
+			CitationChunkID: uuidValue(input.CitationChunkID),
+			OutputSha256:    run.OutputSha256,
+		})
+		if errors.Is(err, pgx.ErrNoRows) {
+			existing, existingErr := q.GetResearchAnalysisReviewEventByRequest(
+				ctx,
+				dbqueries.GetResearchAnalysisReviewEventByRequestParams{
+					UserID: profileID, WorkspaceID: uuidValue(workspaceID),
+					AnalysisRunID: uuidValue(analysisRunID), RequestID: uuidValue(input.RequestID),
+				},
+			)
+			if existingErr != nil {
+				return existingErr
+			}
+			replayed = true
+			result = reviewEventFromValues(
+				existing.ID, existing.RequestID, existing.AnalysisRunID,
+				existing.SectionKey, existing.EventType, existing.ContentEventID,
+				existing.SectionTitle, existing.SectionBody, existing.Note,
+				existing.CitationChunkID, existing.OutputSha256, existing.CreatedAt,
+			)
+			return nil
+		}
+		if err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && (pgErr.Code == "P0001" || pgErr.Code == "23503" || pgErr.Code == "23514") {
+				return ErrReviewConflict
+			}
+			return err
+		}
+		result = reviewEventFromValues(
+			row.ID, row.RequestID, row.AnalysisRunID, row.SectionKey, row.EventType,
+			row.ContentEventID, row.SectionTitle, row.SectionBody, row.Note,
+			row.CitationChunkID, row.OutputSha256, row.CreatedAt,
+		)
+		return nil
+	})
+	return result, replayed, mapStoreError(err)
+}
+
 func (s *PostgresStore) ClaimProcessingJob(ctx context.Context, workerID string, lease time.Duration) (ProcessingJob, bool, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -597,6 +694,24 @@ func documentFromValues(
 		ErrorCode: errorCode.String, ErrorMessage: errorMessage.String, PageCount: int(pageCount.Int32),
 		UploadedAt: optionalTime(uploadedAt), ParsedAt: optionalTime(parsedAt),
 		CreatedAt: createdAt.Time.UTC(), UpdatedAt: updatedAt.Time.UTC(),
+	}
+}
+
+func reviewEventFromValues(
+	id, requestID, analysisRunID pgtype.UUID,
+	sectionKey, eventType string,
+	contentEventID pgtype.UUID,
+	sectionTitle, sectionBody, note pgtype.Text,
+	citationChunkID pgtype.UUID,
+	outputSHA256 string,
+	createdAt pgtype.Timestamptz,
+) AnalysisReviewEvent {
+	return AnalysisReviewEvent{
+		ID: uuidString(id), RequestID: uuidString(requestID), AnalysisRunID: uuidString(analysisRunID),
+		SectionKey: sectionKey, EventType: eventType, ContentEventID: uuidString(contentEventID),
+		SectionTitle: sectionTitle.String, SectionBody: sectionBody.String, Note: note.String,
+		CitationChunkID: uuidString(citationChunkID), OutputSHA256: outputSHA256,
+		CreatedAt: createdAt.Time.UTC(),
 	}
 }
 

@@ -252,6 +252,118 @@ func (q *Queries) CountOwnedResearchDocumentFilters(ctx context.Context, arg Cou
 	return count, err
 }
 
+const createResearchAnalysisReviewEvent = `-- name: CreateResearchAnalysisReviewEvent :one
+insert into public.research_analysis_review_events (
+  id,
+  request_id,
+  user_id,
+  workspace_id,
+  analysis_run_id,
+  section_key,
+  event_type,
+  content_event_id,
+  section_title,
+  section_body,
+  note,
+  citation_chunk_id,
+  output_sha256
+)
+values (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5,
+  $6,
+  $7,
+  $8,
+  $9,
+  $10,
+  $11,
+  $12,
+  $13
+)
+on conflict (user_id, request_id) do nothing
+returning
+  id,
+  request_id,
+  analysis_run_id,
+  section_key,
+  event_type,
+  content_event_id,
+  section_title,
+  section_body,
+  note,
+  citation_chunk_id,
+  output_sha256,
+  created_at
+`
+
+type CreateResearchAnalysisReviewEventParams struct {
+	ID              pgtype.UUID `json:"id"`
+	RequestID       pgtype.UUID `json:"request_id"`
+	UserID          pgtype.UUID `json:"user_id"`
+	WorkspaceID     pgtype.UUID `json:"workspace_id"`
+	AnalysisRunID   pgtype.UUID `json:"analysis_run_id"`
+	SectionKey      string      `json:"section_key"`
+	EventType       string      `json:"event_type"`
+	ContentEventID  pgtype.UUID `json:"content_event_id"`
+	SectionTitle    pgtype.Text `json:"section_title"`
+	SectionBody     pgtype.Text `json:"section_body"`
+	Note            pgtype.Text `json:"note"`
+	CitationChunkID pgtype.UUID `json:"citation_chunk_id"`
+	OutputSha256    string      `json:"output_sha256"`
+}
+
+type CreateResearchAnalysisReviewEventRow struct {
+	ID              pgtype.UUID        `json:"id"`
+	RequestID       pgtype.UUID        `json:"request_id"`
+	AnalysisRunID   pgtype.UUID        `json:"analysis_run_id"`
+	SectionKey      string             `json:"section_key"`
+	EventType       string             `json:"event_type"`
+	ContentEventID  pgtype.UUID        `json:"content_event_id"`
+	SectionTitle    pgtype.Text        `json:"section_title"`
+	SectionBody     pgtype.Text        `json:"section_body"`
+	Note            pgtype.Text        `json:"note"`
+	CitationChunkID pgtype.UUID        `json:"citation_chunk_id"`
+	OutputSha256    string             `json:"output_sha256"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) CreateResearchAnalysisReviewEvent(ctx context.Context, arg CreateResearchAnalysisReviewEventParams) (CreateResearchAnalysisReviewEventRow, error) {
+	row := q.db.QueryRow(ctx, createResearchAnalysisReviewEvent,
+		arg.ID,
+		arg.RequestID,
+		arg.UserID,
+		arg.WorkspaceID,
+		arg.AnalysisRunID,
+		arg.SectionKey,
+		arg.EventType,
+		arg.ContentEventID,
+		arg.SectionTitle,
+		arg.SectionBody,
+		arg.Note,
+		arg.CitationChunkID,
+		arg.OutputSha256,
+	)
+	var i CreateResearchAnalysisReviewEventRow
+	err := row.Scan(
+		&i.ID,
+		&i.RequestID,
+		&i.AnalysisRunID,
+		&i.SectionKey,
+		&i.EventType,
+		&i.ContentEventID,
+		&i.SectionTitle,
+		&i.SectionBody,
+		&i.Note,
+		&i.CitationChunkID,
+		&i.OutputSha256,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const createResearchDocument = `-- name: CreateResearchDocument :one
 insert into public.research_documents (
   id,
@@ -595,6 +707,113 @@ func (q *Queries) GetDocumentProcessingJob(ctx context.Context, id pgtype.UUID) 
 	return i, err
 }
 
+const getOwnedResearchAnalysisRunForReview = `-- name: GetOwnedResearchAnalysisRunForReview :one
+select
+  analysis.id,
+  analysis.status,
+  analysis.output_json,
+  pg_catalog.encode(extensions.digest(analysis.output_json::text, 'sha256'), 'hex') as output_sha256
+from public.research_analysis_runs analysis
+where analysis.id = $1
+  and analysis.workspace_id = $2
+  and analysis.user_id = $3
+  and analysis.status in ('completed', 'partial')
+  and analysis.output_json is not null
+`
+
+type GetOwnedResearchAnalysisRunForReviewParams struct {
+	ID          pgtype.UUID `json:"id"`
+	WorkspaceID pgtype.UUID `json:"workspace_id"`
+	UserID      pgtype.UUID `json:"user_id"`
+}
+
+type GetOwnedResearchAnalysisRunForReviewRow struct {
+	ID           pgtype.UUID `json:"id"`
+	Status       string      `json:"status"`
+	OutputJson   []byte      `json:"output_json"`
+	OutputSha256 string      `json:"output_sha256"`
+}
+
+func (q *Queries) GetOwnedResearchAnalysisRunForReview(ctx context.Context, arg GetOwnedResearchAnalysisRunForReviewParams) (GetOwnedResearchAnalysisRunForReviewRow, error) {
+	row := q.db.QueryRow(ctx, getOwnedResearchAnalysisRunForReview, arg.ID, arg.WorkspaceID, arg.UserID)
+	var i GetOwnedResearchAnalysisRunForReviewRow
+	err := row.Scan(
+		&i.ID,
+		&i.Status,
+		&i.OutputJson,
+		&i.OutputSha256,
+	)
+	return i, err
+}
+
+const getResearchAnalysisReviewEventByRequest = `-- name: GetResearchAnalysisReviewEventByRequest :one
+select
+  event.id,
+  event.request_id,
+  event.analysis_run_id,
+  event.section_key,
+  event.event_type,
+  event.content_event_id,
+  event.section_title,
+  event.section_body,
+  event.note,
+  event.citation_chunk_id,
+  event.output_sha256,
+  event.created_at
+from public.research_analysis_review_events event
+where event.user_id = $1
+  and event.workspace_id = $2
+  and event.analysis_run_id = $3
+  and event.request_id = $4
+`
+
+type GetResearchAnalysisReviewEventByRequestParams struct {
+	UserID        pgtype.UUID `json:"user_id"`
+	WorkspaceID   pgtype.UUID `json:"workspace_id"`
+	AnalysisRunID pgtype.UUID `json:"analysis_run_id"`
+	RequestID     pgtype.UUID `json:"request_id"`
+}
+
+type GetResearchAnalysisReviewEventByRequestRow struct {
+	ID              pgtype.UUID        `json:"id"`
+	RequestID       pgtype.UUID        `json:"request_id"`
+	AnalysisRunID   pgtype.UUID        `json:"analysis_run_id"`
+	SectionKey      string             `json:"section_key"`
+	EventType       string             `json:"event_type"`
+	ContentEventID  pgtype.UUID        `json:"content_event_id"`
+	SectionTitle    pgtype.Text        `json:"section_title"`
+	SectionBody     pgtype.Text        `json:"section_body"`
+	Note            pgtype.Text        `json:"note"`
+	CitationChunkID pgtype.UUID        `json:"citation_chunk_id"`
+	OutputSha256    string             `json:"output_sha256"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) GetResearchAnalysisReviewEventByRequest(ctx context.Context, arg GetResearchAnalysisReviewEventByRequestParams) (GetResearchAnalysisReviewEventByRequestRow, error) {
+	row := q.db.QueryRow(ctx, getResearchAnalysisReviewEventByRequest,
+		arg.UserID,
+		arg.WorkspaceID,
+		arg.AnalysisRunID,
+		arg.RequestID,
+	)
+	var i GetResearchAnalysisReviewEventByRequestRow
+	err := row.Scan(
+		&i.ID,
+		&i.RequestID,
+		&i.AnalysisRunID,
+		&i.SectionKey,
+		&i.EventType,
+		&i.ContentEventID,
+		&i.SectionTitle,
+		&i.SectionBody,
+		&i.Note,
+		&i.CitationChunkID,
+		&i.OutputSha256,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getResearchDocument = `-- name: GetResearchDocument :one
 select
   document.id, document.workspace_id, document.title, document.original_filename,
@@ -921,6 +1140,81 @@ func (q *Queries) InsertResearchRetrievalRun(ctx context.Context, arg InsertRese
 		arg.StageTimings,
 	)
 	return err
+}
+
+const listResearchAnalysisReviewEvents = `-- name: ListResearchAnalysisReviewEvents :many
+select
+  event.id,
+  event.request_id,
+  event.analysis_run_id,
+  event.section_key,
+  event.event_type,
+  event.content_event_id,
+  event.section_title,
+  event.section_body,
+  event.note,
+  event.citation_chunk_id,
+  event.output_sha256,
+  event.created_at
+from public.research_analysis_review_events event
+where event.user_id = $1
+  and event.workspace_id = $2
+  and event.analysis_run_id = $3
+order by event.created_at, event.id
+`
+
+type ListResearchAnalysisReviewEventsParams struct {
+	UserID        pgtype.UUID `json:"user_id"`
+	WorkspaceID   pgtype.UUID `json:"workspace_id"`
+	AnalysisRunID pgtype.UUID `json:"analysis_run_id"`
+}
+
+type ListResearchAnalysisReviewEventsRow struct {
+	ID              pgtype.UUID        `json:"id"`
+	RequestID       pgtype.UUID        `json:"request_id"`
+	AnalysisRunID   pgtype.UUID        `json:"analysis_run_id"`
+	SectionKey      string             `json:"section_key"`
+	EventType       string             `json:"event_type"`
+	ContentEventID  pgtype.UUID        `json:"content_event_id"`
+	SectionTitle    pgtype.Text        `json:"section_title"`
+	SectionBody     pgtype.Text        `json:"section_body"`
+	Note            pgtype.Text        `json:"note"`
+	CitationChunkID pgtype.UUID        `json:"citation_chunk_id"`
+	OutputSha256    string             `json:"output_sha256"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) ListResearchAnalysisReviewEvents(ctx context.Context, arg ListResearchAnalysisReviewEventsParams) ([]ListResearchAnalysisReviewEventsRow, error) {
+	rows, err := q.db.Query(ctx, listResearchAnalysisReviewEvents, arg.UserID, arg.WorkspaceID, arg.AnalysisRunID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListResearchAnalysisReviewEventsRow
+	for rows.Next() {
+		var i ListResearchAnalysisReviewEventsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.RequestID,
+			&i.AnalysisRunID,
+			&i.SectionKey,
+			&i.EventType,
+			&i.ContentEventID,
+			&i.SectionTitle,
+			&i.SectionBody,
+			&i.Note,
+			&i.CitationChunkID,
+			&i.OutputSha256,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listResearchDocumentPages = `-- name: ListResearchDocumentPages :many

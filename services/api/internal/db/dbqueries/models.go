@@ -217,6 +217,59 @@ type Profile struct {
 	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 }
 
+type ResearchAnalysisReviewEvent struct {
+	ID              pgtype.UUID        `json:"id"`
+	RequestID       pgtype.UUID        `json:"request_id"`
+	UserID          pgtype.UUID        `json:"user_id"`
+	WorkspaceID     pgtype.UUID        `json:"workspace_id"`
+	AnalysisRunID   pgtype.UUID        `json:"analysis_run_id"`
+	SectionKey      string             `json:"section_key"`
+	EventType       string             `json:"event_type"`
+	ContentEventID  pgtype.UUID        `json:"content_event_id"`
+	SectionTitle    pgtype.Text        `json:"section_title"`
+	SectionBody     pgtype.Text        `json:"section_body"`
+	Note            pgtype.Text        `json:"note"`
+	CitationChunkID pgtype.UUID        `json:"citation_chunk_id"`
+	OutputSha256    string             `json:"output_sha256"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+}
+
+type ResearchAnalysisRun struct {
+	ID                  pgtype.UUID        `json:"id"`
+	UserID              pgtype.UUID        `json:"user_id"`
+	WorkspaceID         pgtype.UUID        `json:"workspace_id"`
+	RetryOfRunID        pgtype.UUID        `json:"retry_of_run_id"`
+	Workflow            string             `json:"workflow"`
+	WorkflowVersion     string             `json:"workflow_version"`
+	Status              string             `json:"status"`
+	PromptSha256        string             `json:"prompt_sha256"`
+	PromptVersion       string             `json:"prompt_version"`
+	SchemaVersion       string             `json:"schema_version"`
+	Provider            string             `json:"provider"`
+	Model               string             `json:"model"`
+	Mode                string             `json:"mode"`
+	SelectedDocumentIds []pgtype.UUID      `json:"selected_document_ids"`
+	RetrievalRunID      pgtype.UUID        `json:"retrieval_run_id"`
+	RetrievedChunkIds   []pgtype.UUID      `json:"retrieved_chunk_ids"`
+	OutputJson          []byte             `json:"output_json"`
+	ValidationIssues    []byte             `json:"validation_issues"`
+	RepairAttempted     bool               `json:"repair_attempted"`
+	RepairSucceeded     bool               `json:"repair_succeeded"`
+	InputTokens         pgtype.Int4        `json:"input_tokens"`
+	OutputTokens        pgtype.Int4        `json:"output_tokens"`
+	TotalTokens         pgtype.Int4        `json:"total_tokens"`
+	EstimatedCostUsd    pgtype.Numeric     `json:"estimated_cost_usd"`
+	StageTimings        []byte             `json:"stage_timings"`
+	TotalLatencyMs      pgtype.Int4        `json:"total_latency_ms"`
+	EventCount          int32              `json:"event_count"`
+	LastEventSequence   int32              `json:"last_event_sequence"`
+	CancelRequestedAt   pgtype.Timestamptz `json:"cancel_requested_at"`
+	StartedAt           pgtype.Timestamptz `json:"started_at"`
+	CompletedAt         pgtype.Timestamptz `json:"completed_at"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `json:"updated_at"`
+}
+
 type ResearchChunk struct {
 	ID                  pgtype.UUID        `json:"id"`
 	DocumentID          pgtype.UUID        `json:"document_id"`

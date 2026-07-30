@@ -366,6 +366,53 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           $ref: "#/components/responses/NotFound"
+  /v1/research/workspaces/{workspaceId}/analysis-runs/{runId}/review-events:
+    get:
+      operationId: listResearchAnalysisReviewEvents
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "200":
+          description: Append-only human review history for an owner-scoped analysis run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchAnalysisReviewEventListResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: appendResearchAnalysisReviewEvent
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/RunId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppendResearchAnalysisReviewEventRequest"
+      responses:
+        "201":
+          description: Human review event appended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchAnalysisReviewEventResponse"
+        "400":
+          description: Invalid review event payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The decision, edit, or citation target no longer matches the run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /v1/research/workspaces/{workspaceId}/documents/{documentId}:
     get:
       operationId: getResearchDocument
@@ -452,6 +499,13 @@ components:
     DocumentId:
       in: path
       name: documentId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RunId:
+      in: path
+      name: runId
       required: true
       schema:
         type: string
@@ -972,6 +1026,75 @@ components:
           items:
             type: string
             format: uuid
+    ResearchAnalysisReviewEvent:
+      type: object
+      required: [id, requestId, analysisRunId, sectionKey, eventType, outputSha256, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        requestId:
+          type: string
+          format: uuid
+        analysisRunId:
+          type: string
+          format: uuid
+        sectionKey:
+          type: string
+          enum: [executive_summary, operating_signals, risk_factors, questions_for_review]
+        eventType:
+          type: string
+          enum: [edit_saved, accepted, rejected, citation_flagged]
+        contentEventId:
+          type: string
+          format: uuid
+        sectionTitle:
+          type: string
+          maxLength: 160
+        sectionBody:
+          type: string
+          maxLength: 12000
+        note:
+          type: string
+          maxLength: 2000
+        citationChunkId:
+          type: string
+          format: uuid
+        outputSha256:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        createdAt:
+          type: string
+          format: date-time
+    AppendResearchAnalysisReviewEventRequest:
+      type: object
+      additionalProperties: false
+      required: [requestId, sectionKey, eventType]
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        sectionKey:
+          type: string
+          enum: [executive_summary, operating_signals, risk_factors, questions_for_review]
+        eventType:
+          type: string
+          enum: [edit_saved, accepted, rejected, citation_flagged]
+        contentEventId:
+          type: string
+          format: uuid
+        sectionTitle:
+          type: string
+          maxLength: 160
+        sectionBody:
+          type: string
+          maxLength: 12000
+        note:
+          type: string
+          maxLength: 2000
+        citationChunkId:
+          type: string
+          format: uuid
     EvidenceResult:
       type: object
       required:
@@ -1125,6 +1248,29 @@ components:
             $ref: "#/components/schemas/ResearchPage"
         meta:
           $ref: "#/components/schemas/ResearchMeta"
+    ResearchAnalysisReviewEventListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResearchAnalysisReviewEvent"
+        meta:
+          $ref: "#/components/schemas/ResearchMeta"
+    ResearchAnalysisReviewEventResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ResearchAnalysisReviewEvent"
+        meta:
+          allOf:
+            - $ref: "#/components/schemas/ResearchMeta"
+            - type: object
+              properties:
+                replayed:
+                  type: boolean
     ResearchSearchResponse:
       type: object
       required: [data, meta]

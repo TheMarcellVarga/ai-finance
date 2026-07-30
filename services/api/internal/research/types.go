@@ -16,6 +16,7 @@ const (
 var (
 	ErrNotFound           = errors.New("research resource not found")
 	ErrConflict           = errors.New("research resource conflict")
+	ErrReviewConflict     = errors.New("research review state conflict")
 	ErrInvalidUpload      = errors.New("invalid document upload")
 	ErrPersistenceMissing = errors.New("research persistence is not configured")
 )
@@ -147,6 +148,32 @@ type RetrievalRun struct {
 	StageTimings   map[string]int64
 }
 
+type AnalysisReviewEvent struct {
+	ID              string    `json:"id"`
+	RequestID       string    `json:"requestId"`
+	AnalysisRunID   string    `json:"analysisRunId"`
+	SectionKey      string    `json:"sectionKey"`
+	EventType       string    `json:"eventType"`
+	ContentEventID  string    `json:"contentEventId,omitempty"`
+	SectionTitle    string    `json:"sectionTitle,omitempty"`
+	SectionBody     string    `json:"sectionBody,omitempty"`
+	Note            string    `json:"note,omitempty"`
+	CitationChunkID string    `json:"citationChunkId,omitempty"`
+	OutputSHA256    string    `json:"outputSha256"`
+	CreatedAt       time.Time `json:"createdAt"`
+}
+
+type AppendAnalysisReviewEventInput struct {
+	RequestID       string
+	SectionKey      string
+	EventType       string
+	ContentEventID  string
+	SectionTitle    string
+	SectionBody     string
+	Note            string
+	CitationChunkID string
+}
+
 type ProcessingJob struct {
 	ID          string
 	Document    Document
@@ -178,6 +205,8 @@ type Store interface {
 	ListPages(context.Context, string, string, string) ([]Page, error)
 	SearchEvidenceCandidates(context.Context, string, string, SearchRequest, []float32, EmbeddingDescriptor, int) ([]EvidenceResult, error)
 	RecordRetrievalRun(context.Context, string, RetrievalRun) error
+	ListAnalysisReviewEvents(context.Context, string, string, string) ([]AnalysisReviewEvent, error)
+	AppendAnalysisReviewEvent(context.Context, string, string, string, AppendAnalysisReviewEventInput) (AnalysisReviewEvent, bool, error)
 	ClaimProcessingJob(context.Context, string, time.Duration) (ProcessingJob, bool, error)
 	CompleteProcessingJob(context.Context, string, []Page, []Chunk, map[string]int64) (Document, error)
 	FailProcessingJob(context.Context, string, string, string, bool) error

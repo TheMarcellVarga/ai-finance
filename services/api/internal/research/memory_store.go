@@ -340,6 +340,21 @@ func (s *MemoryStore) RecordRetrievalRun(_ context.Context, userID string, run R
 	return nil
 }
 
+func (s *MemoryStore) ListAnalysisReviewEvents(
+	_ context.Context,
+	_, _, _ string,
+) ([]AnalysisReviewEvent, error) {
+	return nil, ErrPersistenceMissing
+}
+
+func (s *MemoryStore) AppendAnalysisReviewEvent(
+	_ context.Context,
+	_, _, _ string,
+	_ AppendAnalysisReviewEventInput,
+) (AnalysisReviewEvent, bool, error) {
+	return AnalysisReviewEvent{}, false, ErrPersistenceMissing
+}
+
 func (s *MemoryStore) ClaimProcessingJob(_ context.Context, workerID string, lease time.Duration) (ProcessingJob, bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

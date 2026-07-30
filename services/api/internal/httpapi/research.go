@@ -109,6 +109,81 @@ func (s *server) searchResearchEvidence(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, map[string]any{"data": response, "meta": s.researchMeta()})
 }
 
+func (s *server) listResearchAnalysisReviewEvents(w http.ResponseWriter, r *http.Request) {
+	principal, _ := auth.PrincipalFromContext(r.Context())
+	if !s.requireResearch(w, r) {
+		return
+	}
+	events, err := s.research.ListAnalysisReviewEvents(
+		r.Context(),
+		principal.ClerkUserID,
+		r.PathValue("workspaceID"),
+		r.PathValue("runID"),
+	)
+	if err != nil {
+		s.writeResearchError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": events, "meta": s.researchMeta()})
+}
+
+func (s *server) appendResearchAnalysisReviewEvent(w http.ResponseWriter, r *http.Request) {
+	principal, _ := auth.PrincipalFromContext(r.Context())
+	if !s.requireResearch(w, r) || !s.enforceMutationRateLimit(w, r, principal) {
+		return
+	}
+	var body struct {
+		RequestID       string `json:"requestId"`
+		SectionKey      string `json:"sectionKey"`
+		EventType       string `json:"eventType"`
+		ContentEventID  string `json:"contentEventId"`
+		SectionTitle    string `json:"sectionTitle"`
+		SectionBody     string `json:"sectionBody"`
+		Note            string `json:"note"`
+		CitationChunkID string `json:"citationChunkId"`
+	}
+	if err := decodeJSON(r, &body); err != nil {
+		writeError(w, r, http.StatusBadRequest, "invalid_json", "Request body must match the review event contract.")
+		return
+	}
+	input, err := research.ValidateAnalysisReviewEvent(research.AppendAnalysisReviewEventInput{
+		RequestID: body.RequestID, SectionKey: body.SectionKey, EventType: body.EventType,
+		ContentEventID: body.ContentEventID, SectionTitle: body.SectionTitle,
+		SectionBody: body.SectionBody, Note: body.Note, CitationChunkID: body.CitationChunkID,
+	})
+	if err != nil {
+		s.writeResearchError(w, r, err)
+		return
+	}
+	event, replayed, err := s.research.AppendAnalysisReviewEvent(
+		r.Context(),
+		principal.ClerkUserID,
+		r.PathValue("workspaceID"),
+		r.PathValue("runID"),
+		input,
+	)
+	if err != nil {
+		s.writeResearchError(w, r, err)
+		return
+	}
+	s.writeAudit(
+		r,
+		principal,
+		"research_analysis_review."+event.EventType,
+		"research_analysis_run",
+		event.AnalysisRunID,
+		map[string]any{"sectionKey": event.SectionKey, "replayed": replayed},
+	)
+	status := http.StatusCreated
+	if replayed {
+		status = http.StatusOK
+	}
+	writeJSON(w, status, map[string]any{
+		"data": event,
+		"meta": map[string]any{"persistence": s.research.PersistenceMode(), "replayed": replayed},
+	})
+}
+
 func (s *server) uploadResearchDocument(w http.ResponseWriter, r *http.Request) {
 	principal, _ := auth.PrincipalFromContext(r.Context())
 	if !s.requireResearch(w, r) || !s.enforceMutationRateLimit(w, r, principal) {
@@ -240,6 +315,10 @@ func (s *server) writeResearchError(w http.ResponseWriter, r *http.Request, err 
 		writeError(w, r, http.StatusNotFound, "not_found", "The research resource was not found.")
 	case errors.Is(err, research.ErrConflict):
 		writeError(w, r, http.StatusConflict, "invalid_document_state", "The document cannot be changed from its current state.")
+	case errors.Is(err, research.ErrReviewConflict):
+		writeError(w, r, http.StatusConflict, "review_state_conflict", "The review action no longer matches the active analysis state.")
+	case errors.Is(err, research.ErrPersistenceMissing):
+		writeError(w, r, http.StatusServiceUnavailable, "durable_review_required", "Durable research persistence is required for review actions.")
 	default:
 		s.logger.Error("research request failed", "requestId", RequestID(r.Context()), "error", err)
 		writeError(w, r, http.StatusInternalServerError, "research_request_failed", "The research request could not be completed.")

@@ -499,3 +499,102 @@ values (
   sqlc.arg(filters),
   sqlc.arg(stage_timings)
 );
+
+-- name: GetOwnedResearchAnalysisRunForReview :one
+select
+  analysis.id,
+  analysis.status,
+  analysis.output_json,
+  pg_catalog.encode(extensions.digest(analysis.output_json::text, 'sha256'), 'hex') as output_sha256
+from public.research_analysis_runs analysis
+where analysis.id = sqlc.arg(id)
+  and analysis.workspace_id = sqlc.arg(workspace_id)
+  and analysis.user_id = sqlc.arg(user_id)
+  and analysis.status in ('completed', 'partial')
+  and analysis.output_json is not null;
+
+-- name: ListResearchAnalysisReviewEvents :many
+select
+  event.id,
+  event.request_id,
+  event.analysis_run_id,
+  event.section_key,
+  event.event_type,
+  event.content_event_id,
+  event.section_title,
+  event.section_body,
+  event.note,
+  event.citation_chunk_id,
+  event.output_sha256,
+  event.created_at
+from public.research_analysis_review_events event
+where event.user_id = sqlc.arg(user_id)
+  and event.workspace_id = sqlc.arg(workspace_id)
+  and event.analysis_run_id = sqlc.arg(analysis_run_id)
+order by event.created_at, event.id;
+
+-- name: CreateResearchAnalysisReviewEvent :one
+insert into public.research_analysis_review_events (
+  id,
+  request_id,
+  user_id,
+  workspace_id,
+  analysis_run_id,
+  section_key,
+  event_type,
+  content_event_id,
+  section_title,
+  section_body,
+  note,
+  citation_chunk_id,
+  output_sha256
+)
+values (
+  sqlc.arg(id),
+  sqlc.arg(request_id),
+  sqlc.arg(user_id),
+  sqlc.arg(workspace_id),
+  sqlc.arg(analysis_run_id),
+  sqlc.arg(section_key),
+  sqlc.arg(event_type),
+  sqlc.arg(content_event_id),
+  sqlc.arg(section_title),
+  sqlc.arg(section_body),
+  sqlc.arg(note),
+  sqlc.arg(citation_chunk_id),
+  sqlc.arg(output_sha256)
+)
+on conflict (user_id, request_id) do nothing
+returning
+  id,
+  request_id,
+  analysis_run_id,
+  section_key,
+  event_type,
+  content_event_id,
+  section_title,
+  section_body,
+  note,
+  citation_chunk_id,
+  output_sha256,
+  created_at;
+
+-- name: GetResearchAnalysisReviewEventByRequest :one
+select
+  event.id,
+  event.request_id,
+  event.analysis_run_id,
+  event.section_key,
+  event.event_type,
+  event.content_event_id,
+  event.section_title,
+  event.section_body,
+  event.note,
+  event.citation_chunk_id,
+  event.output_sha256,
+  event.created_at
+from public.research_analysis_review_events event
+where event.user_id = sqlc.arg(user_id)
+  and event.workspace_id = sqlc.arg(workspace_id)
+  and event.analysis_run_id = sqlc.arg(analysis_run_id)
+  and event.request_id = sqlc.arg(request_id);

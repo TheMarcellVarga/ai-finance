@@ -303,6 +303,54 @@ export type ResearchSearchResponse = {
   meta: ResearchMeta;
 };
 
+export type ResearchAnalysisSectionKey =
+  | "executive_summary"
+  | "operating_signals"
+  | "risk_factors"
+  | "questions_for_review";
+
+export type ResearchAnalysisReviewEventType =
+  | "edit_saved"
+  | "accepted"
+  | "rejected"
+  | "citation_flagged";
+
+export type ResearchAnalysisReviewEvent = {
+  id: string;
+  requestId: string;
+  analysisRunId: string;
+  sectionKey: ResearchAnalysisSectionKey;
+  eventType: ResearchAnalysisReviewEventType;
+  contentEventId?: string;
+  sectionTitle?: string;
+  sectionBody?: string;
+  note?: string;
+  citationChunkId?: string;
+  outputSha256: string;
+  createdAt: string;
+};
+
+export type AppendResearchAnalysisReviewEventRequest = {
+  requestId: string;
+  sectionKey: ResearchAnalysisSectionKey;
+  eventType: ResearchAnalysisReviewEventType;
+  contentEventId?: string;
+  sectionTitle?: string;
+  sectionBody?: string;
+  note?: string;
+  citationChunkId?: string;
+};
+
+export type ResearchAnalysisReviewEventListResponse = {
+  data: ResearchAnalysisReviewEvent[];
+  meta: ResearchMeta;
+};
+
+export type ResearchAnalysisReviewEventResponse = {
+  data: ResearchAnalysisReviewEvent;
+  meta: ResearchMeta & { replayed?: boolean };
+};
+
 export type FinanceApiClientOptions = {
   baseUrl: string;
   getToken?: () => Promise<string | undefined> | string | undefined;
@@ -423,6 +471,27 @@ export class FinanceApiClient {
       method: "POST",
       body,
     });
+  }
+
+  async listResearchAnalysisReviewEvents(
+    workspaceId: string,
+    runId: string,
+  ): Promise<ResearchAnalysisReviewEventListResponse> {
+    return this.request<ResearchAnalysisReviewEventListResponse>(
+      `/v1/research/workspaces/${encodeURIComponent(workspaceId)}/analysis-runs/${encodeURIComponent(runId)}/review-events`,
+      { auth: true },
+    );
+  }
+
+  async appendResearchAnalysisReviewEvent(
+    workspaceId: string,
+    runId: string,
+    body: AppendResearchAnalysisReviewEventRequest,
+  ): Promise<ResearchAnalysisReviewEventResponse> {
+    return this.request<ResearchAnalysisReviewEventResponse>(
+      `/v1/research/workspaces/${encodeURIComponent(workspaceId)}/analysis-runs/${encodeURIComponent(runId)}/review-events`,
+      { auth: true, method: "POST", body },
+    );
   }
 
   private async request<T>(
