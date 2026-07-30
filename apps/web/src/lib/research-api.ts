@@ -74,6 +74,25 @@ export type ResearchSearchResponse = {
   diagnostics: RetrievalDiagnostics;
 };
 
+export type AnalysisReviewEvent = {
+  id: string;
+  requestId: string;
+  analysisRunId: string;
+  sectionKey:
+    | "executive_summary"
+    | "operating_signals"
+    | "risk_factors"
+    | "questions_for_review";
+  eventType: "edit_saved" | "accepted" | "rejected" | "citation_flagged";
+  contentEventId?: string;
+  sectionTitle?: string;
+  sectionBody?: string;
+  note?: string;
+  citationChunkId?: string;
+  outputSha256: string;
+  createdAt: string;
+};
+
 export type ResearchResponse<T> = {
   data: T;
   meta: ResearchMeta;
@@ -214,6 +233,34 @@ export function searchResearchEvidence(
 ) {
   return researchRequest<ResearchSearchResponse>(
     `/v1/research/workspaces/${encodeURIComponent(workspaceId)}/search`,
+    authToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    },
+  );
+}
+
+export function listAnalysisReviewEvents(
+  workspaceId: string,
+  runId: string,
+  authToken: string,
+) {
+  return researchRequest<AnalysisReviewEvent[]>(
+    `/v1/research/workspaces/${encodeURIComponent(workspaceId)}/analysis-runs/${encodeURIComponent(runId)}/review-events`,
+    authToken,
+  );
+}
+
+export function appendAnalysisReviewEvent(
+  workspaceId: string,
+  runId: string,
+  authToken: string,
+  request: Record<string, unknown>,
+) {
+  return researchRequest<AnalysisReviewEvent>(
+    `/v1/research/workspaces/${encodeURIComponent(workspaceId)}/analysis-runs/${encodeURIComponent(runId)}/review-events`,
     authToken,
     {
       method: "POST",
