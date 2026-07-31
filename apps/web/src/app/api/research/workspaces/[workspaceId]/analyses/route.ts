@@ -27,6 +27,7 @@ import {
   type GenerationUsage,
   type ResearchStreamEvent,
 } from "@/lib/ai/structured-research";
+import { screenRetrievedEvidence } from "@/lib/ai/evidence-safety";
 import {
   createStructuredResearchGenerator,
   structuredResearchMode,
@@ -58,6 +59,13 @@ class CancelledRunError extends Error {
   }
 }
 
+class DocumentPromptInjectionError extends Error {
+  constructor() {
+    super("All retrieved passages were excluded by document prompt-injection controls.");
+    this.name = "DocumentPromptInjectionError";
+  }
+}
+
 function isCancellation(error: unknown) {
   return (
     error instanceof CancelledRunError ||
@@ -66,6 +74,14 @@ function isCancellation(error: unknown) {
 }
 
 function sanitizedFailure(error: unknown) {
+  if (error instanceof DocumentPromptInjectionError) {
+    return {
+      code: "document_prompt_injection_detected",
+      message:
+        "The selected evidence contains instruction-like content and cannot be used for generation. Review or remove the affected source before retrying.",
+      retryable: false,
+    };
+  }
   if (error instanceof SyntaxError) {
     return {
       code: "provider_output_invalid_json",
@@ -92,6 +108,7 @@ function terminalTelemetry(input: {
   workflowVersion: string;
   retrievalRunId: string;
   retrievedChunkIds: string[];
+  blockedEvidenceCount: number;
   usage: GenerationUsage;
   repairAttempted: boolean;
   repairSucceeded: boolean;
@@ -107,6 +124,7 @@ function terminalTelemetry(input: {
     workflowVersion: input.workflowVersion,
     retrievalRunId: input.retrievalRunId,
     retrievedChunkIds: input.retrievedChunkIds,
+    blockedEvidenceCount: input.blockedEvidenceCount,
     inputTokens: input.usage.inputTokens,
     outputTokens: input.usage.outputTokens,
     totalTokens: input.usage.totalTokens,
@@ -395,22 +413,28 @@ export async function POST(request: Request, context: RouteContext) {
             "No relevant evidence was found in the selected document scope.",
           );
         }
+        const evidenceScreen = screenRetrievedEvidence(search.results);
+        if (evidenceScreen.safe.length === 0) {
+          throw new DocumentPromptInjectionError();
+        }
+        const safeEvidence = evidenceScreen.safe;
         await patch("retrieving", {
           retrievalRunId: search.diagnostics.runId,
-          retrievedChunkIds: search.results.map((item) => item.chunkId),
+          retrievedChunkIds: safeEvidence.map((item) => item.chunkId),
         });
         endStage(
           "retrieval",
           retrievalStartedAt,
-          `${search.results.length} evidence passages retrieved.`,
+          `${safeEvidence.length} evidence passage${safeEvidence.length === 1 ? "" : "s"} retained${evidenceScreen.blocked.length ? `; ${evidenceScreen.blocked.length} excluded by prompt-injection controls` : ""}.`,
         );
 
         const generationInput: GenerationInput = {
           query: parsedRequest.data.query,
-          evidence: search.results,
+          evidence: safeEvidence,
           diagnostics: search.diagnostics,
           retrievedAt: new Date().toISOString(),
           regenerateSectionKey: parsedRequest.data.regenerateSectionKey,
+          blockedEvidenceCount: evidenceScreen.blocked.length,
         };
 
         let result;
@@ -542,7 +566,8 @@ export async function POST(request: Request, context: RouteContext) {
             model: generator.descriptor.model,
             promptVersion: RESEARCH_PROMPT_VERSION,
             schemaVersion: RESEARCH_SCHEMA_VERSION,
-            retrievedChunkCount: search.results.length,
+            retrievedChunkCount: safeEvidence.length,
+            blockedEvidenceCount: evidenceScreen.blocked.length,
             totalLatencyMs,
           },
         });
@@ -570,7 +595,8 @@ export async function POST(request: Request, context: RouteContext) {
           schemaVersion: RESEARCH_SCHEMA_VERSION,
           workflowVersion: RESEARCH_WORKFLOW_VERSION,
           retrievalRunId: search.diagnostics.runId,
-          retrievedChunkIds: search.results.map((item) => item.chunkId),
+          retrievedChunkIds: safeEvidence.map((item) => item.chunkId),
+          blockedEvidenceCount: evidenceScreen.blocked.length,
           usage,
           repairAttempted,
           repairSucceeded,

@@ -97,6 +97,19 @@ test("deterministic workflow produces a complete schema-valid result", () => {
   assert.equal(structuredResearchResultSchema.safeParse(result).success, true);
 });
 
+test("blocked document instructions are disclosed without entering generated claims", () => {
+  const result = createDeterministicEarningsReview({
+    ...input,
+    blockedEvidenceCount: 2,
+  });
+  assert.equal(
+    result.assumptions.some((assumption) =>
+      assumption.includes("2 retrieved passages were excluded")),
+    true,
+  );
+  assert.doesNotMatch(JSON.stringify(result.sections), /system prompt|available tool/i);
+});
+
 test("human-requested section regeneration refreshes the target without implying approval", () => {
   const result = createDeterministicEarningsReview({
     ...input,
