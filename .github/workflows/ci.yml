@@ -1,0 +1,66 @@
+name: Evidence workspace CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evidence-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: services/api/go.mod
+          cache-dependency-path: services/api/go.sum
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install web dependencies
+        run: npm ci
+        working-directory: apps/web
+      - name: Verify Go service
+        run: go test ./... && go vet ./...
+        working-directory: services/api
+      - name: Verify web, evals, and production build
+        run: npm run test:phase6 && npm run lint && npm run build
+        working-directory: apps/web
+      - name: Verify contracts, safety, and migrations
+        run: |
+          scripts/generate-openapi-client
+          scripts/run-ai-evals
+          scripts/check-ai-safety-fixtures
+          scripts/verify-phase7-security
+          scripts/validate-supabase-migrations
+
+  evidence-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: services/api/go.mod
+          cache-dependency-path: services/api/go.sum
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Install web dependencies
+        run: npm ci
+        working-directory: apps/web
+      - name: Verify upload-to-reviewed-export flow
+        run: scripts/verify-evidence-workspace-e2e
