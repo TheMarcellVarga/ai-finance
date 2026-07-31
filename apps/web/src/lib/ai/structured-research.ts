@@ -424,7 +424,7 @@ export type ResearchStreamEvent = z.infer<typeof researchStreamEventSchema>;
 const unsafeResearchPatterns = [
   /\b(buy|sell|short|hold)\b.*\b(now|today|immediately|next)\b/i,
   /\bwhat should i (buy|sell|hold)\b/i,
-  /\bguarantee(d)? returns?\b/i,
+  /\bguarantee(d)? (?:a |any )?returns?\b/i,
   /\bbeat the market\b/i,
   /\btrading bot\b/i,
   /\bautomated trading\b/i,

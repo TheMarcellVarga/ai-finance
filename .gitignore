@@ -5,6 +5,7 @@
 **/.next
 **/dist
 **/coverage
+artifacts/
 .DS_Store
 .history/
 .vercel
