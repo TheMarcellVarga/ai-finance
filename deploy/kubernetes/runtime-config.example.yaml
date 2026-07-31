@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aperture-runtime
+data:
+  APP_ENV: production
+  LOG_LEVEL: info
+  API_AUTH_MODE: clerk
+  RESEARCH_PERSISTENCE_MODE: postgres
+  DOCUMENT_STORAGE_MODE: supabase
+  DOCUMENT_WORKER_POLL_INTERVAL: 2s
+  RESEARCH_EMBEDDING_PROVIDER: openai
+  AI_EXTERNAL_CALLS_ENABLED: "false"
+  ALLOW_LOCAL_RESEARCH_EMBEDDINGS_IN_PRODUCTION: "false"
+  SEC_USER_AGENT: Aperture Research contact@example.com

@@ -148,6 +148,8 @@ Production must use `API_AUTH_MODE=clerk`, `CLERK_JWT_ISSUER`, and `CLERK_JWKS_U
 ## Deployment Notes
 
 - Vercel hosts Next.js.
-- Go API deploys as a container service.
+- Go API and document worker deploy from the separate `api` and `worker` targets in `services/api/Dockerfile`.
+- Reviewed Kubernetes templates live in `deploy/kubernetes`; production secrets must be injected by the platform and must not be committed.
 - Cloudflare fronts app/API domains and security controls.
 - Production env values live in the relevant deployment platform, not in source control.
+- Follow `docs/DEPLOYMENT_RUNBOOK.md` for preflight, rollout, failure recovery, and rollback.

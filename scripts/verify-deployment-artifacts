@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+require_pattern() {
+  local pattern="$1"
+  local file="$2"
+  if ! rg -q "$pattern" "$file"; then
+    echo "Deployment contract failed: expected '$pattern' in $file" >&2
+    exit 1
+  fi
+}
+
+require_pattern 'FROM runtime AS api' "$repo_root/services/api/Dockerfile"
+require_pattern 'FROM runtime AS worker' "$repo_root/services/api/Dockerfile"
+require_pattern 'USER aperture' "$repo_root/services/api/Dockerfile"
+require_pattern 'readOnlyRootFilesystem: true' "$repo_root/deploy/kubernetes/api.yaml"
+require_pattern 'path: /v1/health' "$repo_root/deploy/kubernetes/api.yaml"
+require_pattern 'type: Recreate' "$repo_root/deploy/kubernetes/worker.yaml"
+require_pattern 'mountPath: /tmp' "$repo_root/deploy/kubernetes/worker.yaml"
+require_pattern 'AI_EXTERNAL_CALLS_ENABLED: "false"' "$repo_root/deploy/kubernetes/runtime-config.example.yaml"
+
+if rg -n '(^|[[:space:]])(DATABASE_URL|SUPABASE_SERVICE_ROLE_KEY|OPENAI_API_KEY):[[:space:]]+[^$<{[:space:]]' "$repo_root/deploy"; then
+  echo "Deployment contract failed: a secret-like value appears inline" >&2
+  exit 1
+fi
+
+echo "Deployment artifact contracts passed."

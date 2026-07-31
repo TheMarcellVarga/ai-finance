@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aperture-document-worker
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: aperture-document-worker
+  template:
+    metadata:
+      labels:
+        app: aperture-document-worker
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: worker
+          image: ghcr.io/OWNER/ai-finance-worker:RELEASE_SHA
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: aperture-runtime
+            - secretRef:
+                name: aperture-secrets
+          volumeMounts:
+            - name: document-tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+      volumes:
+        - name: document-tmp
+          emptyDir:
+            sizeLimit: 512Mi
