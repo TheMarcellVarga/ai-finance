@@ -159,6 +159,13 @@ Required eval groups:
 
 CI should fail if core evals break. Non-blocking evals can report drift for review.
 
+Upgrade Phase 6 implements this plan with a versioned 40-case corpus across five
+source documents. The checked-in baseline records provider, model, workflow,
+prompt, schema, retrieval, latency, and estimated-cost metadata; the authenticated
+evaluation dashboard renders the same release evidence. CI runs the deterministic
+suite with external calls disabled, while live-provider comparisons remain a
+separate explicitly approved activity.
+
 ## AI Dev Setup For Future Agents
 Create a first-class AI development environment so future agents can work safely and consistently.
 

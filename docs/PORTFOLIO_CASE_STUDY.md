@@ -4,7 +4,7 @@
 
 Aperture Financial Intelligence is a recruiter-grade fintech/wealthtech workspace for portfolio-aware research, cited AI briefs, goal scenario planning, and risk explanation. The product deliberately avoids brokerage, trade execution, personalized investment advice, and return promises.
 
-Current state: the local Phase 9 completion pass is complete. Linked public and app routes now present finished portfolio-demo surfaces, the app builds, the Go API tests pass, deterministic AI evals pass, billing/security verification passes, and screenshots can be captured from the local dev server.
+Current state: the six-phase Evidence Workspace upgrade is complete locally. The golden path now runs from private document upload through processing, retrieval, structured cited analysis, human review, citation feedback, and reviewed export. The production build, Go service, 40-case evidence evaluation, security checks, accessibility contracts, deployment artifacts, and disposable-database E2E flow pass without paid AI calls.
 
 ## Product Boundary
 
@@ -43,6 +43,10 @@ The AI layer uses Vercel AI SDK contracts with deterministic fixture mode enable
 - Eval scripts for schema validity, citation behavior, advice boundaries, ownership isolation, prompt injection, stale data disclosure, and goal-planner safety.
 - Stripe and Clerk webhook handlers with signature verification and idempotency storage.
 - Privacy-scrubbed observability helpers for PostHog and Sentry-compatible reporting.
+- A versioned evidence regression baseline covering 40 cases and five source documents, with schema, citation, injection, advice-boundary, unsupported-claim, calculation, latency, and cost metrics.
+- An authenticated evaluation dashboard that makes build, provider, model, workflow, prompt, schema, and retrieval versions visible alongside case outcomes.
+- Human-governed research output: immutable raw analysis, append-only edit/decision history, stale-approval invalidation, incorrect-citation feedback, and reviewed Markdown export.
+- Separate reproducible API and document-worker container targets, non-root runtime images, health probes, read-only filesystems, and Kubernetes deployment templates.
 
 ## Safety And Security
 
@@ -51,7 +55,8 @@ Security-sensitive choices:
 - Service-role keys, provider keys, webhook secrets, and private prompts stay server-side.
 - Every user-owned finance API path validates identity and ownership.
 - AI tools call application-owned APIs, not unrestricted database connections.
-- Prompt-injection and unsafe trading prompts are covered by deterministic fixtures.
+- Retrieved-document prompt injection is screened before generation; hostile chunks are excluded and the run fails closed when no safe evidence remains.
+- Prompt-injection, unsafe trading prompts, forged citations, stale approval, and cross-owner retrieval are covered by deterministic and integration tests.
 - Analytics and error helpers scrub PII, holdings, financial amounts, raw prompts, AI outputs, and secrets by default.
 - Webhook events are idempotent and signature-verified.
 - Local rate-limit fallback exists for development; Upstash should be configured in production.
@@ -65,9 +70,13 @@ cd services/api && go test ./...
 scripts/validate-supabase-migrations
 scripts/generate-openapi-client
 cd apps/web && npm run lint && npm run build
+cd apps/web && npm run test:phase6
 scripts/run-ai-evals
 scripts/check-ai-safety-fixtures
 scripts/verify-phase7-security
+scripts/verify-accessibility-contracts
+scripts/verify-deployment-artifacts
+scripts/verify-evidence-workspace-e2e
 ```
 
 Phase 5 route verification can use `scripts/verify-phase5-live` when no other Next dev server is running. If a local Next dev server is already active, call `/api/ai/portfolio-brief` against that server and validate that `meta.mode` is `fixture`, `liveAiGatewayCall` is false, `liveExternalAiCall` is false, citations are present, and the disclaimer includes not-financial-advice language.
@@ -83,12 +92,13 @@ Local screenshot captures are stored under `docs/screenshots/` when generated:
 
 These screenshots should not contain real user PII, real holdings, raw prompts, API keys, webhook secrets, or non-public financial data.
 
-## Follow-On Hardening
+## Release Boundary
 
-- Deploy Next.js and Go API with production domains, Cloudflare controls, and secure CORS.
+- Deploy Next.js and the containerized Go services with production domains, Cloudflare controls, managed secrets, and secure CORS by following `docs/DEPLOYMENT_RUNBOOK.md`.
 - Configure real Stripe products/prices and run live webhook delivery tests.
 - Configure Clerk production auth and organization flows.
 - Apply Supabase migrations to the remote project and verify AI persistence with service-role credentials.
-- Replace deterministic SEC-style chunks with live EDGAR ingestion, chunking, embeddings, and retrieval.
 - Enable direct OpenAI only after paid model usage is explicitly approved.
 - Source licensed marketing media and record final license evidence.
+
+These are environment activations, not missing local product paths. The repository deliberately does not contain production secrets, claim a public deployment, or represent deterministic local generation as a live model call.

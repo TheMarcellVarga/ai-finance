@@ -6,7 +6,7 @@ This project is not a trading bot, brokerage product, robo-advisor, return-predi
 
 ## Current Status
 
-Roadmap phase: Evidence Workspace Upgrade Phase 1 is complete. Aperture now has an owner-scoped, durable document foundation with private storage, page-aware parsing, processing jobs, retry behavior, and a real research upload/status UI. Retrieval and model-backed document analysis begin in Upgrade Phase 2 and later; external model calls remain disabled.
+Roadmap phase: the six-phase Evidence Workspace Upgrade Track is complete. Aperture now supports an owner-scoped upload-to-reviewed-export workflow with private storage, page-aware retrieval, schema-valid structured analysis, citations, human approval, deterministic evaluation, accessibility contracts, CI gates, and production container artifacts. External model calls remain disabled pending explicit approval.
 
 Phase 0 control-plane assets through Phase 9 local completion are in place:
 - [Agent instructions](AGENTS.md)
@@ -27,6 +27,8 @@ Phase 0 control-plane assets through Phase 9 local completion are in place:
 - Phase 9 completion audit in [docs/UNFINISHED_SURFACES_AUDIT.md](docs/UNFINISHED_SURFACES_AUDIT.md)
 - Watchlist, settings, research, goals, risk, blog, privacy, and terms surfaces with local demo interactions and completion-copy cleanup
 - Upgrade Phase 1 private document research flow: Next.js BFF, Go upload/status/retry APIs, Supabase Storage, Postgres jobs, page-aware parsing, and owner-isolation verification
+- Upgrade Phases 2–5 hybrid retrieval, structured evidence analysis, citation inspection, immutable raw output, append-only human review, and reviewed Markdown export
+- Upgrade Phase 6 regression corpus with 40 cases across five source documents, evaluation dashboard, prompt-injection screening, upload-to-export E2E gate, WCAG-focused semantics, and API/worker deployment artifacts
 
 Current AI working mode:
 - Deterministic fixture mode is the default for local development and review.
@@ -106,6 +108,9 @@ scripts/run-ai-evals
 scripts/check-ai-safety-fixtures
 scripts/verify-phase5-live
 scripts/verify-phase7-security
+scripts/verify-accessibility-contracts
+scripts/verify-deployment-artifacts
+scripts/verify-evidence-workspace-e2e
 ```
 
 ## Local Development
@@ -182,9 +187,10 @@ never use a `NEXT_PUBLIC_` prefix.
 1. Open `/` and confirm the product is framed as AI financial research, not trading automation.
 2. Open `/app/portfolio`, refresh provider-backed portfolio data, and inspect holdings, allocation, freshness, and the intraday chart.
 3. Open `/app/watchlist` to review provider-backed watchlist data, freshness, add-ticker flow, and failure states.
-4. Open `/app/research`, `/app/goals`, and `/app/risk` to review cited AI outputs, route-backed generation controls, saved research behavior, and safety copy.
-5. Open `/app/settings` and `/app/billing` to verify privacy/provider controls, server-side entitlement limits, and local demo billing state.
-6. Run the verification commands in [Demo walkthrough script](docs/DEMO_WALKTHROUGH.md).
+4. Open `/app/research` to review private source upload, evidence search, structured cited analysis, human section decisions, citation feedback, and reviewed export.
+5. Open `/app/research/evaluations` to inspect the stored Phase 6 build/model/prompt/retrieval baseline and release-gate metrics.
+6. Open `/app/goals`, `/app/risk`, `/app/settings`, and `/app/billing` to verify scenario, safety, privacy/provider, entitlement, and local demo billing boundaries.
+7. Run the verification commands in [Demo walkthrough script](docs/DEMO_WALKTHROUGH.md).
 
 ## Recruiter Case Study
 

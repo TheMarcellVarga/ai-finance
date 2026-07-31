@@ -529,7 +529,7 @@ Completion evidence: `docs/UPGRADE_PHASE_5_COMPLETION.md`.
 
 ### Upgrade Phase 6: Evaluation, Accessibility, And Release Polish
 
-Status: pending.
+Status: complete.
 
 Primary skills: `ai-research-features`, `nextjs-fintech-ui`.
 
@@ -553,6 +553,8 @@ Acceptance gate:
 - Every consequential action requires approval.
 - The upload-to-reviewed-export flow passes end to end.
 - Known failure modes and production configuration are documented.
+
+Completion evidence: `docs/UPGRADE_PHASE_6_COMPLETION.md`.
 
 ## AI Task Template
 Use this template for future agent tasks.
