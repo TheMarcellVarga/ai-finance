@@ -387,15 +387,15 @@ export function ResearchWorkspace({
         </div>
       </section>
 
-      <div aria-live="polite">
+      <div aria-live="polite" aria-atomic="true">
         {error ? (
-          <div className="flex items-start gap-3 rounded-[1rem] border border-rose-200/10 bg-rose-200/6 p-4">
+          <div role="alert" className="flex items-start gap-3 rounded-[1rem] border border-rose-200/10 bg-rose-200/6 p-4">
             <AlertTriangle className="mt-0.5 size-4 shrink-0 text-rose-100" />
             <p className="text-sm leading-6 text-rose-50">{error}</p>
           </div>
         ) : null}
         {notice ? (
-          <div className="flex items-start gap-3 rounded-[1rem] border border-emerald-200/10 bg-emerald-200/6 p-4">
+          <div role="status" className="flex items-start gap-3 rounded-[1rem] border border-emerald-200/10 bg-emerald-200/6 p-4">
             <Check className="mt-0.5 size-4 shrink-0 text-emerald-100" />
             <p className="text-sm leading-6 text-emerald-50">{notice}</p>
           </div>
@@ -489,9 +489,9 @@ export function ResearchWorkspace({
             </fieldset>
           </form>
 
-          <div aria-live="polite">
+          <div aria-live="polite" aria-atomic="true">
             {searchError ? (
-              <div className="mt-5 flex items-start gap-3 rounded-[1rem] border border-rose-200/10 bg-rose-200/6 p-4">
+              <div role="alert" className="mt-5 flex items-start gap-3 rounded-[1rem] border border-rose-200/10 bg-rose-200/6 p-4">
                 <AlertTriangle className="mt-0.5 size-4 shrink-0 text-rose-100" />
                 <p className="text-sm leading-6 text-rose-50">{searchError}</p>
               </div>
@@ -501,7 +501,7 @@ export function ResearchWorkspace({
 
         <div aria-busy={searching} className="min-h-48">
           {searching ? (
-            <div className="space-y-0 divide-y divide-white/7">
+            <div aria-hidden="true" className="space-y-0 divide-y divide-white/7">
               {[0, 1, 2].map((item) => (
                 <div key={item} className="animate-pulse p-5 sm:p-6">
                   <div className="h-3 w-40 rounded bg-white/8" />

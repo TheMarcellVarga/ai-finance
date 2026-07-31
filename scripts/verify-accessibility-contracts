@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+web_root="$repo_root/apps/web/src"
+
+require_pattern() {
+  local pattern="$1"
+  local file="$2"
+  local description="$3"
+
+  if ! rg -q "$pattern" "$file"; then
+    echo "Accessibility contract failed: $description ($file)" >&2
+    exit 1
+  fi
+}
+
+require_pattern 'href="#main-content"' "$web_root/app/layout.tsx" "global skip link is missing"
+require_pattern 'id="main-content"' "$web_root/components/app-shell.tsx" "workspace skip target is missing"
+require_pattern 'id="main-content"' "$web_root/components/marketing-page.tsx" "marketing skip target is missing"
+require_pattern 'aria-label="Primary workspace navigation"' "$web_root/components/app-shell.tsx" "desktop workspace navigation is unlabeled"
+require_pattern 'prefers-reduced-motion: reduce' "$web_root/app/globals.css" "reduced-motion override is missing"
+require_pattern '<caption className="sr-only">' "$web_root/components/portfolio-workspace.tsx" "holdings table lacks a caption"
+require_pattern 'role="alert"' "$web_root/components/research-workspace.tsx" "research failures are not announced"
+require_pattern 'aria-hidden="true" className="space-y-0' "$web_root/components/structured-research-panel.tsx" "research loading skeleton is exposed"
+
+if rg -n '<tr[[:space:][:print:]]*onClick=' "$web_root/components" --glob '*.tsx'; then
+  echo "Accessibility contract failed: interactive table rows must expose a native control" >&2
+  exit 1
+fi
+
+echo "Accessibility contracts passed."

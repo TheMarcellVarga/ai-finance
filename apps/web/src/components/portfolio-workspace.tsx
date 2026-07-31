@@ -426,6 +426,9 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
               </div>
               <div className="mt-5 hidden overflow-x-auto md:block">
                 <table className="w-full min-w-[42rem] text-left text-sm">
+                  <caption className="sr-only">
+                    Current portfolio holdings. Select an asset name to load its price history.
+                  </caption>
                   <thead className="text-xs uppercase tracking-[0.14em] text-zinc-500">
                     <tr>
                       <th className="py-3 font-normal">Asset</th>
@@ -440,14 +443,20 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                     {holdings.map((holding) => (
                       <tr
                         key={holding.id}
-                        onClick={() => void loadChart(holding.asset.ticker, interval)}
-                        className={`cursor-pointer text-zinc-300 transition hover:bg-white/[0.035] ${
+                        className={`text-zinc-300 transition hover:bg-white/[0.035] ${
                           selectedTicker === holding.asset.ticker ? "bg-cyan-200/[0.055] text-zinc-100" : ""
                         }`}
                       >
                         <td className="py-4">
-                          <span className="block font-mono text-white">{holding.asset.ticker}</span>
-                          <span className="mt-1 block text-xs text-zinc-500">{holding.asset.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => void loadChart(holding.asset.ticker, interval)}
+                            aria-label={`Load ${holding.asset.name} price history`}
+                            className="rounded text-left hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60"
+                          >
+                            <span className="block font-mono text-white">{holding.asset.ticker}</span>
+                            <span className="mt-1 block text-xs text-zinc-500">{holding.asset.name}</span>
+                          </button>
                         </td>
                         <td className="py-4 font-mono">{holding.displayQuantity}</td>
                         <td className="py-4 font-mono">{holding.asset.displayPrice ?? "Provider pending"}</td>

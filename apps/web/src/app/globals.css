@@ -690,6 +690,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
   .cinema-hero-media,
   .cinema-ambient,
   .cinema-reveal,
@@ -697,4 +706,23 @@
   .workspace-orb {
     animation: none;
   }
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  border: 1px solid rgb(165 243 252 / 0.65);
+  border-radius: 0.65rem;
+  background: #09090b;
+  padding: 0.65rem 0.9rem;
+  color: #ecfeff;
+  font-size: 0.875rem;
+  box-shadow: 0 0 0 3px rgb(34 211 238 / 0.2);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
 }

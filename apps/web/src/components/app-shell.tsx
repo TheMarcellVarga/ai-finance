@@ -33,7 +33,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <UserButton userProfileMode="navigation" userProfileUrl="/app/settings/account" />
           </div>
         </div>
-        <nav className="mt-6 space-y-2">
+        <nav aria-label="Primary workspace navigation" className="mt-6 space-y-2">
           {nav.map((item) => (
             <Link
               key={item.href}
@@ -53,7 +53,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <BrandMark />
               <UserButton userProfileMode="navigation" userProfileUrl="/app/settings/account" />
             </div>
-            <nav className="mt-4 hidden gap-2 overflow-x-auto pb-1 text-sm text-zinc-400 sm:flex">
+            <nav aria-label="Compact workspace navigation" className="mt-4 hidden gap-2 overflow-x-auto pb-1 text-sm text-zinc-400 sm:flex">
               {nav.map((item) => (
                 <Link key={item.href} href={item.href} className="shrink-0 rounded-[0.85rem] bg-white/[0.025] px-3 py-1.5 transition-[background-color,color] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-black/25 hover:text-cyan-50">
                   {item.label}
@@ -62,7 +62,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </nav>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-7xl px-3 pb-24 pt-4 sm:px-6 sm:pb-8 sm:pt-6 lg:px-8 xl:py-8">{children}</main>
+        <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-7xl px-3 pb-24 pt-4 sm:px-6 sm:pb-8 sm:pt-6 lg:px-8 xl:py-8">{children}</main>
       </div>
       <nav className="glass-surface fixed inset-x-3 bottom-3 z-30 flex gap-1 overflow-x-auto rounded-[1.05rem] p-1.5 sm:hidden" aria-label="Workspace navigation">
         {nav.map((item) => (

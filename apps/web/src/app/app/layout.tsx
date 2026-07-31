@@ -7,7 +7,7 @@ import { clerkUnavailableMessage, hasClerkRuntimeKeys } from "@/lib/clerk-config
 export default async function WorkspaceLayout({ children }: { children: ReactNode }) {
   if (!hasClerkRuntimeKeys()) {
     return (
-      <main className="page-stage grid min-h-dvh place-items-center px-4 py-12 text-center">
+      <main id="main-content" tabIndex={-1} className="page-stage grid min-h-dvh place-items-center px-4 py-12 text-center">
         <div className="max-w-md rounded-2xl border border-white/10 bg-black/50 p-6 text-white shadow-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/80">Configuration required</p>
           <h1 className="mt-3 text-2xl font-semibold">Workspace sign-in is unavailable</h1>

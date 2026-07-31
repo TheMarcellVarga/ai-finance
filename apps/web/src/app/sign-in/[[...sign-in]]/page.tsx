@@ -5,7 +5,7 @@ import { clerkUnavailableMessage, hasClerkPublishableKey } from "@/lib/clerk-con
 export default function SignInPage() {
   if (!hasClerkPublishableKey()) {
     return (
-      <main className="page-stage grid min-h-dvh place-items-center px-4 py-12 text-center">
+      <main id="main-content" tabIndex={-1} className="page-stage grid min-h-dvh place-items-center px-4 py-12 text-center">
         <div className="max-w-md rounded-2xl border border-white/10 bg-black/50 p-6 text-white shadow-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/80">Configuration required</p>
           <h1 className="mt-3 text-2xl font-semibold">Sign-in is unavailable</h1>
@@ -16,7 +16,7 @@ export default function SignInPage() {
   }
 
   return (
-    <main className="page-stage grid min-h-dvh place-items-center px-4 py-12">
+    <main id="main-content" tabIndex={-1} className="page-stage grid min-h-dvh place-items-center px-4 py-12">
       <SignIn path="/sign-in" routing="path" signUpUrl="/sign-up" />
     </main>
   );
