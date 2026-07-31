@@ -29,7 +29,7 @@ async function main() {
     })),
   );
   const cases = JSON.parse(await readFile(path.join(fixtureRoot, "cases.json"), "utf8"));
-  const baselinePath = path.join(fixtureRoot, "baseline.json");
+  const baselinePath = path.join(process.cwd(), "src/data/evidence-eval-baseline.json");
   let baseline: EvidenceEvaluationReport | undefined;
   try {
     baseline = JSON.parse(await readFile(baselinePath, "utf8")) as EvidenceEvaluationReport;

@@ -2,7 +2,7 @@ import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, BookMarked, CircleGauge, Goal, Settings, ShieldCheck, UserRound, WalletCards } from "lucide-react";
+import { BarChart3, BookMarked, CircleGauge, FlaskConical, Goal, Settings, ShieldCheck, UserRound, WalletCards } from "lucide-react";
 
 import { BrandMark } from "@/components/brand";
 
@@ -10,6 +10,7 @@ const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/app", label: "Overview", icon: CircleGauge },
   { href: "/app/portfolio", label: "Portfolio", icon: WalletCards },
   { href: "/app/research", label: "Research", icon: BookMarked },
+  { href: "/app/research/evaluations", label: "Evaluations", icon: FlaskConical },
   { href: "/app/goals", label: "Goals", icon: Goal },
   { href: "/app/watchlist", label: "Watchlist", icon: BarChart3 },
   { href: "/app/risk", label: "Risk", icon: ShieldCheck },
