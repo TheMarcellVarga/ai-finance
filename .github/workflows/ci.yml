@@ -41,6 +41,8 @@ jobs:
           scripts/run-ai-evals
           scripts/check-ai-safety-fixtures
           scripts/verify-phase7-security
+          scripts/verify-accessibility-contracts
+          scripts/verify-deployment-artifacts
           scripts/validate-supabase-migrations
 
   evidence-e2e:
