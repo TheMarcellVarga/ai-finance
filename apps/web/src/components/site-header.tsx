@@ -8,6 +8,7 @@ import { hasClerkRuntimeKeys } from "@/lib/clerk-config";
 
 const navItems = [
   { href: "/product", label: "Product" },
+  { href: "/demo", label: "Try demo" },
   { href: "/pricing", label: "Pricing" },
   { href: "/security", label: "Security" },
   { href: "/blog", label: "Briefs" },

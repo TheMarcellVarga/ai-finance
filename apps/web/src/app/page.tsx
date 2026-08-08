@@ -88,7 +88,7 @@ export default function Home() {
                 variant="outline"
                 className="rounded-[0.95rem] px-5"
               >
-                <Link href="/product">See the product</Link>
+                <Link href="/demo">Try the guided demo</Link>
               </Button>
             </div>
           </div>
