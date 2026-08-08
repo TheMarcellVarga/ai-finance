@@ -4,6 +4,8 @@ Recruiter-grade fintech/wealthtech product build for an AI financial research an
 
 This project is not a trading bot, brokerage product, robo-advisor, return-prediction engine, or personalized investment advice system. The product helps users research assets, understand portfolio risk, compare scenarios, review goals, and save cited AI-assisted briefs.
 
+[Open the public guided demo](https://ai-finance-two-bice.vercel.app/demo) · The demo is read-only and uses fictional sample data; the owner-scoped workspace remains sign-in protected.
+
 ## Current Status
 
 Roadmap phase: the six-phase Evidence Workspace Upgrade Track is complete. Aperture now supports an owner-scoped upload-to-reviewed-export workflow with private storage, page-aware retrieval, schema-valid structured analysis, citations, human approval, deterministic evaluation, accessibility contracts, CI gates, and production container artifacts. External model calls remain disabled pending explicit approval.
