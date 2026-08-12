@@ -28,7 +28,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-for command_name in curl go jq npm supabase; do
+for command_name in curl go jq npm pdftotext supabase; do
   command -v "${command_name}" >/dev/null || {
     echo "Missing required command: ${command_name}" >&2
     exit 1
@@ -158,6 +158,12 @@ for _ in $(seq 1 60); do
 done
 [[ "${E2E_DOCUMENT_READY}" == "true" ]] || {
   echo "Uploaded document did not become ready." >&2
+  echo "--- document worker log ---" >&2
+  tail -n 80 "${E2E_TMP_DIR}/worker.log" >&2
+  echo "--- finance API log ---" >&2
+  tail -n 80 "${E2E_TMP_DIR}/api.log" >&2
+  echo "--- Next.js log ---" >&2
+  tail -n 80 "${E2E_TMP_DIR}/web.log" >&2
   exit 1
 }
 
@@ -233,6 +239,12 @@ for _ in $(seq 1 60); do
 done
 [[ "${E2E_UNTRUSTED_STATUS}" == "ready" ]] || {
   echo "Untrusted document did not become ready." >&2
+  echo "--- document worker log ---" >&2
+  tail -n 80 "${E2E_TMP_DIR}/worker.log" >&2
+  echo "--- finance API log ---" >&2
+  tail -n 80 "${E2E_TMP_DIR}/api.log" >&2
+  echo "--- Next.js log ---" >&2
+  tail -n 80 "${E2E_TMP_DIR}/web.log" >&2
   exit 1
 }
 

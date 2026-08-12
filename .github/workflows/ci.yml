@@ -26,6 +26,8 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
+      - name: Install document parser
+        run: sudo apt-get update && sudo apt-get install --yes poppler-utils
       - name: Install web dependencies
         run: npm ci
         working-directory: apps/web
@@ -61,6 +63,8 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
+      - name: Install document parser
+        run: sudo apt-get update && sudo apt-get install --yes poppler-utils
       - name: Install web dependencies
         run: npm ci
         working-directory: apps/web
