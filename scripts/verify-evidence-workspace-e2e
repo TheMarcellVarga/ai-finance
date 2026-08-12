@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
 E2E_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 E2E_API_PORT="${EVIDENCE_E2E_API_PORT:-18080}"
@@ -26,7 +26,35 @@ cleanup() {
     rm -rf -- "${E2E_TMP_DIR}"
   fi
 }
+
+dump_service_logs() {
+  local label
+  local log_file
+
+  for label in "document worker" "finance API" "Next.js"; do
+    case "${label}" in
+      "document worker") log_file="${E2E_TMP_DIR}/worker.log" ;;
+      "finance API") log_file="${E2E_TMP_DIR}/api.log" ;;
+      "Next.js") log_file="${E2E_TMP_DIR}/web.log" ;;
+    esac
+
+    if [[ -f "${log_file}" ]]; then
+      echo "--- ${label} log ---" >&2
+      tail -n 80 "${log_file}" >&2
+    fi
+  done
+}
+
+report_unexpected_failure() {
+  local exit_code="$?"
+  trap - ERR
+  echo "Evidence workspace E2E stopped unexpectedly (exit ${exit_code})." >&2
+  dump_service_logs
+  exit "${exit_code}"
+}
+
 trap cleanup EXIT INT TERM
+trap report_unexpected_failure ERR
 
 for command_name in curl go jq npm pdftotext supabase; do
   command -v "${command_name}" >/dev/null || {
@@ -158,12 +186,7 @@ for _ in $(seq 1 60); do
 done
 [[ "${E2E_DOCUMENT_READY}" == "true" ]] || {
   echo "Uploaded document did not become ready." >&2
-  echo "--- document worker log ---" >&2
-  tail -n 80 "${E2E_TMP_DIR}/worker.log" >&2
-  echo "--- finance API log ---" >&2
-  tail -n 80 "${E2E_TMP_DIR}/api.log" >&2
-  echo "--- Next.js log ---" >&2
-  tail -n 80 "${E2E_TMP_DIR}/web.log" >&2
+  dump_service_logs
   exit 1
 }
 
@@ -239,12 +262,7 @@ for _ in $(seq 1 60); do
 done
 [[ "${E2E_UNTRUSTED_STATUS}" == "ready" ]] || {
   echo "Untrusted document did not become ready." >&2
-  echo "--- document worker log ---" >&2
-  tail -n 80 "${E2E_TMP_DIR}/worker.log" >&2
-  echo "--- finance API log ---" >&2
-  tail -n 80 "${E2E_TMP_DIR}/api.log" >&2
-  echo "--- Next.js log ---" >&2
-  tail -n 80 "${E2E_TMP_DIR}/web.log" >&2
+  dump_service_logs
   exit 1
 }
 
