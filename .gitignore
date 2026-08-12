@@ -8,5 +8,6 @@
 artifacts/
 .DS_Store
 .history/
+.agents/
 .vercel
 **/var/

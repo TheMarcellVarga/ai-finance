@@ -197,3 +197,9 @@ never use a `NEXT_PUBLIC_` prefix.
 ## Recruiter Case Study
 
 The portfolio story is documented in [docs/PORTFOLIO_CASE_STUDY.md](docs/PORTFOLIO_CASE_STUDY.md). It covers the product boundary, architecture tradeoffs, AI safety posture, backend ownership checks, billing/security implementation, verification commands, and remaining live-environment hardening.
+
+## License
+
+No license file is included. The source is available for portfolio review, but
+reuse, redistribution, and derivative works are not granted unless a license is
+added later.

@@ -33,7 +33,7 @@ jobs:
         run: go test ./... && go vet ./...
         working-directory: services/api
       - name: Verify web, evals, and production build
-        run: npm run test:phase6 && npm run lint && npm run build
+        run: npm run test:phase6 && npm run lint && npm run build && npm audit --omit=dev
         working-directory: apps/web
       - name: Verify contracts, safety, and migrations
         run: |
