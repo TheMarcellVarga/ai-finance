@@ -22,15 +22,19 @@ export default function DemoPage() {
     <MarketingPage>
       <section className="page-stage px-4 py-16 sm:px-6 lg:px-8">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(103,232,249,0.14),transparent_24rem),radial-gradient(circle_at_76%_22%,rgba(39,39,42,0.7),transparent_28rem),linear-gradient(180deg,rgba(9,9,11,0),rgba(9,9,11,0.62)_76%)]" />
+        <div className="pointer-events-none cinematic-grid absolute inset-0 opacity-35" />
         <div className="relative z-10 mx-auto max-w-7xl">
           <div className="section-shell rounded-[1.25rem] p-6 sm:p-10 lg:p-12">
             <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-3xl">
-                <h1 className="type-display text-balance text-4xl text-white sm:text-5xl xl:text-6xl">
+                <p className="type-label inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100">
+                  Guided demo · sample data
+                </p>
+                <h1 className="type-display mt-6 text-balance text-4xl text-white sm:text-5xl xl:text-6xl">
                   See the research rhythm before you create an account.
                 </h1>
                 <p className="mt-6 max-w-2xl text-base leading-7 text-zinc-400">
-                  Guided demo using fictional holdings and deterministic evidence. It shows the product loop without connecting a brokerage, calling a market provider, or giving investment advice.
+                  This read-only walkthrough uses fictional holdings and deterministic evidence. It shows the product loop without connecting a brokerage, calling a market provider, or giving investment advice.
                 </p>
                 <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                   <Button asChild size="lg" className="rounded-[0.95rem] px-5">
@@ -44,9 +48,9 @@ export default function DemoPage() {
                   </Button>
                 </div>
               </div>
-              <div className="border-l border-cyan-100/24 py-1 pl-5 lg:w-72">
-                <p className="text-sm font-medium text-cyan-50">Read-only and private</p>
-                <p className="mt-2 text-sm leading-6 text-zinc-400">No sign-in required. No personal data is collected on this page.</p>
+              <div className="rounded-[1rem] border border-cyan-100/12 bg-cyan-100/[0.035] p-5 lg:w-72">
+                <p className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-cyan-100/70">Demo boundary</p>
+                <p className="mt-3 text-sm leading-6 text-zinc-300">No sign-in required. No personal data is collected on this page.</p>
               </div>
             </div>
 
@@ -73,7 +77,7 @@ export default function DemoPage() {
                     </div>
                   ))}
                 </div>
-                <p className="mt-7 rounded-[0.9rem] bg-amber-100/[0.035] p-4 text-sm leading-6 text-amber-50/70">Freshness: sample snapshot · captured for this walkthrough · not a live market feed.</p>
+                <p className="mt-7 rounded-[0.9rem] bg-amber-100/[0.035] p-4 text-sm leading-6 text-zinc-400">Freshness: sample snapshot · captured for this walkthrough · not a live market feed.</p>
               </section>
 
               <section className="glass-surface rounded-[1.1rem] p-5 sm:p-7" aria-labelledby="demo-brief-heading">
