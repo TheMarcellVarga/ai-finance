@@ -12,10 +12,11 @@ Live marketing media remains a follow-on task because final source selection dep
 - Positioning: AI financial research and portfolio decision-support workspace.
 - Visual tone: dark metal, glass edge refraction, dense metrics, restrained green and lime state colors.
 - Typography: Outfit for interface/display text and Geist Mono for tickers, prices, quotas, and timestamps.
-- Mark: minimalist monoline A/lens motif with a centered research focal point. The app renders the mark in `apps/web/src/components/brand.tsx`.
+- Mark: three evidence planes converging through a circular aperture, with a pale-lime focal point and a subtle `A` in the negative space. The app renders the production SVG geometry in `apps/web/src/components/brand.tsx`.
 - Production-safe assets:
   - `apps/web/public/brand/aperture-mark.svg`
   - `apps/web/public/brand/aperture-social-card.svg`
+  - `apps/web/public/brand/aperture-brand-concept-v2.png` (concept board; not used as production logo text)
   - `apps/web/public/media/aperture-private-study-hero-v1.png`
   - `apps/web/public/media/aperture-private-study-detail-v1.png`
   - `apps/web/src/app/icon.png`
