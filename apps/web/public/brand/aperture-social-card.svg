@@ -1,34 +1,45 @@
 <svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">Aperture Financial Intelligence social preview</title>
-  <desc id="desc">Dark fintech social preview for an AI financial research workspace.</desc>
+  <desc id="desc">A dark editorial preview for an evidence-first AI financial research workspace.</desc>
   <rect width="1200" height="630" fill="#09090B"/>
-  <path d="M0 0H1200V630H0V0Z" fill="url(#grid)" fill-opacity="0.2"/>
-  <circle cx="970" cy="110" r="330" fill="#0F766E" fill-opacity="0.16"/>
-  <circle cx="110" cy="560" r="280" fill="#365314" fill-opacity="0.12"/>
-  <rect x="76" y="74" width="1048" height="482" rx="36" fill="#18181B" fill-opacity="0.66" stroke="white" stroke-opacity="0.1"/>
-  <g transform="translate(112 116)">
-    <rect width="92" height="92" rx="20" fill="#09090B" stroke="white" stroke-opacity="0.12"/>
-    <path d="M23 69L46 19L69 69" stroke="#FAFAFA" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M33 50C37 45 42 43 46 43C50 43 55 45 59 50" stroke="#A7F3D0" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="46" cy="50" r="4" fill="#D9F99D"/>
+  <path d="M0 0H1200V630H0V0Z" fill="url(#grid)" fill-opacity="0.16"/>
+  <circle cx="1060" cy="-20" r="380" fill="#0F766E" fill-opacity="0.14"/>
+  <circle cx="160" cy="690" r="330" fill="#365314" fill-opacity="0.1"/>
+  <rect x="72" y="70" width="1056" height="490" rx="38" fill="#121214" fill-opacity="0.82" stroke="#F4F4F0" stroke-opacity="0.1"/>
+  <g transform="translate(112 112)">
+    <rect width="104" height="104" rx="25" fill="#09090B" stroke="#F4F4F0" stroke-opacity="0.12"/>
+    <g transform="translate(18 18)" clip-path="url(#small-mark-clip)">
+      <circle cx="34" cy="34" r="29" fill="#F4F4F0"/>
+      <path d="M31.6 3H37.6V24.3H32Z" fill="#09090B"/>
+      <path d="M47.4 38L68 43.5V49.6L44.6 43.5Z" fill="#09090B"/>
+      <path d="M23.6 40L7.6 59.3L3.4 55L20 35.2Z" fill="#09090B"/>
+      <path d="M34 22.1L48.7 45.7L20.1 46.6Z" fill="#09090B"/>
+      <circle cx="34" cy="36.6" r="3.2" fill="#D8F28A"/>
+    </g>
   </g>
-  <text x="112" y="268" fill="#FFFFFF" font-family="Outfit, Arial, sans-serif" font-size="72" font-weight="400">Aperture Financial Intelligence</text>
-  <text x="116" y="330" fill="#A1A1AA" font-family="Outfit, Arial, sans-serif" font-size="30" font-weight="300">AI research, portfolio risk context, cited briefs, and safe goal scenarios.</text>
-  <g transform="translate(116 410)">
-    <rect width="244" height="58" rx="18" fill="white" fill-opacity="0.05" stroke="white" stroke-opacity="0.08"/>
-    <text x="22" y="37" fill="#A7F3D0" font-family="Geist Mono, Menlo, monospace" font-size="18">CITATIONS READY</text>
-  </g>
-  <g transform="translate(384 410)">
-    <rect width="252" height="58" rx="18" fill="white" fill-opacity="0.05" stroke="white" stroke-opacity="0.08"/>
-    <text x="22" y="37" fill="#A7F3D0" font-family="Geist Mono, Menlo, monospace" font-size="18">NO TRADING BOT</text>
-  </g>
-  <g transform="translate(660 410)">
-    <rect width="276" height="58" rx="18" fill="white" fill-opacity="0.05" stroke="white" stroke-opacity="0.08"/>
-    <text x="22" y="37" fill="#D9F99D" font-family="Geist Mono, Menlo, monospace" font-size="18">FRESHNESS SHOWN</text>
+  <text x="112" y="310" fill="#F4F4F0" font-family="Outfit, Arial, sans-serif" font-size="76" font-weight="500" letter-spacing="-2">Aperture</text>
+  <text x="116" y="360" fill="#8EE6C1" font-family="Geist Mono, Menlo, monospace" font-size="17" font-weight="500" letter-spacing="4">FINANCIAL INTELLIGENCE</text>
+  <text x="116" y="432" fill="#A1A1AA" font-family="Outfit, Arial, sans-serif" font-size="30" font-weight="300">Evidence in focus. Decisions in context.</text>
+  <g transform="translate(865 154)">
+    <circle cx="118" cy="118" r="118" fill="#F4F4F0" fill-opacity="0.03" stroke="#F4F4F0" stroke-opacity="0.08"/>
+    <g clip-path="url(#large-mark-clip)">
+      <circle cx="118" cy="118" r="77" fill="#F4F4F0"/>
+      <path d="M111.6 41H127.5V98.2H112.6Z" fill="#09090B"/>
+      <path d="M159 128.2L218 143.8V161.3L151.5 143.8Z" fill="#09090B"/>
+      <path d="M90.2 133.8L45.2 187.8L33.2 175.8L80 120Z" fill="#09090B"/>
+      <path d="M118 84.5L159.4 151.1L79 153.5Z" fill="#09090B"/>
+      <circle cx="118" cy="125.2" r="9" fill="#D8F28A"/>
+    </g>
   </g>
   <defs>
-    <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse">
-      <path d="M44 0H0V44" stroke="white" stroke-opacity="0.2"/>
+    <clipPath id="small-mark-clip">
+      <circle cx="52" cy="52" r="29"/>
+    </clipPath>
+    <clipPath id="large-mark-clip">
+      <circle cx="118" cy="118" r="77"/>
+    </clipPath>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" stroke="#F4F4F0" stroke-opacity="0.16"/>
     </pattern>
   </defs>
 </svg>
