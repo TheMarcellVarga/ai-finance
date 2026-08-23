@@ -1,37 +1,46 @@
 import Link from "next/link";
 
+type ApertureGlyphProps = {
+  className?: string;
+};
+
+export function ApertureGlyph({ className }: ApertureGlyphProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      viewBox="0 0 64 64"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle cx="32" cy="32" r="27" fill="currentColor" />
+      <g clipPath="url(#aperture-glyph-clip)">
+        <path d="M29.8 4H35.4V23.8H30.2Z" className="fill-zinc-950" />
+        <path d="M44.4 35.6L64 40.8V46.6L41.8 40.8Z" className="fill-zinc-950" />
+        <path d="M22.2 37.6L7.2 55.6L3.2 51.6L18.8 33Z" className="fill-zinc-950" />
+        <path d="M32 20.8L45.8 43L19 43.8Z" className="fill-zinc-950" />
+        <circle cx="32" cy="34.4" r="3" fill="#D8F28A" />
+      </g>
+      <defs>
+        <clipPath id="aperture-glyph-clip">
+          <circle cx="32" cy="32" r="27" />
+        </clipPath>
+      </defs>
+    </svg>
+  );
+}
+
 export function BrandMark() {
   return (
-    <Link href="/" className="flex items-center gap-3" aria-label="Aperture home">
-      <span className="grid size-9 shrink-0 place-items-center rounded-[0.7rem] border border-white/10 bg-zinc-950/80 text-zinc-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_16px_40px_rgba(0,0,0,0.2)]">
-        <svg
-          aria-hidden="true"
-          className="size-6"
-          viewBox="0 0 32 32"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M7.8 24.5L16 6.8L24.2 24.5"
-            stroke="currentColor"
-            strokeWidth="1.75"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M11.5 17.4C12.9 15.9 14.4 15.2 16 15.2C17.6 15.2 19.1 15.9 20.5 17.4"
-            stroke="#A7F3D0"
-            strokeWidth="1.35"
-            strokeLinecap="round"
-          />
-          <circle cx="16" cy="17.4" r="1.35" fill="#D9F99D" />
-        </svg>
+    <Link href="/" className="group flex items-center gap-3" aria-label="Aperture home">
+      <span className="grid size-9 shrink-0 place-items-center rounded-[0.72rem] border border-white/10 bg-zinc-950/90 text-[#f4f4f0] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_14px_36px_rgba(0,0,0,0.24)] transition-colors group-hover:text-white">
+        <ApertureGlyph className="size-[1.65rem]" />
       </span>
-      <span className="leading-tight">
-        <span className="block text-[0.95rem] font-medium tracking-normal text-white">
+      <span className="leading-none">
+        <span className="block text-[0.98rem] font-medium tracking-[-0.02em] text-white">
           Aperture
         </span>
-        <span className="block text-[0.68rem] font-normal tracking-normal text-zinc-500">
+        <span className="mt-1 block text-[0.61rem] font-medium uppercase tracking-[0.13em] text-zinc-500">
           Financial Intelligence
         </span>
       </span>
