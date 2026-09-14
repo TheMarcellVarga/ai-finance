@@ -1,13 +1,15 @@
-// The monitor does several provider requests per selected market. Keep its
-// default response small enough for a short-lived serverless function while
-// allowing longer-running callers to request a bounded larger batch.
-export const DEFAULT_CRYPTO_MONITOR_LIMIT = 20;
+// The monitor does several provider requests per selected market. Keep the
+// default at the largest bounded batch supported by the serverless route.
+export const DEFAULT_CRYPTO_MONITOR_LIMIT = 80;
 export const MAX_CRYPTO_MONITOR_LIMIT = 80;
 
 export function normalizeCryptoMonitorLimit(value?: string | null) {
+  if (value == null || value.trim() === "") {
+    return DEFAULT_CRYPTO_MONITOR_LIMIT;
+  }
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) {
     return DEFAULT_CRYPTO_MONITOR_LIMIT;
   }
-  return Math.min(MAX_CRYPTO_MONITOR_LIMIT, Math.max(DEFAULT_CRYPTO_MONITOR_LIMIT, Math.floor(parsed)));
+  return Math.min(MAX_CRYPTO_MONITOR_LIMIT, Math.max(20, Math.floor(parsed)));
 }

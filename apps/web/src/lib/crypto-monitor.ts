@@ -49,6 +49,10 @@ const DEFAULT_LIMIT = DEFAULT_CRYPTO_MONITOR_LIMIT;
 const MAX_LIMIT = MAX_CRYPTO_MONITOR_LIMIT;
 const OKX_KLINE_PAGE_LIMIT = 300;
 const MAX_KLINE_HISTORY_PAGES = 8;
+// The monitor only needs a bounded recent history to identify the current
+// state. Detailed chart requests retain the longer eight-page history above.
+const MONITOR_KLINE_HISTORY_PAGES = 2;
+const MONITOR_FETCH_CONCURRENCY = 8;
 const CHART_CANDLE_LIMIT = 260;
 const ANALYSIS_CANDLE_LIMIT = OKX_KLINE_PAGE_LIMIT * MAX_KLINE_HISTORY_PAGES;
 const CCXT_KLINE_PAGE_LIMIT = 500;
@@ -638,7 +642,7 @@ async function fetchOkxCandleHistory(instId: string, interval: CryptoMonitorInte
   const candles: CryptoCandle[] = [];
   let after: string | null = null;
 
-  for (let page = 0; page < MAX_KLINE_HISTORY_PAGES; page += 1) {
+  for (let page = 0; page < MONITOR_KLINE_HISTORY_PAGES; page += 1) {
     const params = new URLSearchParams({
       instId,
       bar: okxBarForInterval(interval),
@@ -691,7 +695,7 @@ async function fetchCcxtCandleHistory(
   let since = Date.now() - lookback * firstResolution.sourceMilliseconds;
   let previousOldestOpenTime: number | null = null;
 
-  for (let page = 0; page < MAX_KLINE_HISTORY_PAGES; page += 1) {
+  for (let page = 0; page < MONITOR_KLINE_HISTORY_PAGES; page += 1) {
     const result = await fetchCcxtCandles(exchange, symbol, interval, CCXT_KLINE_PAGE_LIMIT, since);
     if (result.candles.length === 0) {
       return { candles: mergeCandles(candles), historyComplete: true };
@@ -785,7 +789,7 @@ async function loadOkxCryptoMonitor(
     loadCoinMarketCapSlugs(baseAssets),
   ]);
 
-  const settled = await mapWithConcurrency(selected, 8, async (ticker) => {
+  const settled = await mapWithConcurrency(selected, MONITOR_FETCH_CONCURRENCY, async (ticker) => {
     try {
       const history = await fetchOkxCandleHistory(ticker.instId, interval);
       const supertrend = calculateSupertrend(history.candles);
@@ -932,7 +936,7 @@ async function loadCcxtCryptoMonitor(
   ]);
 
   const failureReasons = new Set<string>();
-  const settled = await mapWithConcurrency(selected, 8, async ({ symbol, ticker, market, volume }) => {
+  const settled = await mapWithConcurrency(selected, MONITOR_FETCH_CONCURRENCY, async ({ symbol, ticker, market, volume }) => {
     try {
       const history = await fetchCcxtCandleHistory(provider, symbol, interval, scope);
       const supertrend = calculateSupertrend(history.candles);

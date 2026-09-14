@@ -407,8 +407,9 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
   const [query, setQuery] = useState("");
   const [trendFilter, setTrendFilter] = useState<TrendFilter>("all");
   const [sort, setSort] = useState<SortState>(sortPresets.volume);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!initialPayload && !initialError);
   const [error, setError] = useState<string | null>(initialError ?? null);
+  const autoLoadStartedRef = useRef(Boolean(initialPayload || initialError));
   const jumpTargetSymbolRef = useRef<string | null>(null);
   const [jumpRequest, setJumpRequest] = useState(0);
   const initialNow = initialPayload?.meta.capturedAt ? Date.parse(initialPayload.meta.capturedAt) : 0;
@@ -437,7 +438,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
 
     try {
       const response = await fetch(
-        `/api/finance/crypto-monitor?provider=${encodeURIComponent(selectedProvider)}&interval=${selectedInterval}&scope=${selectedScope}&limit=20`,
+        `/api/finance/crypto-monitor?provider=${encodeURIComponent(selectedProvider)}&interval=${selectedInterval}&scope=${selectedScope}&limit=80`,
         { cache: "no-store" },
       );
       const data = (await response.json()) as CryptoMonitorPayload | RouteError;
@@ -461,6 +462,17 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
     setProvider(nextProvider);
     void loadMarkets(nextProvider, interval, nextScope);
   }, [interval, loadMarkets, provider]);
+
+  useEffect(() => {
+    if (initialPayload || initialError || autoLoadStartedRef.current) {
+      return;
+    }
+
+    autoLoadStartedRef.current = true;
+    queueMicrotask(() => {
+      void loadMarkets(provider, interval, scope);
+    });
+  }, [initialError, initialPayload, interval, loadMarkets, provider, scope]);
 
   const rows = useMemo(() => {
     const normalizedQuery = query.trim().toUpperCase();

@@ -5,12 +5,12 @@ import { isFlipEligibleBaseAsset, isStablecoinAsset } from "./crypto-market-univ
 import { normalizeCryptoMonitorLimit } from "./crypto-monitor-limits";
 import { cryptoMonitorIntervals, normalizeCryptoMonitorInterval } from "./crypto-monitor-intervals";
 
-test("uses a Vercel-safe default monitor batch while retaining a bounded override", () => {
-  assert.equal(normalizeCryptoMonitorLimit(null), 20);
+test("uses the highest reliable monitor batch while retaining a bounded override", () => {
+  assert.equal(normalizeCryptoMonitorLimit(null), 80);
   assert.equal(normalizeCryptoMonitorLimit("20"), 20);
   assert.equal(normalizeCryptoMonitorLimit("80"), 80);
   assert.equal(normalizeCryptoMonitorLimit("150"), 80);
-  assert.equal(normalizeCryptoMonitorLimit("not-a-number"), 20);
+  assert.equal(normalizeCryptoMonitorLimit("not-a-number"), 80);
 });
 
 test("supports the expanded shared Supertrend timeframe set", () => {
