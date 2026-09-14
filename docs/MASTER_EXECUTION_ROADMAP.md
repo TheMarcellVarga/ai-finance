@@ -177,9 +177,12 @@ identifiers. Search accepts class, country, region, currency, exchange, and
 bounded result filters; provider availability and freshness remain explicit.
 
 The UI exposes the same search boundary through the portfolio and watchlist
-asset picker. Coverage means every instrument/country returned by the
-configured provider; the app does not invent quotes for asset classes or
-markets a provider does not cover.
+asset picker and a dedicated Global assets workspace modeled on the Crypto
+Research Monitor. The workspace makes the canonical class catalog, country
+filter standard, provider-backed search results, freshness, and coverage
+limits visible in one place. Coverage means every instrument/country returned
+by the configured provider; the app does not invent quotes for asset classes
+or markets a provider does not cover.
 
 ### Phase 4 Extension: Global Crypto Exchange Coverage
 

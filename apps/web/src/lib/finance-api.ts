@@ -1,3 +1,5 @@
+import type { FinanceAssetCatalog } from "@/lib/asset-catalog";
+
 export type FinanceAsset = {
   ticker: string;
   name: string;
@@ -34,6 +36,11 @@ export type FinanceAssetSearchResponse = {
     provider: string;
     freshness: string;
   };
+};
+
+export type FinanceAssetCatalogResponse = {
+  data: FinanceAssetCatalog;
+  meta: { provider: string; freshness: string; capturedAt: string };
 };
 
 export type FinancePortfolioResponse = {
@@ -194,6 +201,19 @@ export async function searchRealProviderAssets(input: {
     throw new Error(payload?.error?.message ?? `Finance API returned ${response.status}.`);
   }
   return payload as FinanceAssetSearchResponse;
+}
+
+export async function loadRealProviderAssetCatalog(): Promise<FinanceAssetCatalogResponse> {
+  const response = await financeFetch(`${financeApiBaseUrl}/v1/assets/catalog`, {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+  const text = await response.text();
+  const payload = parseFinancePayload(text);
+  if (!response.ok) {
+    throw new Error(payload?.error?.message ?? `Finance API returned ${response.status}.`);
+  }
+  return payload as FinanceAssetCatalogResponse;
 }
 
 export async function loadRealProviderPortfolio(authToken: string): Promise<FinancePortfolioResponse> {

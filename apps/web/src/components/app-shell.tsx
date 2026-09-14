@@ -2,7 +2,7 @@ import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, Bitcoin, BookMarked, CircleGauge, FlaskConical, Goal, Settings, ShieldCheck, UserRound, WalletCards } from "lucide-react";
+import { BarChart3, Bitcoin, BookMarked, CircleGauge, FlaskConical, Goal, Layers3, Settings, ShieldCheck, UserRound, WalletCards } from "lucide-react";
 
 import { BrandMark } from "@/components/brand";
 import { WorkspaceParticleBloom } from "@/components/workspace-particle-bloom";
@@ -15,6 +15,7 @@ const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/app/goals", label: "Goals", icon: Goal },
   { href: "/app/watchlist", label: "Watchlist", icon: BarChart3 },
   { href: "/app/crypto-monitor", label: "Crypto monitor", icon: Bitcoin },
+  { href: "/app/assets", label: "Global assets", icon: Layers3 },
   { href: "/app/risk", label: "Risk", icon: ShieldCheck },
   { href: "/app/settings", label: "Settings", icon: Settings },
   { href: "/app/settings/account", label: "Account", icon: UserRound },
