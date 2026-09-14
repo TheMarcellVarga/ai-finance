@@ -18,6 +18,7 @@ export function createFinanceAiTools(requestAuthorization?: string | null) {
         name: z.string(),
         baseCurrency: z.string(),
         summary: z.object({
+          totalValueCents: z.number().int().nonnegative(),
           displayTotalValue: z.string(),
           topConcentrationTicker: z.string(),
           topConcentrationBps: z.number(),

@@ -1,48 +1,32 @@
 import { Activity, AlertTriangle, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 
 import { AiActionPanel } from "@/components/ai-action-panel";
-import type { PortfolioSnapshot } from "@/lib/ai/portfolio-brief";
+import { getPortfolioSnapshot } from "@/lib/ai/portfolio-tools";
 import { createDeterministicRiskExplainer, riskExplainerSchema } from "@/lib/ai/research-intelligence";
+import { authenticatedSessionToken } from "@/lib/server/identity";
 
-const demoSnapshot: PortfolioSnapshot = {
-  id: "phase-6-risk-demo",
-  name: "Core research portfolio",
-  baseCurrency: "USD",
-  summary: {
-    displayTotalValue: "$48,250.00",
-    topConcentrationTicker: "NVDA",
-    topConcentrationBps: 4200,
-    holdingCount: 3,
-    reviewFlags: 2,
-  },
-  holdings: [
-    {
-      ticker: "NVDA",
-      name: "NVIDIA Corp.",
-      sector: "Technology",
-      displayValue: "$20,265.00",
-      displayPrice: "$337.75",
-      weightBps: 4200,
-      freshness: "fixture-provider-reported",
-      capturedAt: "2026-05-24T00:00:00.000Z",
-      provider: "deterministic-risk-fixture",
-    },
-  ],
-  allocation: [
-    { label: "Technology", weightBps: 7600, status: "review" },
-    { label: "Communication Services", weightBps: 1400, status: "ok" },
-    { label: "Broad market ETF", weightBps: 1000, status: "ok" },
-  ],
-  dataFreshness: {
-    provider: "deterministic-risk-fixture",
-    capturedAt: "2026-05-24T00:00:00.000Z",
-    freshness: "fixture-provider-reported",
-  },
-};
+export const dynamic = "force-dynamic";
 
-export default function RiskPage() {
+export default async function RiskPage() {
+  const authToken = await authenticatedSessionToken();
+  let snapshot;
+  try {
+    snapshot = await getPortfolioSnapshot({ requestAuthorization: `Bearer ${authToken}` });
+  } catch (error) {
+    return (
+      <section className="section-shell rounded-[1.25rem] p-6 sm:p-8">
+        <AlertTriangle className="size-5 text-amber-200" />
+        <h1 className="type-display mt-5 text-3xl text-white sm:text-5xl">Risk review needs your portfolio.</h1>
+        <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-400">
+          {error instanceof Error ? error.message : "No owner-scoped portfolio snapshot is available."} No sample allocation is substituted.
+        </p>
+        <Link href="/app/portfolio" className="mt-6 inline-flex rounded-[0.85rem] bg-cyan-100 px-4 py-2 text-sm font-medium text-black">Add a real holding</Link>
+      </section>
+    );
+  }
   const risk = riskExplainerSchema.parse(
-    createDeterministicRiskExplainer(demoSnapshot, "Explain concentration and allocation risk as research."),
+    createDeterministicRiskExplainer(snapshot, "Explain concentration and allocation risk as research."),
   );
 
   return (
@@ -56,7 +40,7 @@ export default function RiskPage() {
           </div>
           <div className="rounded-[8px] bg-amber-200/8 p-4">
             <p className="text-xs uppercase tracking-[0.18em] text-amber-100/80">Review flags</p>
-            <p className="mt-2 text-3xl font-light text-white">{demoSnapshot.summary.reviewFlags}</p>
+            <p className="mt-2 text-3xl font-light text-white">{snapshot.summary.reviewFlags}</p>
             <p className="mt-1 text-sm text-zinc-400">{risk.dataFreshness.freshness}</p>
           </div>
         </div>
@@ -115,10 +99,10 @@ export default function RiskPage() {
         description="Save the risk review with citations and usage metadata. Running the live route requires the local finance API portfolio snapshot to be available for the authenticated workspace."
         generateEndpoint="/api/ai/risk-explainer"
         generatePayload={{
-          portfolioId: demoSnapshot.id,
+          portfolioId: snapshot.id,
           prompt: "Explain concentration and allocation risk as research.",
         }}
-        saveTitle="Core research portfolio risk explainer"
+        saveTitle={`${snapshot.name} risk explainer`}
         saveSourceType="risk_explainer"
         citationCount={risk.citations.length}
       />

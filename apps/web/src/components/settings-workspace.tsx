@@ -1,17 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Bell, Database, Download, KeyRound, Lock, MonitorCog, ShieldCheck, ToggleLeft, ToggleRight, UserRound } from "lucide-react";
+import { Bell, CheckCircle2, Database, Download, KeyRound, Lock, MonitorCog, ShieldCheck, UserRound } from "lucide-react";
 
-type ToggleKey = "privacyTelemetry" | "providerFreshness" | "weeklyDigest" | "aiDisclaimers";
-
-const initialToggles: Record<ToggleKey, boolean> = {
-  privacyTelemetry: true,
-  providerFreshness: true,
-  weeklyDigest: false,
-  aiDisclaimers: true,
-};
 
 const controlGroups = [
   {
@@ -43,32 +34,35 @@ const controlGroups = [
   },
 ];
 
-const toggles: Array<{ key: ToggleKey; title: string; body: string }> = [
+const controls: Array<{ title: string; body: string; status: string }> = [
   {
-    key: "privacyTelemetry",
     title: "Scrub analytics payloads",
     body: "Keep PII, holdings, financial amounts, prompts, and AI outputs out of telemetry by default.",
+    status: "Enforced",
   },
   {
-    key: "providerFreshness",
     title: "Show freshness badges",
     body: "Display provider, timestamp, and stale-data labels anywhere market or AI context appears.",
+    status: "Enforced",
   },
   {
-    key: "weeklyDigest",
     title: "Weekly research digest",
-    body: "Prepare a notification digest from watchlist movement and saved research metadata.",
+    body: "No notification delivery is configured for this workspace.",
+    status: "Off",
   },
   {
-    key: "aiDisclaimers",
     title: "AI boundary notices",
     body: "Keep not-financial-advice notices visible near research, goal, and risk outputs.",
+    status: "Enforced",
   },
 ];
 
-export function SettingsWorkspace() {
-  const [values, setValues] = useState(initialToggles);
-  const [mode, setMode] = useState<"demo" | "live-ready">("demo");
+type SettingsWorkspaceProps = {
+  financeApiConnected: boolean;
+  externalAiEnabled: boolean;
+};
+
+export function SettingsWorkspace({ financeApiConnected, externalAiEnabled }: SettingsWorkspaceProps) {
 
   return (
     <div className="space-y-6">
@@ -88,29 +82,17 @@ export function SettingsWorkspace() {
               <MonitorCog className="mt-1 size-5 text-cyan-200" />
               <div>
                 <p className="text-sm text-zinc-400">Runtime mode</p>
-                <p className="mt-1 text-xl font-medium text-white">{mode === "demo" ? "Local demo mode" : "Live-provider ready"}</p>
+                <p className="mt-1 text-xl font-medium text-white">{financeApiConnected ? "Market data connected" : "Finance API unavailable"}</p>
                 <p className="mt-2 text-sm leading-6 text-zinc-500">
-                  {mode === "demo"
-                    ? "Deterministic AI is active for local verification without model spend."
-                    : "External providers require explicit environment switches and server-side credentials."}
+                  {externalAiEnabled
+                    ? "External AI generation is enabled with server-side provider configuration."
+                    : "External AI generation is off; portfolio calculations and retrieval remain available without model spend."}
                 </p>
               </div>
             </div>
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              {(["demo", "live-ready"] as const).map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setMode(item)}
-                    className={`rounded-[0.85rem] border px-3 py-2 text-sm transition active:scale-[0.98] ${
-                      mode === item
-                        ? "border-cyan-200/40 bg-cyan-200/12 text-cyan-50"
-                      : "border-white/10 bg-white/[0.03] text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200"
-                  }`}
-                >
-                  {item === "demo" ? "Demo" : "Live-ready"}
-                </button>
-              ))}
+            <div className="mt-5 flex items-center gap-2 rounded-[0.85rem] bg-white/[0.035] px-3 py-2 text-sm text-zinc-300">
+              <CheckCircle2 className={`size-4 ${financeApiConnected ? "text-emerald-200" : "text-amber-200"}`} />
+              Status reflects server configuration
             </div>
           </div>
         </div>
@@ -162,26 +144,17 @@ export function SettingsWorkspace() {
               <h2 className="type-card-title text-xl text-white">Workspace controls</h2>
             </div>
             <div className="mt-5 space-y-3">
-              {toggles.map((item) => {
-                const active = values[item.key];
-                const Icon = active ? ToggleRight : ToggleLeft;
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => setValues((current) => ({ ...current, [item.key]: !current[item.key] }))}
-                    className="w-full rounded-[1rem] border border-white/10 bg-white/[0.025] p-4 text-left transition hover:bg-black/20 active:scale-[0.99]"
-                  >
+              {controls.map((item) => (
+                  <div key={item.title} className="w-full rounded-[1rem] border border-white/10 bg-white/[0.025] p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-sm font-medium text-white">{item.title}</p>
                         <p className="mt-2 text-sm leading-6 text-zinc-500">{item.body}</p>
                       </div>
-                      <Icon className={active ? "size-5 text-cyan-200" : "size-5 text-zinc-600"} />
+                      <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-xs text-zinc-300">{item.status}</span>
                     </div>
-                  </button>
-                );
-              })}
+                  </div>
+              ))}
             </div>
           </div>
 

@@ -78,13 +78,13 @@ export async function POST(request: Request) {
     const usage = await recordUsageEvent({
       authToken,
       feature: "risk_explainer",
-      metadata: { mode: "deterministic-fixture", portfolioId: parsedRequest.data.portfolioId },
+      metadata: { mode: "portfolio_risk_rules", portfolioId: parsedRequest.data.portfolioId },
     });
 
     return NextResponse.json({
       data: parsedExplanation,
       meta: {
-        mode: "deterministic-fixture",
+        mode: "portfolio_risk_rules",
         liveAiGatewayCall: false,
         toolRuns: [
           {

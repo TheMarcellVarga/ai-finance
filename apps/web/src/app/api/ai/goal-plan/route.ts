@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { createDeterministicGoalPlan, goalPlanRequestSchema, goalPlanSchema } from "@/lib/ai/research-intelligence";
+import { getPortfolioSnapshot } from "@/lib/ai/portfolio-tools";
+import { createGoalScenarioPlan, goalPlanRequestSchema, goalPlanSchema } from "@/lib/ai/research-intelligence";
 import { checkUsageLimit, recordUsageEvent } from "@/lib/billing/usage";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import {
@@ -63,32 +64,44 @@ export async function POST(request: Request) {
     );
   }
 
-  const plan = createDeterministicGoalPlan(parsedRequest.data);
-  const parsedPlan = "goalName" in plan ? goalPlanSchema.parse(plan) : plan;
-  const usage = await recordUsageEvent({
-    authToken,
-    feature: "goal_plan",
-    metadata: { mode: "deterministic-fixture", riskPreference: parsedRequest.data.riskPreference },
-  });
+  try {
+    const snapshot = await getPortfolioSnapshot({
+      portfolioId: parsedRequest.data.portfolioId,
+      requestAuthorization: `Bearer ${authToken}`,
+    });
+    const plan = createGoalScenarioPlan(parsedRequest.data, snapshot);
+    const parsedPlan = "goalName" in plan ? goalPlanSchema.parse(plan) : plan;
+    const usage = await recordUsageEvent({
+      authToken,
+      feature: "goal_plan",
+      metadata: { mode: "portfolio_scenario_calculator", riskPreference: parsedRequest.data.riskPreference },
+    });
 
-  return NextResponse.json({
-    data: parsedPlan,
-    meta: {
-      mode: "deterministic-fixture",
-      liveAiGatewayCall: false,
-      toolRuns: [
-        {
-          name: "getGoalState",
-          status: "success",
-          provider: "deterministic-goal-fixture",
-        },
-        {
-          name: "createGoalDraft",
-          status: "success",
-          safetyLabel: parsedPlan.safetyLabel,
-        },
-      ],
-      usage: { entitlement: usageGate, persistence: usage },
-    },
-  });
+    return NextResponse.json({
+      data: parsedPlan,
+      meta: {
+        mode: "portfolio_scenario_calculator",
+        liveAiGatewayCall: false,
+        toolRuns: [
+          {
+            name: "getPortfolioSnapshot",
+            status: "success",
+            provider: snapshot.dataFreshness.provider,
+            freshness: snapshot.dataFreshness.freshness,
+          },
+          {
+            name: "createGoalDraft",
+            status: "success",
+            safetyLabel: parsedPlan.safetyLabel,
+          },
+        ],
+        usage: { entitlement: usageGate, persistence: usage },
+      },
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: { code: "goal_plan_failed", message: error instanceof Error ? error.message : "The goal scenario could not be calculated." } },
+      { status: 502 },
+    );
+  }
 }

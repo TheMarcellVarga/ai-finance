@@ -39,7 +39,7 @@ export default async function BillingPage() {
               <span>
                 {usage.configured
                   ? `Usage period ${usage.period}. Billing state: ${usage.billingState}.`
-                  : "Local fixture mode: persisted billing enforcement waits for Supabase server credentials."}
+                  : usage.message}
               </span>
             </div>
           </div>

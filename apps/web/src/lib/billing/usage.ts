@@ -9,6 +9,7 @@ import {
 } from "@/lib/billing/entitlements";
 import { decodeJwtSubject } from "@/lib/server/identity";
 import { ensureProfileForClerkUser, supabaseRestFetch, supabaseServerConfigured } from "@/lib/server/supabase-rest";
+import { loadFinanceUsage } from "@/lib/finance-api";
 
 type SubscriptionRow = {
   plan: string | null;
@@ -72,10 +73,18 @@ async function readUsageRows(userId: string, period: string) {
 export async function getUsageSummaryForToken(authToken?: string | null) {
   const period = billingPeriod();
 
-  if (!supabaseServerConfigured()) {
+  async function localApiSummary(message: string) {
     const free = effectivePlanForSubscription(null);
+    let apiFeatures: Array<{ feature: string; used: number; limit: number; status: string }> = [];
+    if (authToken) {
+      try {
+        apiFeatures = (await loadFinanceUsage(authToken)).data.features;
+      } catch {
+        apiFeatures = [];
+      }
+    }
     return {
-      configured: false,
+      configured: false as const,
       clerkUserId: decodeJwtSubject(authToken),
       period,
       plan: free.plan,
@@ -84,41 +93,50 @@ export async function getUsageSummaryForToken(authToken?: string | null) {
       entitlements: free.entitlements,
       features: usageFeatures.map((feature) => {
         const limit = limitForFeature(free.entitlements, feature);
+        const apiFeature = apiFeatures.find((candidate) => candidate.feature === feature);
         return {
           feature,
-          used: 0,
-          limit,
-          status: limit <= 0 ? "unavailable" : "local_fixture",
+          used: apiFeature?.used ?? 0,
+          limit: apiFeature?.limit ?? limit,
+          status: limit <= 0 ? "unavailable" : apiFeature ? "local_api" : "session_only",
         };
       }),
-      message: "Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to enforce persisted usage limits.",
+      message,
     };
   }
 
-  const clerkUserId = decodeJwtSubject(authToken);
-  const profile = await ensureProfileForClerkUser({ clerkUserId });
-  const subscription = await readSubscription(profile.id);
-  const plan = effectivePlanForSubscription(subscription);
-  const usageRows = await readUsageRows(profile.id, period);
-  return {
-    configured: true,
-    clerkUserId,
-    period,
-    plan: plan.plan,
-    status: plan.status,
-    billingState: plan.billingState,
-    entitlements: plan.entitlements,
-    features: usageFeatures.map((feature) => {
-      const used = usageForFeature(usageRows, feature);
-      const limit = limitForFeature(plan.entitlements, feature);
-      return {
-        feature,
-        used,
-        limit,
-        status: limit <= 0 ? "unavailable" : used >= limit ? "limit_reached" : "available",
-      };
-    }),
-  };
+  if (!supabaseServerConfigured()) {
+    return localApiSummary("Persisted usage is not configured; local API counts remain visible for this session.");
+  }
+
+  try {
+    const clerkUserId = decodeJwtSubject(authToken);
+    const profile = await ensureProfileForClerkUser({ clerkUserId });
+    const subscription = await readSubscription(profile.id);
+    const plan = effectivePlanForSubscription(subscription);
+    const usageRows = await readUsageRows(profile.id, period);
+    return {
+      configured: true as const,
+      clerkUserId,
+      period,
+      plan: plan.plan,
+      status: plan.status,
+      billingState: plan.billingState,
+      entitlements: plan.entitlements,
+      features: usageFeatures.map((feature) => {
+        const used = usageForFeature(usageRows, feature);
+        const limit = limitForFeature(plan.entitlements, feature);
+        return {
+          feature,
+          used,
+          limit,
+          status: limit <= 0 ? "unavailable" : used >= limit ? "limit_reached" : "available",
+        };
+      }),
+    };
+  } catch {
+    return localApiSummary("Persisted usage is temporarily unreachable; local API counts remain visible for this session.");
+  }
 }
 
 export async function checkUsageLimit(input: { authToken?: string | null; feature: UsageFeature }) {
@@ -170,19 +188,23 @@ export async function recordUsageEvent(input: {
   }
 
   const clerkUserId = decodeJwtSubject(input.authToken);
-  const profile = await ensureProfileForClerkUser({ clerkUserId });
-  const [usageEvent] = await supabaseRestFetch<Array<{ id: string }>>("usage_events", {
-    method: "POST",
-    body: JSON.stringify([
-      {
-        user_id: profile.id,
-        feature: input.feature,
-        count: input.count ?? 1,
-        billing_period: billingPeriod(),
-        metadata: input.metadata ?? {},
-      },
-    ]),
-  });
+  try {
+    const profile = await ensureProfileForClerkUser({ clerkUserId });
+    const [usageEvent] = await supabaseRestFetch<Array<{ id: string }>>("usage_events", {
+      method: "POST",
+      body: JSON.stringify([
+        {
+          user_id: profile.id,
+          feature: input.feature,
+          count: input.count ?? 1,
+          billing_period: billingPeriod(),
+          metadata: input.metadata ?? {},
+        },
+      ]),
+    });
 
-  return { status: "recorded" as const, usageEventId: usageEvent.id };
+    return { status: "recorded" as const, usageEventId: usageEvent.id };
+  } catch {
+    return { status: "temporarily_unavailable" as const };
+  }
 }

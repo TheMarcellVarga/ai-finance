@@ -46,7 +46,10 @@ export const filingSummarySchema = z.object({
 
 export const goalPlanSchema = z.object({
   goalName: z.string().min(1),
+  currentAmount: z.string().min(1),
   targetAmount: z.string().min(1),
+  fundingGap: z.string().min(1),
+  progressBps: z.number().int().min(0),
   timeHorizon: z.string().min(1),
   summary: z.string().min(20),
   milestones: z
@@ -109,11 +112,12 @@ export const filingSummaryRequestSchema = z.object({
 });
 
 export const goalPlanRequestSchema = z.object({
-  goalName: z.string().trim().min(1).max(80).default("Long-term research goal"),
-  targetAmount: z.string().trim().min(1).max(40).default("$250,000"),
-  timeHorizon: z.string().trim().min(1).max(80).default("5 years"),
+  portfolioId: z.string().trim().min(1).max(120),
+  goalName: z.string().trim().min(1).max(80),
+  targetAmountCents: z.number().int().positive().max(100_000_000_000),
+  timeHorizonMonths: z.number().int().min(1).max(600),
+  monthlyContributionCents: z.number().int().nonnegative().max(100_000_000),
   riskPreference: z.enum(["conservative", "balanced", "growth"]).default("balanced"),
-  contributionCadence: z.string().trim().min(1).max(80).default("monthly"),
   prompt: z.string().trim().min(1).max(1200).optional(),
 });
 
@@ -278,50 +282,76 @@ export function createDeterministicFilingSummary(input: z.infer<typeof filingSum
   };
 }
 
-export function createDeterministicGoalPlan(input: z.infer<typeof goalPlanRequestSchema>): GoalPlan | PortfolioBrief {
-  const safety = classifyPromptSafety(input.prompt ?? `${input.goalName} ${input.targetAmount} ${input.timeHorizon}`);
+function formatScenarioMoney(cents: number, currency: string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
+}
+
+function monthLabel(months: number) {
+  if (months % 12 === 0) {
+    const years = months / 12;
+    return `${years} ${years === 1 ? "year" : "years"}`;
+  }
+  return `${months} months`;
+}
+
+function milestoneDate(monthsFromNow: number) {
+  const date = new Date();
+  date.setUTCMonth(date.getUTCMonth() + monthsFromNow);
+  return new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric", timeZone: "UTC" }).format(date);
+}
+
+export function createGoalScenarioPlan(
+  input: z.infer<typeof goalPlanRequestSchema>,
+  snapshot: PortfolioSnapshot,
+): GoalPlan | PortfolioBrief {
+  const safety = classifyPromptSafety(input.prompt ?? `${input.goalName} ${input.targetAmountCents} ${input.timeHorizonMonths}`);
   if (!safety.safe) {
     return createRefusalBrief(input.prompt ?? input.goalName);
   }
 
-  const capturedAt = nowIso();
+  const currentAmountCents = snapshot.summary.totalValueCents;
+  const fundingGapCents = Math.max(input.targetAmountCents - currentAmountCents, 0);
+  const requiredMonthlyCents = Math.ceil(fundingGapCents / input.timeHorizonMonths);
+  const projectedContributionCents = input.monthlyContributionCents * input.timeHorizonMonths;
+  const projectedBalanceCents = currentAmountCents + projectedContributionCents;
+  const progressBps = Math.min(Math.round((currentAmountCents * 10_000) / input.targetAmountCents), 10_000);
+  const currency = snapshot.baseCurrency || "USD";
+  const capturedAt = snapshot.dataFreshness.capturedAt || nowIso();
+  const milestoneFractions = [0.25, 0.5, 0.75];
+
   return {
     goalName: input.goalName,
-    targetAmount: input.targetAmount,
-    timeHorizon: input.timeHorizon,
+    currentAmount: formatScenarioMoney(currentAmountCents, currency),
+    targetAmount: formatScenarioMoney(input.targetAmountCents, currency),
+    fundingGap: formatScenarioMoney(fundingGapCents, currency),
+    progressBps,
+    timeHorizon: monthLabel(input.timeHorizonMonths),
     summary:
-      `${input.goalName} is framed as an educational scenario plan with ${input.contributionCadence} review habits and a ${input.riskPreference} risk preference. ` +
-      "The plan avoids projected returns and focuses on milestones, assumptions, and research discipline.",
-    milestones: [
-      {
-        title: "Baseline review",
-        targetDate: "Month 1",
-        reviewMetric: "Confirm starting balance, contribution capacity, and portfolio concentration.",
-        status: "draft",
-      },
-      {
-        title: "Quarterly scenario check",
-        targetDate: "Quarterly",
-        reviewMetric: "Compare contributions, diversification review notes, and stale data flags.",
-        status: "pending",
-      },
-      {
-        title: "Annual assumption audit",
-        targetDate: "Annually",
-        reviewMetric: "Refresh goal assumptions, contribution cadence, risk preference, and constraints.",
-        status: "review",
-      },
-    ],
+      `${input.goalName} starts from the live portfolio value of ${formatScenarioMoney(currentAmountCents, currency)} and tests ${formatScenarioMoney(input.monthlyContributionCents, currency)} monthly for ${monthLabel(input.timeHorizonMonths)}. ` +
+      "The arithmetic assumes zero investment return, so market performance is not fabricated or promised.",
+    milestones: milestoneFractions.map((fraction) => {
+      const thresholdBps = Math.round(fraction * 10_000);
+      return {
+        title: `${Math.round(fraction * 100)}% funding review`,
+        targetDate: milestoneDate(Math.max(1, Math.round(input.timeHorizonMonths * fraction))),
+        reviewMetric: `Compare the current provider-backed balance with ${formatScenarioMoney(Math.round(input.targetAmountCents * fraction), currency)} and review contribution records.`,
+        status: progressBps >= thresholdBps ? ("review" as const) : ("pending" as const),
+      };
+    }),
     contributionScenarios: [
       {
-        cadence: input.contributionCadence,
-        amount: "User-entered amount required",
-        assumption: "Scenario uses contributions as an input only and does not assume investment returns.",
+        cadence: "Your monthly input",
+        amount: formatScenarioMoney(input.monthlyContributionCents, currency),
+        assumption: `Adds ${formatScenarioMoney(projectedContributionCents, currency)} over the selected horizon; estimated ending balance is ${formatScenarioMoney(projectedBalanceCents, currency)} before withdrawals, taxes, fees, inflation, or market movement.`,
       },
       {
-        cadence: "pause-review",
-        amount: "$0 incremental contribution",
-        assumption: "Used to show how the plan behaves when contributions pause; no outcome is guaranteed.",
+        cadence: "Zero-return gap pace",
+        amount: formatScenarioMoney(requiredMonthlyCents, currency),
+        assumption: "This is the monthly arithmetic needed to close the current funding gap with contributions alone; it is not a recommendation or return forecast.",
       },
     ],
     educationalChallenges: [
@@ -339,28 +369,24 @@ export function createDeterministicGoalPlan(input: z.infer<typeof goalPlanReques
     ],
     citations: [
       {
-        label: "Goal planner safety contract",
-        sourceType: "goal_plan",
-        sourceId: "phase-6-goal-fixture",
+        label: "Owner-scoped portfolio snapshot",
+        sourceType: "portfolio_snapshot",
+        sourceId: snapshot.id,
         capturedAt,
-        freshness: "runtime",
+        freshness: snapshot.dataFreshness.freshness,
       },
     ],
     assumptions: [
       "No expected return, alpha, or guarantee is used.",
       `Risk preference is treated as a planning label: ${input.riskPreference}.`,
-      `Target amount and horizon are user-provided scenario inputs: ${input.targetAmount}, ${input.timeHorizon}.`,
+      `Target, horizon, and monthly contribution are user-provided inputs: ${formatScenarioMoney(input.targetAmountCents, currency)}, ${monthLabel(input.timeHorizonMonths)}, ${formatScenarioMoney(input.monthlyContributionCents, currency)}.`,
     ],
-    dataFreshness: {
-      provider: "deterministic-goal-fixture",
-      capturedAt,
-      freshness: "runtime",
-    },
-    confidence: "medium",
+    dataFreshness: snapshot.dataFreshness,
+    confidence: "high",
     safetyLabel: "research_only",
     disclaimer,
     followUpQuestions: [
-      "What contribution amount should be tested as an input-only scenario?",
+      "What monthly contribution should be tested next?",
       "Should portfolio concentration be reviewed before setting milestone thresholds?",
     ],
   };

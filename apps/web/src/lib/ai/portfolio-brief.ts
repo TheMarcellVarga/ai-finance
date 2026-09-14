@@ -40,6 +40,7 @@ export type PortfolioSnapshot = {
   name: string;
   baseCurrency: string;
   summary: {
+    totalValueCents: number;
     displayTotalValue: string;
     topConcentrationTicker: string;
     topConcentrationBps: number;
