@@ -13,10 +13,13 @@ import {
 
 import { getUsageSummaryForToken } from "@/lib/billing/usage";
 import {
+  FinanceWorkspaceEmptyError,
+  loadFinanceUsage,
   loadRealProviderPortfolio,
   loadRealProviderWatchlist,
 } from "@/lib/finance-api";
 import { authenticatedSessionToken } from "@/lib/server/identity";
+import { OverviewCharts } from "@/components/overview-charts";
 
 export const dynamic = "force-dynamic";
 
@@ -50,56 +53,64 @@ function formatTimestamp(value?: string) {
 }
 
 async function loadOverviewData(authToken: string) {
-  const [portfolioResult, watchlistResult, usageResult] = await Promise.allSettled([
+  const [portfolioResult, watchlistResult, usageResult, financeUsageResult] = await Promise.allSettled([
     loadRealProviderPortfolio(authToken),
     loadRealProviderWatchlist(authToken),
     getUsageSummaryForToken(authToken),
+    loadFinanceUsage(authToken),
   ]);
+
+  const financeUsage = financeUsageResult.status === "fulfilled" ? financeUsageResult.value.data : null;
+  const persistedUsage = usageResult.status === "fulfilled" ? usageResult.value : null;
 
   return {
     portfolio: portfolioResult.status === "fulfilled" ? portfolioResult.value.data : null,
     watchlist: watchlistResult.status === "fulfilled" ? watchlistResult.value.data : null,
-    usage: usageResult.status === "fulfilled" ? usageResult.value : null,
-    marketDataAvailable: portfolioResult.status === "fulfilled" || watchlistResult.status === "fulfilled",
+    portfolioEmpty: portfolioResult.status === "rejected" && portfolioResult.reason instanceof FinanceWorkspaceEmptyError,
+    watchlistEmpty: watchlistResult.status === "rejected" && watchlistResult.reason instanceof FinanceWorkspaceEmptyError,
+    usage: persistedUsage,
+    financeUsage,
+    marketDataAvailable: financeUsageResult.status === "fulfilled",
   };
 }
 
 export default async function AppOverviewPage() {
   const authToken = await authenticatedSessionToken();
-  const { portfolio, watchlist, usage, marketDataAvailable } = await loadOverviewData(authToken);
+  const { portfolio, portfolioEmpty, watchlist, watchlistEmpty, usage, financeUsage, marketDataAvailable } = await loadOverviewData(authToken);
   const topHolding = portfolio ? [...portfolio.holdings].sort((left, right) => right.weightBps - left.weightBps)[0] : undefined;
   const watchlistItems = watchlist ? [...watchlist.items].sort(
     (left, right) => Math.abs(right.asset.dailyChangeBps ?? 0) - Math.abs(left.asset.dailyChangeBps ?? 0),
   ) : undefined;
   const largestMove = watchlistItems?.[0];
-  const aiUsage = usage?.features.find((feature) => feature.feature === "portfolio_brief");
+  const aiUsage = usage?.features.find((feature) => feature.feature === "portfolio_brief")
+    ?? financeUsage?.features.find((feature) => feature.feature === "portfolio_brief");
 
   const summaryMetrics = [
     {
       label: "Portfolio value",
       value: portfolio?.summary.displayTotalValue ?? unavailableValue,
-      detail: portfolio ? `${portfolio.summary.holdingCount} source-backed positions` : "Finance API unavailable",
+      detail: portfolio ? `${portfolio.summary.holdingCount} source-backed positions` : portfolioEmpty ? "Add your first real holding" : "Finance API unavailable",
       icon: WalletCards,
       tone: "cyan",
     },
     {
       label: "Concentration",
       value: topHolding ? percentFromBps(topHolding.weightBps) : unavailableValue,
-      detail: topHolding ? `${topHolding.asset.ticker} largest allocation` : "Awaiting portfolio snapshot",
+      detail: topHolding ? `${topHolding.asset.ticker} largest allocation` : portfolioEmpty ? "No portfolio data entered" : "Awaiting portfolio snapshot",
       icon: CircleGauge,
       tone: portfolio && portfolio.summary.reviewFlags > 0 ? "amber" : "cyan",
     },
     {
       label: "Watchlist focus",
       value: largestMove?.asset.ticker ?? unavailableValue,
-      detail: largestMove ? `${formatMove(largestMove.asset.dailyChangeBps)} provider-reported move` : "Awaiting market feed",
+      detail: largestMove ? `${formatMove(largestMove.asset.dailyChangeBps)} provider-reported move` : watchlistEmpty ? "Add a ticker to begin" : "Awaiting market feed",
       icon: Radar,
       tone: "cyan",
     },
     {
       label: "Research usage",
       value: aiUsage ? `${aiUsage.used}/${aiUsage.limit}` : unavailableValue,
-      detail: usage ? `${usage.entitlements.label} plan · ${usage.period}` : "Usage service unavailable",
+      detail: usage ? `${usage.entitlements.label} plan · ${usage.period}` : financeUsage ? `${financeUsage.plan} plan · ${financeUsage.period}` : "Usage service unavailable",
       icon: Sparkles,
       tone: "amber",
     },
@@ -155,7 +166,7 @@ export default async function AppOverviewPage() {
                   {marketDataAvailable ? "Source-aware context is ready." : "Local market services are offline."}
                 </p>
                 <p className="mt-2 text-xs leading-5 text-zinc-500">
-                  {portfolio ? `${portfolio.dataFreshness.provider} · ${formatTimestamp(portfolio.dataFreshness.capturedAt)}` : "Start local services to restore provider-backed values."}
+                  {portfolio ? `${portfolio.dataFreshness.provider} · ${formatTimestamp(portfolio.dataFreshness.capturedAt)}` : marketDataAvailable ? "Finance API connected · add your own data to begin." : "Start local services to restore provider-backed values."}
                 </p>
               </div>
             </div>
@@ -176,73 +187,20 @@ export default async function AppOverviewPage() {
         ))}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="section-shell rounded-[1.25rem] p-5 sm:p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="type-label text-xs uppercase text-cyan-100/75">Portfolio</p>
-              <h2 className="type-card-title mt-3 text-2xl text-white">Allocation review</h2>
-            </div>
-            <Link className="overview-link" href="/app/portfolio">
-              Open portfolio
-              <ArrowRight className="size-3.5" />
-            </Link>
-          </div>
-          {portfolio ? (
-            <div className="mt-6 space-y-4">
-              {portfolio.allocation.slice(0, 5).map((item) => (
-                <div key={item.label} className="grid grid-cols-[7rem_1fr_3rem] items-center gap-3 sm:grid-cols-[9rem_1fr_3.5rem]">
-                  <span className="truncate text-xs text-zinc-400">{item.label}</span>
-                  <span className="h-2 overflow-hidden rounded-full bg-white/[0.07]">
-                    <span
-                      className={`block h-full rounded-full ${item.status === "review" ? "bg-amber-200/80" : "bg-cyan-200/75"}`}
-                      style={{ width: `${Math.min(item.weightBps / 100, 100)}%` }}
-                    />
-                  </span>
-                  <span className="text-right font-mono text-xs text-zinc-300">{percentFromBps(item.weightBps)}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-6 rounded-[1rem] bg-amber-100/[0.035] p-4 text-sm leading-6 text-zinc-400">
-              Portfolio values are hidden while the local finance API is unavailable. No estimated prices are substituted.
-            </p>
-          )}
-        </div>
-
-        <div className="section-shell rounded-[1.25rem] p-5 sm:p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="type-label text-xs uppercase text-amber-100/75">Watchlist</p>
-              <h2 className="type-card-title mt-3 text-2xl text-white">Movement review</h2>
-            </div>
-            <Link className="overview-link" href="/app/watchlist">
-              Open watchlist
-              <ArrowRight className="size-3.5" />
-            </Link>
-          </div>
-          {watchlistItems?.length ? (
-            <div className="mt-5 divide-y divide-white/8">
-              {watchlistItems.slice(0, 4).map((item) => (
-                <div key={item.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-4 py-3.5">
-                  <div className="min-w-0">
-                    <p className="font-mono text-sm text-white">{item.asset.ticker}</p>
-                    <p className="mt-1 truncate text-xs text-zinc-500">{item.asset.name}</p>
-                  </div>
-                  <p className="truncate font-mono text-sm text-zinc-300">{item.asset.displayPrice ?? unavailableValue}</p>
-                  <p className={`font-mono text-sm ${item.asset.dailyChangeBps == null ? "text-zinc-500" : item.asset.dailyChangeBps >= 0 ? "text-cyan-100" : "text-amber-100"}`}>
-                    {formatMove(item.asset.dailyChangeBps)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-6 rounded-[1rem] bg-amber-100/[0.035] p-4 text-sm leading-6 text-zinc-400">
-              Watchlist movement will appear when the provider-backed feed is available.
-            </p>
-          )}
-        </div>
-      </section>
+      <OverviewCharts
+        allocation={portfolio?.allocation ?? []}
+        watchlist={(watchlistItems ?? []).map((item) => ({
+          id: item.id,
+          ticker: item.asset.ticker,
+          name: item.asset.name,
+          displayPrice: item.asset.displayPrice,
+          dailyChangeBps: item.asset.dailyChangeBps,
+        }))}
+        provider={portfolio?.dataFreshness.provider ?? watchlist?.dataFreshness.provider}
+        capturedAt={portfolio?.dataFreshness.capturedAt ?? watchlist?.dataFreshness.capturedAt}
+        portfolioEmpty={portfolioEmpty}
+        watchlistEmpty={watchlistEmpty}
+      />
 
       <section>
         <div className="mb-4 flex items-end justify-between gap-4">

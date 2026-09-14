@@ -26,6 +26,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { StructuredResearchPanel } from "@/components/structured-research-panel";
+import { WorkspaceWaveAccent } from "@/components/workspace-wave-accent";
 import type {
   ResearchDocument,
   ResearchMeta,
@@ -357,7 +358,8 @@ export function ResearchWorkspace({
 
   return (
     <div className="space-y-6">
-      <section className="section-shell rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
+      <section className="section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
+        <WorkspaceWaveAccent className="pointer-events-none absolute right-4 top-3 hidden sm:block lg:right-8 lg:top-5" />
         <div className="grid gap-7 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
             <p className="type-label inline-flex items-center gap-2 rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100">

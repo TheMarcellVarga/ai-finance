@@ -2,9 +2,10 @@ import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, BookMarked, CircleGauge, FlaskConical, Goal, Settings, ShieldCheck, UserRound, WalletCards } from "lucide-react";
+import { BarChart3, Bitcoin, BookMarked, CircleGauge, FlaskConical, Goal, Settings, ShieldCheck, UserRound, WalletCards } from "lucide-react";
 
 import { BrandMark } from "@/components/brand";
+import { WorkspaceParticleBloom } from "@/components/workspace-particle-bloom";
 
 const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/app", label: "Overview", icon: CircleGauge },
@@ -13,6 +14,7 @@ const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/app/research/evaluations", label: "Evaluations", icon: FlaskConical },
   { href: "/app/goals", label: "Goals", icon: Goal },
   { href: "/app/watchlist", label: "Watchlist", icon: BarChart3 },
+  { href: "/app/crypto-monitor", label: "Crypto monitor", icon: Bitcoin },
   { href: "/app/risk", label: "Risk", icon: ShieldCheck },
   { href: "/app/settings", label: "Settings", icon: Settings },
   { href: "/app/settings/account", label: "Account", icon: UserRound },
@@ -23,10 +25,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="page-stage workspace-stage min-h-dvh text-white">
       <div className="workspace-atmosphere" aria-hidden="true">
+        <WorkspaceParticleBloom />
         <span className="workspace-orb workspace-orb-cyan" />
         <span className="workspace-orb workspace-orb-amber" />
       </div>
-      <aside className="workspace-sidebar fixed inset-y-4 left-4 hidden w-72 rounded-[1.2rem] p-5 shadow-[0_28px_76px_rgba(0,0,0,0.38)] backdrop-blur-2xl xl:block">
+      <aside className="workspace-sidebar fixed inset-y-4 left-4 z-20 hidden w-72 rounded-[1.2rem] p-5 shadow-[0_28px_76px_rgba(0,0,0,0.38)] backdrop-blur-2xl xl:block">
         <div className="glass-surface rounded-[1rem] p-3">
           <div className="flex items-center justify-between gap-3">
             <BrandMark />
@@ -46,7 +49,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
       </aside>
-      <div className="xl:pl-80">
+      <div className="relative z-10 xl:pl-80">
         <header className="sticky top-0 z-20 px-3 py-3 xl:hidden">
           <div className="glass-surface rounded-[1.1rem] p-3 sm:p-4">
             <div className="flex items-center justify-between gap-3">
