@@ -9,7 +9,7 @@ This file lists planned local and production configuration. Exact variable names
 - Supabase local Postgres
 - optional Redis-compatible local cache or Upstash dev credentials
 
-Use `scripts/dev-local` for local portfolio and AI development. It starts the Go API with `services/api/.env`, verifies `/v1/health`, then starts or reuses the Next.js dev server with `FINANCE_API_BASE_URL` pointed at the local API.
+Run `npm run dev` from the repository root for local portfolio and AI development. It delegates to `scripts/dev-local`, starts the Go API with `services/api/.env`, verifies `/v1/health`, then starts or reuses the Next.js dev server with `FINANCE_API_BASE_URL` pointed at the local API.
 
 ## Public Client Variables
 
@@ -127,6 +127,8 @@ OpenAI key. Production ignores deterministic failure/delay fixture variables.
 - SEC EDGAR requests need a compliant user agent/contact.
 - FMP is the current Phase 4 quote/search provider and must be configured only in server environments.
 - Twelve Data, Finnhub, and SEC EDGAR are configured for follow-on provider and filing work.
+- FMP/Twelve Data results are normalized through the global asset boundary: the picker accepts canonical asset classes, ISO 3166-1 alpha-2 country filters, ISO 4217 alpha-3 currencies, exchange filters, and provider identifiers. Coverage is provider-backed; configure more than one provider when the intended market universe requires broader instrument or country availability.
+- The crypto monitor reads public, unauthenticated exchange market endpoints server-side; no exchange API key or trading permission is required. The Singapore / MAS-authorised DPT scope is the safe default and the UI exposes it as a checkbox checked by default. It is mapped to exchange providers listed in the [MAS Financial Institutions Directory](https://eservices.mas.gov.sg/fid/institution?activity=Digital+Payment+Token+Service&category=Major+Payment+Institution&sector=Payments), then limited to providers exposing public ticker and OHLCV capabilities through CCXT. Unchecking the box explicitly opts into the broader supported public exchange catalog, including Binance when its CCXT capabilities are available. OKX uses the native adapter and CCXT catalog entries use the server-only CCXT adapter. Generic providers are restricted to active spot markets quoted in USD, USDC, or USDT, with lower-timeframe aggregation when an exchange does not publish the requested interval. Candle history uses a bounded safety lookback. The selected provider, compliance scope, and catalog are returned in `meta.provider`, `meta.providerLabel`, `meta.scope`, `meta.scopeLabel`, and `meta.availableProviders`, and each row reports whether the provider history was exhausted.
 - Provider failures must be shown clearly; the app must not fabricate market prices.
 
 ## Setup Order

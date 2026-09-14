@@ -15,7 +15,7 @@ Supabase Postgres is the relational system of record. Use SQL migrations, `pgx`,
 | --- | --- |
 | `profiles` | Clerk mapping, display name, role, onboarding state |
 | `subscriptions` | Stripe customer/subscription state and plan |
-| `assets` | Curated equities/ETFs, ticker metadata, CIK, sector, type |
+| `assets` | Provider-backed global instrument metadata: canonical asset class, exchange, ISO country/currency, identifiers, sector, and freshness-linked provider symbol |
 | `price_snapshots` | Cached market data with provider and freshness |
 | `portfolios` | User-owned portfolio containers |
 | `holdings` | Positions linked to portfolios and assets |

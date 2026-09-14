@@ -163,6 +163,39 @@ Acceptance gate:
 - Charts fit mobile and desktop containers.
 - Provider failures are visible and block fabricated market values.
 
+### Phase 4 Extension: Global Asset Universe
+
+Status: complete.
+
+The portfolio/watchlist boundary now supports a provider-backed global asset
+universe instead of a US equity/ETF-only contract. The Go API exposes a
+versioned taxonomy covering public and private-market instruments, fixed
+income, funds, derivatives, currencies, commodities, real estate, cash-like
+assets, and digital assets. Asset metadata carries ISO 3166-1 alpha-2 country
+codes, ISO 4217 alpha-3 currencies, exchange/MIC fields, and provider
+identifiers. Search accepts class, country, region, currency, exchange, and
+bounded result filters; provider availability and freshness remain explicit.
+
+The UI exposes the same search boundary through the portfolio and watchlist
+asset picker. Coverage means every instrument/country returned by the
+configured provider; the app does not invent quotes for asset classes or
+markets a provider does not cover.
+
+### Phase 4 Extension: Global Crypto Exchange Coverage
+
+Status: complete.
+
+The crypto research monitor retains its native OKX market-data adapter and now
+adds a server-only CCXT registry for data-capable providers. The exchange
+catalog is allowlisted, rate-limited by the provider client, and returned with
+the monitor payload so the UI can select the actual supported universe.
+Singapore/MAS-authorised DPT providers are the safe default and are selected by
+a checkbox that is checked on first load; unchecking it explicitly opts into
+the broader supported public exchange catalog. Generic providers normalize
+active spot markets quoted in USD, USDC, or USDT, retain provider/source
+metadata, aggregate compatible lower timeframes when needed, and surface
+provider failures without fabricating market values.
+
 ## Phase 5: Real AI Foundation
 Status: implementation complete; fixture mode is the active working path and live credential verification is deferred.
 
@@ -336,6 +369,10 @@ Purpose:
 - Fixture and deterministic modes may remain for local tests, but the demo UI must clearly present finished behavior or intentionally scoped demo data without looking unfinished.
 
 Completed artifacts:
+- Root `npm run dev` starts the supported full local stack so provider-backed dashboard data is not accidentally hidden behind a web-only process.
+- Authenticated portfolio and watchlist surfaces no longer auto-create sample AAPL/MSFT/NVDA data; users enter their own positions and tickers before provider enrichment.
+- Overview, goals, and risk now share the same owner-scoped portfolio snapshot. Goal scenarios use the live portfolio value plus user-entered target, horizon, and contribution inputs with explicit zero-return arithmetic.
+- Billing and settings report actual runtime/API state and local API usage counts instead of browser-only controls or fixture-status placeholders.
 - `/app/watchlist` now renders a provider-backed watchlist workspace with list, refresh, add-ticker, source freshness, empty, loading, and error states through the Next.js `/api/finance/watchlist` BFF route backed by the Go watchlist API.
 - `/app/settings` now renders concrete account, privacy, data export, notification, provider-mode, AI-boundary, and telemetry controls for the local portfolio demo.
 - Clerk now gates `/app(.*)` through the Next.js 16 proxy and protected app layout, provides `/sign-in` and `/sign-up`, exposes Clerk-managed profile and session security at `/app/settings/account`, and replaces browser-side demo identity fallbacks with authenticated session tokens.

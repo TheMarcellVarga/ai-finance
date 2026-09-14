@@ -32,7 +32,7 @@ Aperture Financial Intelligence is an AI financial research workspace that helps
 
 Allowed:
 - Portfolio research and risk explanation.
-- Asset and ETF research.
+- Research across provider-backed asset classes and markets, including equities, funds, fixed income, derivatives, commodities, currencies, real estate, private-market metadata, cash-like instruments, and digital assets.
 - SEC filing summaries with citations.
 - Watchlist digest and movement context.
 - Goal scenario planning and educational milestones.
@@ -69,14 +69,14 @@ Exact Stripe prices can be adjusted before implementation, but entitlement limit
 
 ## Demo Asset Universe
 
-Use curated US equities and ETFs for v1:
+The initial demo may use curated US equities and ETFs:
 - Mega-cap technology: AAPL, MSFT, NVDA, GOOGL, AMZN, META
 - Financials: JPM, BRK.B, V
 - Healthcare: UNH, JNJ, LLY
 - Energy/industrials: XOM, CAT
 - ETFs: SPY, QQQ, VTI, IWM, AGG, GLD, VNQ
 
-Market data should come from configured server-side providers and clearly show freshness or provider failures.
+The product boundary is broader than the initial demo universe. The Go API normalizes provider results into a versioned asset-class taxonomy, ISO 3166-1 alpha-2 country codes, ISO 4217 alpha-3 currencies, exchange/MIC metadata, and provider identifiers. Market data should come from configured server-side providers and clearly show freshness, provider coverage, or provider failures. No UI should imply that every provider lists every instrument in every country at every moment.
 
 ## Brand Direction
 

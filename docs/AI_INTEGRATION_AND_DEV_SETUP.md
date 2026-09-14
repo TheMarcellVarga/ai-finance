@@ -29,7 +29,7 @@ Expose a typed tool registry to the AI runtime. Every tool must validate input, 
 
 Initial tools:
 - `getPortfolioSnapshot`: holdings, allocation, value, concentration, and freshness.
-- `getAssetProfile`: ticker metadata, sector, exchange, CIK, and cached fundamentals.
+- `getAssetProfile`: provider-backed identifier metadata, canonical asset class, exchange/MIC, country, currency, sector, CIK, and cached fundamentals.
 - `getPriceHistory`: normalized historical prices with provider and stale-data flags.
 - `getFilingChunks`: retrieved SEC filing chunks with section labels and source URLs.
 - `getWatchlistMovers`: watchlist price movement summary.

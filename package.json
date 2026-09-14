@@ -1,0 +1,10 @@
+{
+  "name": "aperture-financial-intelligence",
+  "private": true,
+  "scripts": {
+    "dev": "./scripts/dev-local",
+    "build": "npm --prefix apps/web run build",
+    "lint": "npm --prefix apps/web run lint",
+    "test": "cd services/api && go test ./... && cd ../../apps/web && npm run test:phase6"
+  }
+}
