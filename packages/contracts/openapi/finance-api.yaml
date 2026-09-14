@@ -82,6 +82,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AssetCatalogResponse"
+  /v1/market-monitors/{class}:
+    get:
+      operationId: getMarketMonitor
+      security: []
+      parameters:
+        - in: path
+          name: class
+          required: true
+          schema:
+            type: string
+            description: Asset monitor ID, excluding crypto which has its dedicated monitor route.
+      responses:
+        "200":
+          description: Free public asset-class monitor snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketMonitorResponse"
+        "404":
+          description: Monitor class is not available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /v1/assets/{ticker}/quote:
     get:
       operationId: getAssetQuote
@@ -692,6 +716,116 @@ components:
               type: string
         meta:
           $ref: "#/components/schemas/ContractMeta"
+    MarketMonitorPoint:
+      type: object
+      required: [timestamp, value]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        value:
+          type: number
+    MarketMonitorRow:
+      type: object
+      required: [symbol, name, price, displayValue, dailyChangePercent, monthlyChangePercent, sparkline, provider, sourceUrl, capturedAt]
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        venue:
+          type: string
+        currency:
+          type: string
+        unit:
+          type: string
+        price:
+          type: number
+        displayValue:
+          type: string
+        dailyChangePercent:
+          type: number
+        monthlyChangePercent:
+          type: number
+        volume:
+          type: number
+        sparkline:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketMonitorPoint"
+        provider:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+        capturedAt:
+          type: string
+          format: date-time
+        isProxy:
+          type: boolean
+        proxyNote:
+          type: string
+    MarketMonitorClassSummary:
+      type: object
+      required: [id, label, description, coverage]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        coverage:
+          type: string
+    MarketMonitorMeta:
+      type: object
+      required: [assetClass, label, description, provider, providerLabel, freeApi, capturedAt, requestedMarkets, returnedMarkets, failedMarkets, coverage, quoteConvention, freshness, failureReasons, availableClasses]
+      properties:
+        assetClass:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        provider:
+          type: string
+        providerLabel:
+          type: string
+        freeApi:
+          type: boolean
+        capturedAt:
+          type: string
+          format: date-time
+        requestedMarkets:
+          type: integer
+        returnedMarkets:
+          type: integer
+        failedMarkets:
+          type: integer
+        coverage:
+          type: string
+        quoteConvention:
+          type: string
+        freshness:
+          type: string
+        failureReasons:
+          type: array
+          items:
+            type: string
+        availableClasses:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketMonitorClassSummary"
+    MarketMonitorResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketMonitorRow"
+        meta:
+          $ref: "#/components/schemas/MarketMonitorMeta"
     QuoteSnapshot:
       type: object
       required: [ticker, priceCents, displayPrice, timestamp, provider, freshness]

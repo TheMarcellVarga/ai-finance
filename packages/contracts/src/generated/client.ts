@@ -52,6 +52,48 @@ export type AssetCatalogResponse = {
   meta: ContractMeta;
 };
 
+export type MarketMonitorPoint = { timestamp: string; value: number };
+
+export type MarketMonitorRow = {
+  symbol: string;
+  name: string;
+  venue?: string;
+  currency?: string;
+  unit?: string;
+  price: number;
+  displayValue: string;
+  dailyChangePercent: number;
+  monthlyChangePercent: number;
+  volume?: number;
+  sparkline: MarketMonitorPoint[];
+  provider: string;
+  sourceUrl: string;
+  capturedAt: string;
+  isProxy?: boolean;
+  proxyNote?: string;
+};
+
+export type MarketMonitorResponse = {
+  data: MarketMonitorRow[];
+  meta: {
+    assetClass: string;
+    label: string;
+    description: string;
+    provider: string;
+    providerLabel: string;
+    freeApi: boolean;
+    capturedAt: string;
+    requestedMarkets: number;
+    returnedMarkets: number;
+    failedMarkets: number;
+    coverage: string;
+    quoteConvention: string;
+    freshness: string;
+    failureReasons: string[];
+    availableClasses: Array<{ id: string; label: string; description: string; coverage: string }>;
+  };
+};
+
 export type QuoteSnapshot = {
   ticker: string;
   priceCents: number;
@@ -428,6 +470,10 @@ export class FinanceApiClient {
 
   async getAssetCatalog(): Promise<AssetCatalogResponse> {
     return this.request<AssetCatalogResponse>("/v1/assets/catalog");
+  }
+
+  async getMarketMonitor(assetClass: string): Promise<MarketMonitorResponse> {
+    return this.request<MarketMonitorResponse>(`/v1/market-monitors/${encodeURIComponent(assetClass)}`);
   }
 
   async getAssetQuote(ticker: string): Promise<QuoteResponse> {

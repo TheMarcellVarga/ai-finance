@@ -16,6 +16,10 @@ type FallbackMarketProvider struct {
 		AssetSearchProvider
 		QuoteProvider
 	}
+	Tertiary interface {
+		AssetSearchProvider
+		QuoteProvider
+	}
 }
 
 func (p FallbackMarketProvider) SearchAssets(ctx context.Context, query string) ([]AssetProfile, error) {
@@ -26,13 +30,19 @@ func (p FallbackMarketProvider) SearchAssets(ctx context.Context, query string) 
 		}
 	}
 	if p.Secondary != nil {
-		return p.Secondary.SearchAssets(ctx, query)
+		assets, err := p.Secondary.SearchAssets(ctx, query)
+		if err == nil && len(assets) > 0 {
+			return assets, nil
+		}
+	}
+	if p.Tertiary != nil {
+		return p.Tertiary.SearchAssets(ctx, query)
 	}
 	return nil, ErrProviderNotConfigured
 }
 
 func (p FallbackMarketProvider) SearchAssetsWithFilters(ctx context.Context, filters AssetSearchFilters) ([]AssetProfile, error) {
-	providersToTry := []AssetSearchProvider{p.Primary, p.Secondary}
+	providersToTry := []AssetSearchProvider{p.Primary, p.Secondary, p.Tertiary}
 	var lastErr error
 	for _, provider := range providersToTry {
 		if provider == nil {
@@ -65,7 +75,13 @@ func (p FallbackMarketProvider) LatestQuote(ctx context.Context, ticker string) 
 		}
 	}
 	if p.Secondary != nil {
-		return p.Secondary.LatestQuote(ctx, ticker)
+		quote, err := p.Secondary.LatestQuote(ctx, ticker)
+		if err == nil && quote.PriceCents > 0 {
+			return quote, nil
+		}
+	}
+	if p.Tertiary != nil {
+		return p.Tertiary.LatestQuote(ctx, ticker)
 	}
 	return QuoteSnapshot{}, ErrProviderNotConfigured
 }

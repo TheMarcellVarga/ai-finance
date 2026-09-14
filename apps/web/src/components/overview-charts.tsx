@@ -162,11 +162,11 @@ export function OverviewCharts({ allocation, watchlist, provider = "market data 
           <div>
             <div className="flex items-center gap-2 text-sm text-white">
               <Radar className="size-4 text-amber-100" />
-              Watchlist movement
+              Monitor movement
             </div>
             <h2 className="type-card-title mt-3 text-2xl text-white">What changed today</h2>
           </div>
-          <Link className="overview-link" href="/app/watchlist">
+          <Link className="overview-link" href="/app/monitors">
             Details
             <ArrowRight className="size-3.5" />
           </Link>

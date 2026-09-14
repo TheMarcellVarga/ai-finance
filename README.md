@@ -28,6 +28,7 @@ Phase 0 control-plane assets through Phase 9 local completion are in place:
 - Phase 8 local case-study package: brand/media notes, architecture diagram, walkthrough script, screenshot capture set, README updates, and API docs
 - Phase 9 completion audit in [docs/UNFINISHED_SURFACES_AUDIT.md](docs/UNFINISHED_SURFACES_AUDIT.md)
 - Watchlist, settings, research, goals, risk, blog, privacy, and terms surfaces with local demo interactions and completion-copy cleanup
+- Consolidated global Asset monitors family at `/app/monitors`, with free public Yahoo Finance and Frankfurter/ECB data, explicit proxy labels, freshness metadata, and monitor-level watchlist pinning
 - Upgrade Phase 1 private document research flow: Next.js BFF, Go upload/status/retry APIs, Supabase Storage, Postgres jobs, page-aware parsing, and owner-isolation verification
 - Upgrade Phases 2–5 hybrid retrieval, structured evidence analysis, citation inspection, immutable raw output, append-only human review, and reviewed Markdown export
 - Upgrade Phase 6 regression corpus with 40 cases across five source documents, evaluation dashboard, prompt-injection screening, upload-to-export E2E gate, WCAG-focused semantics, and API/worker deployment artifacts
@@ -187,8 +188,8 @@ never use a `NEXT_PUBLIC_` prefix.
 ## Local Demo Path
 
 1. Open `/` and confirm the product is framed as AI financial research, not trading automation.
-2. Open `/app/portfolio`, refresh provider-backed portfolio data, and inspect holdings, allocation, freshness, and the intraday chart.
-3. Open `/app/watchlist` to review provider-backed watchlist data, freshness, add-ticker flow, and failure states.
+2. Open `/app/monitors` to move through equities, fixed income, funds, currencies, commodities, real estate, derivatives, private-market proxies, cash/rates, protection/contracts, and the dedicated crypto monitor.
+3. Open `/app/portfolio`, refresh provider-backed portfolio data, and inspect holdings, allocation, freshness, and the intraday chart.
 4. Open `/app/research` to review private source upload, evidence search, structured cited analysis, human section decisions, citation feedback, and reviewed export.
 5. Open `/app/research/evaluations` to inspect the stored Phase 6 build/model/prompt/retrieval baseline and release-gate metrics.
 6. Open `/app/goals`, `/app/risk`, `/app/settings`, and `/app/billing` to verify scenario, safety, privacy/provider, entitlement, and local demo billing boundaries.

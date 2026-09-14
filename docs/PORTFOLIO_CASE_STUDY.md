@@ -10,7 +10,7 @@ Current state: the six-phase Evidence Workspace upgrade is complete locally. The
 
 The product helps users:
 
-- Review portfolios, allocation, concentration, holdings, watchlists, and provider freshness.
+- Review portfolios, allocation, concentration, holdings, global asset monitors, watchlist pins, and provider freshness.
 - Generate structured research and risk explanations with citations, assumptions, and safety labels.
 - Compare educational goal scenarios without promising outcomes.
 - Track usage limits and billing entitlements.
@@ -34,7 +34,7 @@ The AI layer uses Vercel AI SDK contracts with deterministic fixture mode enable
 ## Implementation Highlights
 
 - Next.js App Router marketing routes and authenticated workspace routes.
-- Premium dark fintech UI with responsive shell, portfolio workspace, research, goals, risk, watchlist, settings, and billing surfaces.
+- Premium dark fintech UI with responsive shell, portfolio workspace, global asset monitors, research, goals, risk, watchlist actions, settings, and billing surfaces.
 - Go API with health checks, structured errors, request IDs, Clerk/JWKS auth middleware, local dev auth mode, provider interfaces, portfolio/watchlist handlers, rate limits, and handler tests.
 - OpenAPI 3.1 contract plus generated TypeScript client validation flow.
 - Supabase migrations for core finance tables, deterministic demo assets, Phase 6 research/goal intelligence, and Phase 7 billing/security/observability.

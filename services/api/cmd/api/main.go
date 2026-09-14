@@ -48,12 +48,14 @@ func main() {
 
 	fmp := providers.FMPProvider{APIKey: cfg.FMPAPIKey}
 	twelveData := providers.TwelveDataProvider{APIKey: cfg.TwelveDataAPIKey}
-	marketData := providers.FallbackMarketProvider{Primary: fmp, Secondary: twelveData}
+	freeMarketMonitors := providers.FreeMarketMonitorProvider{}
+	marketData := providers.FallbackMarketProvider{Primary: fmp, Secondary: twelveData, Tertiary: freeMarketMonitors}
 	handler := httpapi.NewHandler(httpapi.Options{
 		Authenticator:    authenticator,
 		AssetProvider:    marketData,
 		QuoteProvider:    marketData,
 		ChartProvider:    twelveData,
+		MarketMonitor:    freeMarketMonitors,
 		Research:         researchRuntime.Store,
 		ResearchEmbedder: researchRuntime.Embedder,
 		DocumentStore:    researchRuntime.Storage,

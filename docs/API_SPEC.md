@@ -16,6 +16,7 @@ The Go service exposes versioned REST APIs under `/v1`. Next.js may wrap selecte
 | `GET` | `/v1/health` | Service health |
 | `GET` | `/v1/assets/search?q=&assetClass=&countryCode=&region=&currency=&exchange=&limit=` | Provider-backed global asset search with canonical class and ISO country filters |
 | `GET` | `/v1/assets/catalog` | Canonical asset-class taxonomy, region options, ISO country coverage, and currency standard |
+| `GET` | `/v1/market-monitors/:class` | Free public read-only monitor snapshot for the global asset-class monitor family |
 | `GET` | `/v1/assets/:ticker/quote` | Latest real-provider quote |
 | `GET` | `/v1/assets/:ticker/intraday?interval=5min` | Intraday real-provider price series |
 | `GET` | `/v1/assets/:ticker` | Asset profile |
@@ -56,6 +57,7 @@ The Go service exposes versioned REST APIs under `/v1`. Next.js may wrap selecte
 | `GET` | `/api/finance/intraday` | Same-origin intraday chart proxy backed by the finance API |
 | `GET` | `/api/finance/assets/catalog` | Same-origin canonical asset-class, region, country-code, and currency catalog |
 | `GET` | `/api/finance/assets/search?q=&assetClass=&countryCode=` | Same-origin global asset picker proxy backed by the finance API |
+| `GET` | `/api/finance/asset-monitor?class=` | Same-origin asset-class monitor proxy backed by free public market-data adapters |
 | `GET` | `/api/finance/crypto-exchanges?scope=singapore_mas_dpt\|global` | Server-generated catalog. The Singapore / MAS-authorised DPT scope is the default and is represented by the UI checkbox; `global` explicitly opts into all supported public providers with ticker and OHLCV capabilities. |
 | `GET` | `/api/finance/crypto-monitor?provider={exchangeId}&scope=singapore_mas_dpt\|global&interval=4h&limit=80` | Public spot crypto monitor. Omitted scope defaults to Singapore / MAS-authorised providers; `global` opts into the broader catalog. The provider ID must come from `/api/finance/crypto-exchanges` for the selected scope. The default and maximum batch are 80 markets; the monitor uses a bounded recent history scan per market so the full batch remains suitable for a short-lived Vercel function. OKX uses the native adapter and other catalog entries use the server-only CCXT adapter. Supported intervals, in chronological order: `1m`, `3m`, `5m`, `15m`, `30m`, `1h`, `2h`, `4h`, `6h`, `12h`, `1d`, `3d`, `1w`. |
 | `POST` | `/api/finance/portfolio` | Same-origin provider-backed portfolio fixture route for local demo flows |

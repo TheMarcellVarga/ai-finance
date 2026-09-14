@@ -21,6 +21,7 @@ type Options struct {
 	AssetProvider    providers.AssetSearchProvider
 	QuoteProvider    providers.QuoteProvider
 	ChartProvider    providers.IntradayProvider
+	MarketMonitor    providers.MarketMonitorProvider
 	Workspace        *store.WorkspaceStore
 	Research         research.Store
 	ResearchEmbedder research.Embedder
@@ -33,6 +34,7 @@ type server struct {
 	assetProvider providers.AssetSearchProvider
 	quoteProvider providers.QuoteProvider
 	chartProvider providers.IntradayProvider
+	marketMonitor providers.MarketMonitorProvider
 	workspace     *store.WorkspaceStore
 	research      research.Store
 	retriever     research.Retriever
@@ -54,6 +56,7 @@ func NewHandler(opts Options) http.Handler {
 		assetProvider: opts.AssetProvider,
 		quoteProvider: opts.QuoteProvider,
 		chartProvider: opts.ChartProvider,
+		marketMonitor: opts.MarketMonitor,
 		workspace:     opts.Workspace,
 		research:      opts.Research,
 		retriever:     research.Retriever{Store: opts.Research, Embedder: opts.ResearchEmbedder},
@@ -68,6 +71,7 @@ func NewHandler(opts Options) http.Handler {
 	mux.HandleFunc("GET /v1/assets/catalog", s.assetCatalog)
 	mux.HandleFunc("GET /v1/assets/{ticker}/quote", s.quoteAsset)
 	mux.HandleFunc("GET /v1/assets/{ticker}/intraday", s.intradayAsset)
+	mux.HandleFunc("GET /v1/market-monitors/{class}", s.marketMonitorData)
 	mux.Handle("GET /v1/me", s.requireAuth(http.HandlerFunc(s.me)))
 	mux.Handle("GET /v1/usage", s.requireAuth(http.HandlerFunc(s.usage)))
 	mux.Handle("GET /v1/portfolios", s.requireAuth(http.HandlerFunc(s.listPortfolios)))
@@ -184,6 +188,23 @@ func (s *server) assetCatalog(w http.ResponseWriter, r *http.Request) {
 			"capturedAt": time.Now().UTC().Format(time.RFC3339),
 		},
 	})
+}
+
+func (s *server) marketMonitorData(w http.ResponseWriter, r *http.Request) {
+	if s.marketMonitor == nil {
+		writeError(w, r, http.StatusServiceUnavailable, "provider_not_configured", "Free market monitor data is not configured.")
+		return
+	}
+	payload, err := s.marketMonitor.LoadMarketMonitor(r.Context(), r.PathValue("class"))
+	if err != nil {
+		if strings.Contains(err.Error(), "unknown market monitor class") {
+			writeError(w, r, http.StatusNotFound, "unknown_monitor_class", "That asset-class monitor is not available.")
+			return
+		}
+		writeError(w, r, http.StatusBadGateway, "market_monitor_unavailable", "The free public market monitor could not complete the request.")
+		return
+	}
+	writeJSON(w, http.StatusOK, payload)
 }
 
 func normalizeAssetSearchLimit(value string) int {

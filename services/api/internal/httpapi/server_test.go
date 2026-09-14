@@ -19,6 +19,39 @@ type fakeProvider struct{}
 
 type globalAssetProvider struct{ fakeProvider }
 
+type marketMonitorProvider struct{}
+
+func (marketMonitorProvider) LoadMarketMonitor(_ context.Context, assetClass string) (providers.MarketMonitorPayload, error) {
+	return providers.MarketMonitorPayload{
+		Data: []providers.MarketMonitorRow{{
+			Symbol:               "AAPL",
+			Name:                 "Apple",
+			Price:                195.27,
+			DisplayValue:         "$195.27",
+			DailyChangePercent:   0.42,
+			MonthlyChangePercent: 3.1,
+			Provider:             "free-yahoo",
+			SourceURL:            "https://finance.yahoo.com/quote/AAPL",
+			CapturedAt:           testFreshAt(),
+		}},
+		Meta: providers.MarketMonitorMeta{
+			AssetClass:       assetClass,
+			Label:            "Equities",
+			Provider:         "yahoo",
+			ProviderLabel:    "Yahoo Finance public chart data",
+			FreeAPI:          true,
+			CapturedAt:       testFreshAt(),
+			RequestedMarkets: 1,
+			ReturnedMarkets:  1,
+			Coverage:         "Global listed sample",
+			QuoteConvention:  "Provider-listed quote",
+			Freshness:        "Public delayed data",
+			FailureReasons:   []string{},
+			AvailableClasses: []providers.MarketMonitorClassSummary{{ID: "equities", Label: "Equities"}},
+		},
+	}, nil
+}
+
 func (globalAssetProvider) SearchAssets(_ context.Context, _ string) ([]providers.AssetProfile, error) {
 	return []providers.AssetProfile{
 		{Ticker: "7203.T", Name: "Toyota Motor Corporation", Exchange: "TSE", Type: "equity", AssetClass: "equity", CountryCode: "JP", Region: "asia", Currency: "JPY", FreshAt: testFreshAt(), Provider: "global-test"},
@@ -75,6 +108,25 @@ func testHandler(t *testing.T) http.Handler {
 		ChartProvider: fakeProvider{},
 		Logger:        slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
+}
+
+func TestMarketMonitorEndpointUsesFreeProviderContract(t *testing.T) {
+	authenticator, err := auth.NewAuthenticator(auth.Config{Mode: "dev", Env: "test", DevPrefix: "dev:"}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewHandler(Options{Authenticator: authenticator, MarketMonitor: marketMonitorProvider{}, Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/market-monitors/equities", nil)
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", res.Code, res.Body.String())
+	}
+	if got := res.Body.String(); !contains(got, `"freeApi":true`) || !contains(got, `"symbol":"AAPL"`) || !contains(got, `"provider":"free-yahoo"`) {
+		t.Fatalf("expected free market monitor payload, got %s", got)
+	}
 }
 
 func TestHealth(t *testing.T) {

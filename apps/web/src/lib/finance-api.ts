@@ -43,6 +43,56 @@ export type FinanceAssetCatalogResponse = {
   meta: { provider: string; freshness: string; capturedAt: string };
 };
 
+export type MarketMonitorPoint = {
+  timestamp: string;
+  value: number;
+};
+
+export type MarketMonitorRow = {
+  symbol: string;
+  name: string;
+  venue?: string;
+  currency?: string;
+  unit?: string;
+  price: number;
+  displayValue: string;
+  dailyChangePercent: number;
+  monthlyChangePercent: number;
+  volume?: number;
+  sparkline: MarketMonitorPoint[];
+  provider: string;
+  sourceUrl: string;
+  capturedAt: string;
+  isProxy?: boolean;
+  proxyNote?: string;
+};
+
+export type MarketMonitorResponse = {
+  data: MarketMonitorRow[];
+  meta: {
+    assetClass: string;
+    label: string;
+    description: string;
+    provider: string;
+    providerLabel: string;
+    freeApi: boolean;
+    capturedAt: string;
+    requestedMarkets: number;
+    returnedMarkets: number;
+    failedMarkets: number;
+    coverage: string;
+    quoteConvention: string;
+    freshness: string;
+    failureReasons: string[];
+    availableClasses: Array<{
+      id: string;
+      label: string;
+      description: string;
+      coverage: string;
+    }>;
+  };
+};
+
 export type FinancePortfolioResponse = {
   data: {
     id: string;
@@ -214,6 +264,19 @@ export async function loadRealProviderAssetCatalog(): Promise<FinanceAssetCatalo
     throw new Error(payload?.error?.message ?? `Finance API returned ${response.status}.`);
   }
   return payload as FinanceAssetCatalogResponse;
+}
+
+export async function loadFreeAssetMonitor(assetClass: string): Promise<MarketMonitorResponse> {
+  const response = await financeFetch(`${financeApiBaseUrl}/v1/market-monitors/${encodeURIComponent(assetClass)}`, {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+  const text = await response.text();
+  const payload = parseFinancePayload(text);
+  if (!response.ok) {
+    throw new Error(payload?.error?.message ?? `Market monitor returned ${response.status}.`);
+  }
+  return payload as MarketMonitorResponse;
 }
 
 export async function loadRealProviderPortfolio(authToken: string): Promise<FinancePortfolioResponse> {

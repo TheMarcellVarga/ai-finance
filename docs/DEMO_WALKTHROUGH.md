@@ -29,23 +29,27 @@ curl -fsS http://127.0.0.1:8080/v1/health
    - Show holdings, allocation, concentration, intraday chart, provider freshness, and the decision-support disclaimer.
    - Say: "The browser does not compute authoritative finance state. The UI calls server routes backed by the Go finance API."
 
-4. Open `/app/research`.
+4. Open `/app/monitors`.
+   - Move through equities, fixed income, funds, currencies, commodities, real estate, derivatives, private-market proxies, cash/rates, protection/contracts, and the dedicated crypto monitor.
+   - Say: "Each monitor uses a free public source, shows its quote convention and freshness, and marks proxy data instead of implying coverage we do not have."
+
+5. Open `/app/research`.
    - Show filing highlights, material risk review, and retrieved chunks.
    - Say: "Phase 6 uses deterministic fixtures locally but keeps the final contract: citations, freshness, assumptions, and safety labels."
 
-5. Open `/app/goals`.
+6. Open `/app/goals`.
    - Show milestones, contribution scenarios, and educational challenges.
    - Say: "Goal planning is framed as scenario education and research discipline, not a promise of returns."
 
-6. Open `/app/risk`.
+7. Open `/app/risk`.
    - Show concentration, allocation, limitations, and review actions.
    - Say: "The risk explainer gives review areas, not buy or sell instructions."
 
-7. Open `/app/billing`.
+8. Open `/app/billing`.
    - Show plan limits and usage period.
    - Say: "Entitlements are server-enforced and route handlers check usage before AI generation."
 
-8. Close with the engineering story.
+9. Close with the engineering story.
    - Next.js owns product and AI UX.
    - Go owns finance APIs, ownership, calculations, rate limits, and audit behavior.
    - Supabase stores user-owned finance data, AI persistence, usage, billing metadata, and research chunks.
@@ -69,4 +73,3 @@ scripts/verify-phase7-security
 - Vercel AI Gateway verification is intentionally skipped locally to avoid billing blockers.
 - Live Stripe and Clerk webhook delivery requires configured deployment secrets.
 - Supabase persistence verification requires server-side `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
-
