@@ -42,14 +42,14 @@ type Holding struct {
 	DisplayQuantity  string `json:"displayQuantity"`
 	AverageCostCents int64  `json:"-"`
 	DisplayAvgCost   string `json:"displayAvgCost"`
-	MarketValueCents int64  `json:"-"`
+	MarketValueCents int64  `json:"marketValueCents"`
 	DisplayValue     string `json:"displayValue"`
 	WeightBps        int    `json:"weightBps"`
 	Notes            string `json:"notes,omitempty"`
 }
 
 type PortfolioSummary struct {
-	TotalValueCents        int64  `json:"-"`
+	TotalValueCents        int64  `json:"totalValueCents"`
 	DisplayTotalValue      string `json:"displayTotalValue"`
 	TopConcentrationTicker string `json:"topConcentrationTicker"`
 	TopConcentrationBps    int    `json:"topConcentrationBps"`

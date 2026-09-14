@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	assetcatalog "github.com/marcellvarga/ai-finance/services/api/internal/assets"
 )
 
 var ErrProviderNotConfigured = errors.New("provider not configured")
@@ -36,15 +38,20 @@ func (p FMPProvider) SearchAssets(ctx context.Context, query string) ([]AssetPro
 			}
 			priceCents := int64(math.Round(quote.Price * 100))
 			return []AssetProfile{{
-				Ticker:        strings.ToUpper(quote.Symbol),
-				Name:          quote.Name,
-				Exchange:      quote.Exchange,
-				Type:          "equity",
-				PriceCents:    priceCents,
-				DisplayPrice:  formatProviderMoney(priceCents),
-				DailyChangeBp: int(math.Round(quote.ChangePct * 100)),
-				FreshAt:       ts,
-				Provider:      "fmp",
+				Ticker:         strings.ToUpper(quote.Symbol),
+				ProviderSymbol: strings.ToUpper(quote.Symbol),
+				Name:           quote.Name,
+				Exchange:       quote.Exchange,
+				Type:           assetcatalog.NormalizeAssetClass(firstNonEmpty(quote.Type, "equity")),
+				AssetClass:     assetcatalog.NormalizeAssetClass(firstNonEmpty(quote.Type, "equity")),
+				CountryCode:    assetcatalog.NormalizeCountryCode(quote.CountryCode),
+				Country:        quote.Country,
+				Currency:       assetcatalog.NormalizeCurrencyCode(quote.Currency),
+				PriceCents:     priceCents,
+				DisplayPrice:   formatProviderMoney(priceCents),
+				DailyChangeBp:  int(math.Round(quote.ChangePct * 100)),
+				FreshAt:        ts,
+				Provider:       "fmp",
 			}}, nil
 		}
 	}
@@ -62,6 +69,13 @@ func (p FMPProvider) SearchAssets(ctx context.Context, query string) ([]AssetPro
 		Exchange    string `json:"exchangeShortName"`
 		ExchangeAlt string `json:"exchange"`
 		Type        string `json:"type"`
+		Country     string `json:"country"`
+		CountryCode string `json:"countryCode"`
+		Currency    string `json:"currency"`
+		MIC         string `json:"mic"`
+		ISIN        string `json:"isin"`
+		CUSIP       string `json:"cusip"`
+		FIGI        string `json:"figi"`
 	}
 	if err := p.get(ctx, endpoint+"?"+values.Encode(), &rows); err != nil {
 		return nil, err
@@ -75,13 +89,23 @@ func (p FMPProvider) SearchAssets(ctx context.Context, query string) ([]AssetPro
 			continue
 		}
 		exchange := firstNonEmpty(row.Exchange, row.ExchangeAlt, row.StockEx)
+		assetClass := normalizeAssetType(row.Type)
 		assets = append(assets, AssetProfile{
-			Ticker:   ticker,
-			Name:     strings.TrimSpace(row.Name),
-			Exchange: strings.TrimSpace(exchange),
-			Type:     normalizeAssetType(row.Type),
-			FreshAt:  freshAt,
-			Provider: "fmp",
+			Ticker:         ticker,
+			ProviderSymbol: ticker,
+			Name:           strings.TrimSpace(row.Name),
+			Exchange:       strings.TrimSpace(exchange),
+			Type:           assetClass,
+			AssetClass:     assetClass,
+			Country:        strings.TrimSpace(row.Country),
+			CountryCode:    assetcatalog.NormalizeCountryCode(row.CountryCode),
+			Currency:       assetcatalog.NormalizeCurrencyCode(row.Currency),
+			MIC:            strings.TrimSpace(row.MIC),
+			ISIN:           strings.TrimSpace(row.ISIN),
+			CUSIP:          strings.TrimSpace(row.CUSIP),
+			FIGI:           strings.TrimSpace(row.FIGI),
+			FreshAt:        freshAt,
+			Provider:       "fmp",
 		})
 	}
 
@@ -116,6 +140,7 @@ func (p FMPProvider) LatestQuote(ctx context.Context, ticker string) (QuoteSnaps
 		PriceCents:    priceCents,
 		DisplayPrice:  formatProviderMoney(priceCents),
 		DailyChangeBp: int(math.Round(row.ChangePct * 100)),
+		Currency:      assetcatalog.NormalizeCurrencyCode(row.Currency),
 		Timestamp:     ts,
 		Provider:      "fmp",
 		Freshness:     "provider-reported",
@@ -123,12 +148,16 @@ func (p FMPProvider) LatestQuote(ctx context.Context, ticker string) (QuoteSnaps
 }
 
 type fmpQuoteRow struct {
-	Symbol    string  `json:"symbol"`
-	Name      string  `json:"name"`
-	Price     float64 `json:"price"`
-	ChangePct float64 `json:"changePercentage"`
-	Timestamp int64   `json:"timestamp"`
-	Exchange  string  `json:"exchange"`
+	Symbol      string  `json:"symbol"`
+	Name        string  `json:"name"`
+	Price       float64 `json:"price"`
+	ChangePct   float64 `json:"changePercentage"`
+	Timestamp   int64   `json:"timestamp"`
+	Exchange    string  `json:"exchange"`
+	Type        string  `json:"type"`
+	Country     string  `json:"country"`
+	CountryCode string  `json:"countryCode"`
+	Currency    string  `json:"currency"`
 }
 
 func (p FMPProvider) latestQuoteRow(ctx context.Context, ticker string) (fmpQuoteRow, error) {
@@ -176,21 +205,16 @@ func (p FMPProvider) get(ctx context.Context, endpoint string, target any) error
 }
 
 func normalizeAssetType(value string) string {
-	switch strings.ToLower(strings.TrimSpace(value)) {
-	case "etf", "fund":
-		return "etf"
-	default:
-		return "equity"
-	}
+	return assetcatalog.NormalizeAssetClass(value)
 }
 
 func looksLikeTicker(value string) bool {
 	value = strings.TrimSpace(value)
-	if value == "" || len(value) > 8 {
+	if value == "" || len(value) > 32 {
 		return false
 	}
 	for _, char := range value {
-		if (char < 'A' || char > 'Z') && (char < 'a' || char > 'z') && char != '.' && char != '-' {
+		if (char < 'A' || char > 'Z') && (char < 'a' || char > 'z') && (char < '0' || char > '9') && char != '.' && char != '-' && char != ':' && char != '/' && char != '_' {
 			return false
 		}
 	}

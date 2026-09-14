@@ -2,9 +2,19 @@ export type Asset = {
   ticker: string;
   name: string;
   exchange: string;
-  type: "equity" | "etf";
+  type: string;
+  assetClass?: string;
   sector?: string;
   cik?: string;
+  countryCode?: string;
+  country?: string;
+  region?: string;
+  currency?: string;
+  mic?: string;
+  isin?: string;
+  cusip?: string;
+  figi?: string;
+  providerSymbol?: string;
   capturedAt?: string;
   freshness?: string;
   provider?: string;
@@ -16,9 +26,30 @@ export type AssetSearchResponse = {
   data: Asset[];
   meta: {
     query?: string;
+    assetClass?: string;
+    countryCode?: string;
+    region?: string;
+    currency?: string;
+    exchange?: string;
+    coverage?: string;
     provider: string;
     freshness: string;
   };
+};
+
+export type AssetCatalogResponse = {
+  data: {
+    assetClasses: Array<{ id: string; label: string; description: string }>;
+    regions: string[];
+    countryCoverage: {
+      standard: string;
+      acceptedCodePattern: string;
+      allCodesAccepted: boolean;
+      scope: string;
+    };
+    currencyStandard: string;
+  };
+  meta: ContractMeta;
 };
 
 export type QuoteSnapshot = {
@@ -26,6 +57,7 @@ export type QuoteSnapshot = {
   priceCents: number;
   displayPrice: string;
   dailyChangeBps?: number;
+  currency?: string;
   timestamp: string;
   provider: string;
   freshness: string;
@@ -100,12 +132,14 @@ export type Holding = {
   quantity: number;
   displayQuantity: string;
   displayAvgCost: string;
+  marketValueCents: number;
   displayValue: string;
   weightBps: number;
   notes?: string;
 };
 
 export type PortfolioSummary = {
+  totalValueCents: number;
   displayTotalValue: string;
   topConcentrationTicker: string;
   topConcentrationBps: number;
@@ -372,12 +406,28 @@ export class FinanceApiClient {
     return this.request<HealthResponse>("/v1/health");
   }
 
-  async searchAssets(query: string): Promise<AssetSearchResponse> {
+  async searchAssets(query: string, filters: {
+    assetClass?: string;
+    countryCode?: string;
+    region?: string;
+    currency?: string;
+    exchange?: string;
+    limit?: number;
+  } = {}): Promise<AssetSearchResponse> {
     const params = new URLSearchParams();
     if (query) {
       params.set("q", query);
     }
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== undefined && value !== "") {
+        params.set(key, String(value));
+      }
+    }
     return this.request<AssetSearchResponse>(`/v1/assets/search?${params}`);
+  }
+
+  async getAssetCatalog(): Promise<AssetCatalogResponse> {
+    return this.request<AssetCatalogResponse>("/v1/assets/catalog");
   }
 
   async getAssetQuote(ticker: string): Promise<QuoteResponse> {

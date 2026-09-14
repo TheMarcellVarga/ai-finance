@@ -17,6 +17,15 @@ import (
 
 type fakeProvider struct{}
 
+type globalAssetProvider struct{ fakeProvider }
+
+func (globalAssetProvider) SearchAssets(_ context.Context, _ string) ([]providers.AssetProfile, error) {
+	return []providers.AssetProfile{
+		{Ticker: "7203.T", Name: "Toyota Motor Corporation", Exchange: "TSE", Type: "equity", AssetClass: "equity", CountryCode: "JP", Region: "asia", Currency: "JPY", FreshAt: testFreshAt(), Provider: "global-test"},
+		{Ticker: "BND", Name: "Global Bond Fund", Exchange: "NYSE", Type: "bond", AssetClass: "bond", CountryCode: "US", Region: "americas", Currency: "USD", FreshAt: testFreshAt(), Provider: "global-test"},
+	}, nil
+}
+
 func (fakeProvider) SearchAssets(_ context.Context, query string) ([]providers.AssetProfile, error) {
 	return []providers.AssetProfile{
 		{Ticker: "AAPL", Name: "Apple Inc.", Exchange: "NASDAQ", Type: "equity", Sector: "Technology", FreshAt: testFreshAt(), Provider: "test-provider"},
@@ -130,6 +139,44 @@ func TestAssetSearchUsesRealProvider(t *testing.T) {
 	}
 	if got := res.Body.String(); !contains(got, "AAPL") {
 		t.Fatalf("expected AAPL in response, got %s", got)
+	}
+}
+
+func TestAssetSearchSupportsGlobalClassAndCountryFilters(t *testing.T) {
+	authenticator, err := auth.NewAuthenticator(auth.Config{Mode: "dev", Env: "test", DevPrefix: "dev:"}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewHandler(Options{
+		Authenticator: authenticator,
+		AssetProvider: globalAssetProvider{},
+		QuoteProvider: globalAssetProvider{},
+		ChartProvider: globalAssetProvider{},
+		Logger:        slog.New(slog.NewTextHandler(io.Discard, nil)),
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/assets/search?q=7203.T&assetClass=equity&countryCode=jp&currency=jpy&limit=5", nil)
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", res.Code, res.Body.String())
+	}
+	if got := res.Body.String(); !contains(got, `"ticker":"7203.T"`) || !contains(got, `"assetClass":"equity"`) || !contains(got, `"countryCode":"JP"`) || !contains(got, `"currency":"JPY"`) {
+		t.Fatalf("expected normalized global metadata, got %s", got)
+	}
+}
+
+func TestAssetCatalogExposesBroadTaxonomy(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/v1/assets/catalog", nil)
+	res := httptest.NewRecorder()
+	testHandler(t).ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", res.Code, res.Body.String())
+	}
+	if got := res.Body.String(); !contains(got, `"assetClasses"`) || !contains(got, `"allCodesAccepted":true`) || !contains(got, `"ISO 3166-1 alpha-2"`) {
+		t.Fatalf("expected global catalog metadata, got %s", got)
 	}
 }
 

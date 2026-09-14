@@ -3,18 +3,28 @@ package store
 import "strings"
 
 type Asset struct {
-	Ticker        string `json:"ticker"`
-	Name          string `json:"name"`
-	Exchange      string `json:"exchange"`
-	Type          string `json:"type"`
-	Sector        string `json:"sector,omitempty"`
-	CIK           string `json:"cik,omitempty"`
-	PriceCents    int64  `json:"-"`
-	CapturedAt    string `json:"capturedAt,omitempty"`
-	Freshness     string `json:"freshness,omitempty"`
-	Provider      string `json:"provider,omitempty"`
-	DisplayPrice  string `json:"displayPrice,omitempty"`
-	DailyChangeBp int    `json:"dailyChangeBps,omitempty"`
+	Ticker         string `json:"ticker"`
+	Name           string `json:"name"`
+	Exchange       string `json:"exchange"`
+	Type           string `json:"type"` // Legacy alias for AssetClass.
+	AssetClass     string `json:"assetClass,omitempty"`
+	Sector         string `json:"sector,omitempty"`
+	CIK            string `json:"cik,omitempty"`
+	CountryCode    string `json:"countryCode,omitempty"`
+	Country        string `json:"country,omitempty"`
+	Region         string `json:"region,omitempty"`
+	Currency       string `json:"currency,omitempty"`
+	MIC            string `json:"mic,omitempty"`
+	ISIN           string `json:"isin,omitempty"`
+	CUSIP          string `json:"cusip,omitempty"`
+	FIGI           string `json:"figi,omitempty"`
+	ProviderSymbol string `json:"providerSymbol,omitempty"`
+	PriceCents     int64  `json:"-"`
+	CapturedAt     string `json:"capturedAt,omitempty"`
+	Freshness      string `json:"freshness,omitempty"`
+	Provider       string `json:"provider,omitempty"`
+	DisplayPrice   string `json:"displayPrice,omitempty"`
+	DailyChangeBp  int    `json:"dailyChangeBps,omitempty"`
 }
 
 type SeedAssetStore struct {

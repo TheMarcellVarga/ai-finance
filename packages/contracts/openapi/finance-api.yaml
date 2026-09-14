@@ -29,6 +29,41 @@ paths:
           schema:
             type: string
           required: false
+        - in: query
+          name: assetClass
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: countryCode
+          schema:
+            type: string
+            pattern: "^[A-Za-z]{2}$"
+          required: false
+        - in: query
+          name: region
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: currency
+          schema:
+            type: string
+            pattern: "^[A-Za-z]{3}$"
+          required: false
+        - in: query
+          name: exchange
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+          required: false
       responses:
         "200":
           description: Matching real-provider assets
@@ -36,6 +71,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AssetSearchResponse"
+  /v1/assets/catalog:
+    get:
+      operationId: getAssetCatalog
+      security: []
+      responses:
+        "200":
+          description: Global asset class and geography catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetCatalogResponse"
   /v1/assets/{ticker}/quote:
     get:
       operationId: getAssetQuote
@@ -535,10 +581,33 @@ components:
           type: string
         type:
           type: string
-          enum: [equity, etf]
+          description: Legacy alias for assetClass.
+        assetClass:
+          type: string
+          description: Canonical asset taxonomy ID.
         sector:
           type: string
         cik:
+          type: string
+        countryCode:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        country:
+          type: string
+        region:
+          type: string
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        mic:
+          type: string
+        isin:
+          type: string
+        cusip:
+          type: string
+        figi:
+          type: string
+        providerSymbol:
           type: string
         capturedAt:
           type: string
@@ -569,6 +638,60 @@ components:
               type: string
             freshness:
               type: string
+            assetClass:
+              type: string
+            countryCode:
+              type: string
+            region:
+              type: string
+            currency:
+              type: string
+            exchange:
+              type: string
+            coverage:
+              type: string
+    AssetClassDefinition:
+      type: object
+      required: [id, label, description]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+    AssetCatalogResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [assetClasses, regions, countryCoverage, currencyStandard]
+          properties:
+            assetClasses:
+              type: array
+              items:
+                $ref: "#/components/schemas/AssetClassDefinition"
+            regions:
+              type: array
+              items:
+                type: string
+            countryCoverage:
+              type: object
+              required: [standard, acceptedCodePattern, allCodesAccepted, scope]
+              properties:
+                standard:
+                  type: string
+                acceptedCodePattern:
+                  type: string
+                allCodesAccepted:
+                  type: boolean
+                scope:
+                  type: string
+            currencyStandard:
+              type: string
+        meta:
+          $ref: "#/components/schemas/ContractMeta"
     QuoteSnapshot:
       type: object
       required: [ticker, priceCents, displayPrice, timestamp, provider, freshness]
@@ -581,6 +704,9 @@ components:
           type: string
         dailyChangeBps:
           type: integer
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
         timestamp:
           type: string
           format: date-time
@@ -705,7 +831,7 @@ components:
           enum: [ok, review]
     Holding:
       type: object
-      required: [id, asset, quantity, displayQuantity, displayAvgCost, displayValue, weightBps]
+      required: [id, asset, quantity, displayQuantity, displayAvgCost, marketValueCents, displayValue, weightBps]
       properties:
         id:
           type: string
@@ -717,6 +843,10 @@ components:
           type: string
         displayAvgCost:
           type: string
+        marketValueCents:
+          type: integer
+          format: int64
+          minimum: 0
         displayValue:
           type: string
         weightBps:
@@ -725,8 +855,12 @@ components:
           type: string
     PortfolioSummary:
       type: object
-      required: [displayTotalValue, topConcentrationTicker, topConcentrationBps, holdingCount, reviewFlags]
+      required: [totalValueCents, displayTotalValue, topConcentrationTicker, topConcentrationBps, holdingCount, reviewFlags]
       properties:
+        totalValueCents:
+          type: integer
+          format: int64
+          minimum: 0
         displayTotalValue:
           type: string
         topConcentrationTicker:

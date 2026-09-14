@@ -5,9 +5,11 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
+	assetcatalog "github.com/marcellvarga/ai-finance/services/api/internal/assets"
 	"github.com/marcellvarga/ai-finance/services/api/internal/auth"
 	"github.com/marcellvarga/ai-finance/services/api/internal/providers"
 	"github.com/marcellvarga/ai-finance/services/api/internal/research"
@@ -63,6 +65,7 @@ func NewHandler(opts Options) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v1/health", s.health)
 	mux.HandleFunc("GET /v1/assets/search", s.searchAssets)
+	mux.HandleFunc("GET /v1/assets/catalog", s.assetCatalog)
 	mux.HandleFunc("GET /v1/assets/{ticker}/quote", s.quoteAsset)
 	mux.HandleFunc("GET /v1/assets/{ticker}/intraday", s.intradayAsset)
 	mux.Handle("GET /v1/me", s.requireAuth(http.HandlerFunc(s.me)))
@@ -100,28 +103,135 @@ func (s *server) health(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) searchAssets(w http.ResponseWriter, r *http.Request) {
+	if allowed, resetAt := s.rateLimiter.Allow("public-asset-search:" + strings.TrimSpace(r.RemoteAddr)); !allowed {
+		writeJSON(w, http.StatusTooManyRequests, map[string]any{
+			"error": map[string]any{
+				"code":      "rate_limited",
+				"message":   "Asset search is temporarily rate-limited.",
+				"requestId": RequestID(r.Context()),
+				"resetAt":   resetAt.UTC().Format(time.RFC3339),
+			},
+		})
+		return
+	}
 	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	filters := providers.AssetSearchFilters{
+		Query:       query,
+		AssetClass:  normalizeOptionalAssetClass(r.URL.Query().Get("assetClass")),
+		CountryCode: assetcatalog.NormalizeCountryCode(firstNonEmptyString(r.URL.Query().Get("countryCode"), r.URL.Query().Get("country"))),
+		Region:      assetcatalog.NormalizeRegion(r.URL.Query().Get("region")),
+		Currency:    assetcatalog.NormalizeCurrencyCode(r.URL.Query().Get("currency")),
+		Exchange:    strings.TrimSpace(r.URL.Query().Get("exchange")),
+		Limit:       normalizeAssetSearchLimit(r.URL.Query().Get("limit")),
+	}
 	if s.assetProvider == nil {
 		writeError(w, r, http.StatusServiceUnavailable, "provider_not_configured", "Real asset search provider is not configured.")
 		return
 	}
-	profiles, err := s.assetProvider.SearchAssets(r.Context(), query)
+	var profiles []providers.AssetProfile
+	var err error
+	if filteredProvider, ok := s.assetProvider.(providers.FilteredAssetSearchProvider); ok {
+		profiles, err = filteredProvider.SearchAssetsWithFilters(r.Context(), filters)
+	} else {
+		profiles, err = s.assetProvider.SearchAssets(r.Context(), query)
+	}
 	if err != nil {
 		writeError(w, r, http.StatusBadGateway, "provider_error", "Real asset search provider could not complete the request.")
 		return
 	}
-	results := make([]store.Asset, 0, len(profiles))
+	results := make([]store.Asset, 0, minInt(len(profiles), filters.Limit))
 	for _, profile := range profiles {
+		if !matchesAssetFilters(profile, filters) {
+			continue
+		}
 		results = append(results, assetFromProfile(profile, providers.QuoteSnapshot{}))
+		if len(results) >= filters.Limit {
+			break
+		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"data": results,
 		"meta": map[string]any{
-			"query":     query,
-			"provider":  "real-provider",
-			"freshness": "provider-reported",
+			"query":       query,
+			"assetClass":  filters.AssetClass,
+			"countryCode": filters.CountryCode,
+			"region":      filters.Region,
+			"currency":    filters.Currency,
+			"exchange":    filters.Exchange,
+			"provider":    "real-provider",
+			"freshness":   "provider-reported",
+			"coverage":    "provider-backed-global",
 		},
 	})
+}
+
+func (s *server) assetCatalog(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{
+		"data": map[string]any{
+			"assetClasses": assetcatalog.AssetClasses(),
+			"regions":      assetcatalog.RegionOptions(),
+			"countryCoverage": map[string]any{
+				"standard":            "ISO 3166-1 alpha-2",
+				"acceptedCodePattern": "^[A-Z]{2}$",
+				"allCodesAccepted":    true,
+				"scope":               "Every country and territory returned by the configured market-data provider",
+			},
+			"currencyStandard": "ISO 4217 alpha-3",
+		},
+		"meta": map[string]any{
+			"provider":   "application-catalog",
+			"freshness":  "versioned",
+			"capturedAt": time.Now().UTC().Format(time.RFC3339),
+		},
+	})
+}
+
+func normalizeAssetSearchLimit(value string) int {
+	limit, err := strconv.Atoi(strings.TrimSpace(value))
+	if err != nil || limit <= 0 {
+		return 20
+	}
+	if limit > 50 {
+		return 50
+	}
+	return limit
+}
+
+func normalizeOptionalAssetClass(value string) string {
+	if strings.TrimSpace(value) == "" {
+		return ""
+	}
+	return assetcatalog.NormalizeAssetClass(value)
+}
+
+func minInt(left, right int) int {
+	if left < right {
+		return left
+	}
+	return right
+}
+
+func matchesAssetFilters(profile providers.AssetProfile, filters providers.AssetSearchFilters) bool {
+	assetClass := assetcatalog.NormalizeAssetClass(firstNonEmptyString(profile.AssetClass, profile.Type))
+	if filters.AssetClass != "" && assetClass != filters.AssetClass {
+		return false
+	}
+	if filters.CountryCode != "" {
+		profileCountry := assetcatalog.NormalizeCountryCode(profile.CountryCode)
+		if profileCountry != filters.CountryCode && !strings.EqualFold(strings.TrimSpace(profile.Country), filters.CountryCode) {
+			return false
+		}
+	}
+	if filters.Region != "" && !strings.EqualFold(strings.TrimSpace(profile.Region), filters.Region) {
+		return false
+	}
+	if filters.Currency != "" && assetcatalog.NormalizeCurrencyCode(profile.Currency) != filters.Currency {
+		return false
+	}
+	if filters.Exchange != "" && !strings.EqualFold(strings.TrimSpace(profile.Exchange), filters.Exchange) {
+		return false
+	}
+	return true
 }
 
 func (s *server) quoteAsset(w http.ResponseWriter, r *http.Request) {
@@ -452,19 +562,31 @@ func assetFromProfile(profile providers.AssetProfile, quote providers.QuoteSnaps
 	if quote.Freshness != "" {
 		freshness = quote.Freshness
 	}
+	assetClass := assetcatalog.NormalizeAssetClass(firstNonEmptyString(profile.AssetClass, profile.Type))
+	currency := assetcatalog.NormalizeCurrencyCode(firstNonEmptyString(quote.Currency, profile.Currency))
 	return store.Asset{
-		Ticker:        strings.ToUpper(strings.TrimSpace(profile.Ticker)),
-		Name:          strings.TrimSpace(profile.Name),
-		Exchange:      strings.TrimSpace(profile.Exchange),
-		Type:          strings.TrimSpace(profile.Type),
-		Sector:        strings.TrimSpace(profile.Sector),
-		CIK:           strings.TrimSpace(profile.CIK),
-		PriceCents:    quote.PriceCents,
-		CapturedAt:    capturedAt,
-		Freshness:     freshness,
-		Provider:      provider,
-		DisplayPrice:  firstNonEmptyString(quote.DisplayPrice, profile.DisplayPrice),
-		DailyChangeBp: firstNonZeroInt(quote.DailyChangeBp, profile.DailyChangeBp),
+		Ticker:         strings.ToUpper(strings.TrimSpace(profile.Ticker)),
+		ProviderSymbol: strings.TrimSpace(firstNonEmptyString(profile.ProviderSymbol, profile.Ticker)),
+		Name:           strings.TrimSpace(profile.Name),
+		Exchange:       strings.TrimSpace(profile.Exchange),
+		Type:           assetClass,
+		AssetClass:     assetClass,
+		Sector:         strings.TrimSpace(profile.Sector),
+		CIK:            strings.TrimSpace(profile.CIK),
+		CountryCode:    assetcatalog.NormalizeCountryCode(profile.CountryCode),
+		Country:        strings.TrimSpace(profile.Country),
+		Region:         assetcatalog.NormalizeRegion(profile.Region),
+		Currency:       currency,
+		MIC:            strings.TrimSpace(profile.MIC),
+		ISIN:           strings.TrimSpace(profile.ISIN),
+		CUSIP:          strings.TrimSpace(profile.CUSIP),
+		FIGI:           strings.TrimSpace(profile.FIGI),
+		PriceCents:     quote.PriceCents,
+		CapturedAt:     capturedAt,
+		Freshness:      freshness,
+		Provider:       provider,
+		DisplayPrice:   firstNonEmptyString(quote.DisplayPrice, profile.DisplayPrice),
+		DailyChangeBp:  firstNonZeroInt(quote.DailyChangeBp, profile.DailyChangeBp),
 	}
 }
 

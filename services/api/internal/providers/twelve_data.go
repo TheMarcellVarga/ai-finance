@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	assetcatalog "github.com/marcellvarga/ai-finance/services/api/internal/assets"
 )
 
 type TwelveDataProvider struct {
@@ -51,15 +53,21 @@ func (p TwelveDataProvider) SearchAssets(ctx context.Context, query string) ([]A
 			closeCents, _ := decimalStringToCents(quote.Close)
 			changePercent, _ := strconv.ParseFloat(strings.TrimSpace(quote.PercentChange), 64)
 			return []AssetProfile{{
-				Ticker:        strings.ToUpper(quote.Symbol),
-				Name:          quote.Name,
-				Exchange:      quote.Exchange,
-				Type:          "equity",
-				PriceCents:    closeCents,
-				DisplayPrice:  formatProviderMoney(closeCents),
-				DailyChangeBp: int(math.Round(changePercent * 100)),
-				FreshAt:       quoteTimestamp(quote.Timestamp),
-				Provider:      "twelve-data",
+				Ticker:         strings.ToUpper(quote.Symbol),
+				ProviderSymbol: strings.ToUpper(quote.Symbol),
+				Name:           quote.Name,
+				Exchange:       quote.Exchange,
+				Type:           assetcatalog.NormalizeAssetClass(firstNonEmpty(quote.InstrumentType, "equity")),
+				AssetClass:     assetcatalog.NormalizeAssetClass(firstNonEmpty(quote.InstrumentType, "equity")),
+				CountryCode:    assetcatalog.NormalizeCountryCode(quote.CountryCode),
+				Country:        quote.Country,
+				Currency:       assetcatalog.NormalizeCurrencyCode(quote.Currency),
+				MIC:            quote.MICCode,
+				PriceCents:     closeCents,
+				DisplayPrice:   formatProviderMoney(closeCents),
+				DailyChangeBp:  int(math.Round(changePercent * 100)),
+				FreshAt:        quoteTimestamp(quote.Timestamp),
+				Provider:       "twelve-data",
 			}}, nil
 		}
 	}
@@ -70,10 +78,15 @@ func (p TwelveDataProvider) SearchAssets(ctx context.Context, query string) ([]A
 
 	var payload struct {
 		Data []struct {
-			Symbol     string `json:"symbol"`
-			Instrument string `json:"instrument_name"`
-			Exchange   string `json:"exchange"`
-			Type       string `json:"instrument_type"`
+			Symbol         string `json:"symbol"`
+			Instrument     string `json:"instrument_name"`
+			Exchange       string `json:"exchange"`
+			Type           string `json:"instrument_type"`
+			Country        string `json:"country"`
+			CountryCode    string `json:"country_code"`
+			Currency       string `json:"currency"`
+			MICCode        string `json:"mic_code"`
+			ProviderSymbol string `json:"provider_symbol"`
 		} `json:"data"`
 		Status  string `json:"status"`
 		Message string `json:"message"`
@@ -91,13 +104,20 @@ func (p TwelveDataProvider) SearchAssets(ctx context.Context, query string) ([]A
 		if strings.TrimSpace(row.Symbol) == "" {
 			continue
 		}
+		assetClass := normalizeAssetType(row.Type)
 		assets = append(assets, AssetProfile{
-			Ticker:   strings.ToUpper(strings.TrimSpace(row.Symbol)),
-			Name:     strings.TrimSpace(row.Instrument),
-			Exchange: strings.TrimSpace(row.Exchange),
-			Type:     normalizeAssetType(row.Type),
-			FreshAt:  now,
-			Provider: "twelve-data",
+			Ticker:         strings.ToUpper(strings.TrimSpace(row.Symbol)),
+			ProviderSymbol: firstNonEmpty(strings.TrimSpace(row.ProviderSymbol), strings.TrimSpace(row.Symbol)),
+			Name:           strings.TrimSpace(row.Instrument),
+			Exchange:       strings.TrimSpace(row.Exchange),
+			Type:           assetClass,
+			AssetClass:     assetClass,
+			Country:        strings.TrimSpace(row.Country),
+			CountryCode:    assetcatalog.NormalizeCountryCode(row.CountryCode),
+			Currency:       assetcatalog.NormalizeCurrencyCode(row.Currency),
+			MIC:            strings.TrimSpace(row.MICCode),
+			FreshAt:        now,
+			Provider:       "twelve-data",
 		})
 	}
 	return assets, nil
@@ -121,6 +141,7 @@ func (p TwelveDataProvider) LatestQuote(ctx context.Context, ticker string) (Quo
 		PriceCents:    closeCents,
 		DisplayPrice:  formatProviderMoney(closeCents),
 		DailyChangeBp: int(math.Round(changePercent * 100)),
+		Currency:      assetcatalog.NormalizeCurrencyCode(row.Currency),
 		Timestamp:     quoteTimestamp(row.Timestamp),
 		Provider:      "twelve-data",
 		Freshness:     "provider-reported",
@@ -203,15 +224,20 @@ func (p TwelveDataProvider) IntradayPrices(ctx context.Context, ticker string, i
 }
 
 type twelveQuoteRow struct {
-	Symbol        string `json:"symbol"`
-	Name          string `json:"name"`
-	Exchange      string `json:"exchange"`
-	Close         string `json:"close"`
-	PercentChange string `json:"percent_change"`
-	Timestamp     int64  `json:"timestamp"`
-	Status        string `json:"status"`
-	Code          int    `json:"code"`
-	Message       string `json:"message"`
+	Symbol         string `json:"symbol"`
+	Name           string `json:"name"`
+	Exchange       string `json:"exchange"`
+	Close          string `json:"close"`
+	PercentChange  string `json:"percent_change"`
+	Timestamp      int64  `json:"timestamp"`
+	InstrumentType string `json:"instrument_type"`
+	Country        string `json:"country"`
+	CountryCode    string `json:"country_code"`
+	Currency       string `json:"currency"`
+	MICCode        string `json:"mic_code"`
+	Status         string `json:"status"`
+	Code           int    `json:"code"`
+	Message        string `json:"message"`
 }
 
 func (p TwelveDataProvider) latestQuote(ctx context.Context, ticker string) (twelveQuoteRow, error) {

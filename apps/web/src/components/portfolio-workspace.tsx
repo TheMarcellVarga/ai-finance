@@ -1,17 +1,23 @@
 "use client";
 
-import type { MouseEvent } from "react";
+import type { FormEvent, MouseEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Activity, AlertTriangle, BarChart3, Gauge, Layers3, RefreshCw, ShieldCheck, SlidersHorizontal, WalletCards } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, Gauge, Layers3, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, WalletCards } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { AssetPicker } from "@/components/asset-picker";
+import { WorkspaceWaveAccent } from "@/components/workspace-wave-accent";
 
 type Asset = {
   ticker: string;
   name: string;
   exchange: string;
   type: string;
+  assetClass?: string;
   sector?: string;
+  countryCode?: string;
+  country?: string;
+  currency?: string;
   capturedAt?: string;
   freshness?: string;
   provider?: string;
@@ -25,6 +31,7 @@ type Holding = {
   quantity: number;
   displayQuantity: string;
   displayAvgCost: string;
+  marketValueCents: number;
   displayValue: string;
   weightBps: number;
   notes?: string;
@@ -44,6 +51,7 @@ type Portfolio = {
     displayAmount: string;
   }>;
   summary: {
+    totalValueCents: number;
     displayTotalValue: string;
     topConcentrationTicker: string;
     topConcentrationBps: number;
@@ -80,6 +88,10 @@ function percentFromBps(value: number) {
   return `${(value / 100).toFixed(1)}%`;
 }
 
+function assetClassLabel(asset: Asset) {
+  return (asset.assetClass ?? asset.type).replaceAll("_", " ");
+}
+
 function formatTimestamp(value?: string) {
   if (!value) {
     return "Pending provider timestamp";
@@ -111,16 +123,8 @@ function formatMoneyFromCents(cents: number) {
   }).format(cents / 100);
 }
 
-function moneyStringToCents(value: string) {
-  const parsed = Number(value.replace(/[$,]/g, ""));
-  if (!Number.isFinite(parsed)) {
-    return 0;
-  }
-  return Math.round(parsed * 100);
-}
-
 function holdingValueCents(holding: Holding) {
-  return moneyStringToCents(holding.displayValue);
+  return holding.marketValueCents;
 }
 
 function chartPath(points: IntradayChart["data"], width = 640, height = 190) {
@@ -180,13 +184,19 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [loading, setLoading] = useState(false);
   const [chartLoading, setChartLoading] = useState(false);
-  const [selectedTicker, setSelectedTicker] = useState(initialSelectedTicker ?? initialChart?.meta.ticker ?? initialPortfolio?.summary.topConcentrationTicker ?? "AAPL");
+  const [selectedTicker, setSelectedTicker] = useState(initialSelectedTicker ?? initialChart?.meta.ticker ?? initialPortfolio?.summary.topConcentrationTicker ?? "");
   const [interval, setInterval] = useState(initialInterval ?? initialChart?.meta.interval ?? "5min");
   const [chartMode, setChartMode] = useState<"price" | "volume">("price");
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [liveRefresh, setLiveRefresh] = useState(false);
   const [monthlyContribution, setMonthlyContribution] = useState(1500);
   const [riskLens, setRiskLens] = useState<"concentration" | "income" | "review">("concentration");
+  const [portfolioName, setPortfolioName] = useState("");
+  const [holdingTicker, setHoldingTicker] = useState("");
+  const [holdingQuantity, setHoldingQuantity] = useState("");
+  const [holdingAverageCost, setHoldingAverageCost] = useState("");
+  const [holdingNotes, setHoldingNotes] = useState("");
+  const [mutating, setMutating] = useState(false);
   const chartWrapRef = useRef<HTMLDivElement | null>(null);
 
   const holdings = useMemo(() => portfolio?.holdings ?? [], [portfolio]);
@@ -241,7 +251,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/finance/portfolio", { method: "POST" });
+      const response = await fetch("/api/finance/portfolio", { cache: "no-store" });
       const payload = (await response.json()) as PortfolioResponse | { error?: { message?: string } };
       if (!response.ok || !("data" in payload)) {
         const errorPayload = payload as { error?: { message?: string } };
@@ -255,6 +265,55 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
       setError(requestError instanceof Error ? requestError.message : "Market data is temporarily unavailable.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function submitHolding(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const quantity = Number.parseInt(holdingQuantity, 10);
+    const averageCost = holdingAverageCost.trim() ? Number.parseFloat(holdingAverageCost) : 0;
+    if (!holdingTicker.trim() || !Number.isInteger(quantity) || quantity <= 0 || !Number.isFinite(averageCost) || averageCost < 0) {
+      setError("Enter a valid ticker, whole-share quantity, and optional non-negative average cost.");
+      return;
+    }
+    if (!portfolio && !portfolioName.trim()) {
+      setError("Name the portfolio before adding its first holding.");
+      return;
+    }
+
+    setMutating(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/finance/portfolio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: portfolio ? "add_holding" : "create",
+          portfolioId: portfolio?.id,
+          name: portfolioName.trim(),
+          ticker: holdingTicker.trim().toUpperCase(),
+          quantity,
+          averageCostCents: Math.round(averageCost * 100),
+          notes: holdingNotes.trim() || undefined,
+        }),
+      });
+      const payload = (await response.json()) as PortfolioResponse | { error?: { message?: string } };
+      if (!response.ok || !("data" in payload)) {
+        throw new Error("error" in payload ? payload.error?.message ?? "The holding could not be added." : "The holding could not be added.");
+      }
+      setPortfolio(payload.data);
+      setMeta(payload.meta);
+      const ticker = holdingTicker.trim().toUpperCase();
+      setSelectedTicker(ticker);
+      setHoldingTicker("");
+      setHoldingQuantity("");
+      setHoldingAverageCost("");
+      setHoldingNotes("");
+      await loadChart(ticker, interval);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "The holding could not be added.");
+    } finally {
+      setMutating(false);
     }
   }
 
@@ -279,7 +338,8 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
 
   return (
     <div className="space-y-6">
-      <section className="section-shell rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
+      <section className="section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
+        <WorkspaceWaveAccent className="pointer-events-none absolute right-4 top-3 hidden sm:block lg:right-8 lg:top-5" />
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <p className="type-label inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
@@ -316,7 +376,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
             type="button"
             onClick={() => setLiveRefresh((value) => !value)}
             className={`ml-0 rounded-full border px-3 py-1.5 text-xs transition sm:ml-2 ${
-              liveRefresh ? "border-emerald-200/50 bg-emerald-200/10 text-emerald-100" : "border-white/10 bg-white/[0.03] text-zinc-400 hover:bg-white/[0.06]"
+              liveRefresh ? "border-emerald-200/50 bg-emerald-200/10 text-emerald-100" : "border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.06]"
             }`}
           >
             {liveRefresh ? "Live refresh on" : "Live refresh off"}
@@ -337,21 +397,51 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
         </section>
       ) : null}
 
+      <form onSubmit={submitHolding} className="section-shell rounded-[1.25rem] p-5 sm:p-6">
+        <div className="flex items-center gap-3">
+          <Plus className="size-5 text-cyan-200" />
+          <div>
+            <h2 className="type-card-title text-xl text-white">{portfolio ? "Add a holding" : "Build your real portfolio"}</h2>
+            <p className="mt-1 text-sm text-zinc-500">Enter your own position; Aperture supplies only the provider quote and freshness metadata.</p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          {!portfolio ? (
+            <label className="text-sm text-zinc-300">
+              Portfolio name
+              <input value={portfolioName} onChange={(event) => setPortfolioName(event.target.value)} maxLength={80} className="mt-2 h-11 w-full rounded-[0.75rem] border border-white/10 bg-zinc-950/70 px-3 text-base text-white outline-none focus:border-cyan-200/40" required />
+            </label>
+          ) : null}
+          <AssetPicker
+            value={holdingTicker}
+            onChange={setHoldingTicker}
+            inputId="portfolio-asset"
+            label="Global asset"
+            description="Search provider-backed instruments across asset classes and ISO country codes."
+          />
+          <label className="text-sm text-zinc-300">
+            Whole shares
+            <input type="number" inputMode="numeric" min="1" max="1000000" step="1" value={holdingQuantity} onChange={(event) => setHoldingQuantity(event.target.value)} className="mt-2 h-11 w-full rounded-[0.75rem] border border-white/10 bg-zinc-950/70 px-3 font-mono text-base text-white outline-none focus:border-cyan-200/40" required />
+          </label>
+          <label className="text-sm text-zinc-300">
+            Average cost (optional)
+            <input type="number" inputMode="decimal" min="0" step="0.01" value={holdingAverageCost} onChange={(event) => setHoldingAverageCost(event.target.value)} className="mt-2 h-11 w-full rounded-[0.75rem] border border-white/10 bg-zinc-950/70 px-3 font-mono text-base text-white outline-none focus:border-cyan-200/40" />
+          </label>
+          <label className="text-sm text-zinc-300">
+            Research note (optional)
+            <input value={holdingNotes} onChange={(event) => setHoldingNotes(event.target.value)} maxLength={180} className="mt-2 h-11 w-full rounded-[0.75rem] border border-white/10 bg-zinc-950/70 px-3 text-base text-white outline-none focus:border-cyan-200/40" />
+          </label>
+        </div>
+        <Button type="submit" disabled={mutating} className="mt-5 w-full sm:w-fit">
+          <Plus className="size-4" />
+          {mutating ? "Checking provider" : portfolio ? "Add holding" : "Create portfolio"}
+        </Button>
+      </form>
+
       {!portfolio ? (
         <section className="glass-surface rounded-[1.25rem] p-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            {[
-              ["Live values", "Latest available quotes populate holdings and portfolio value."],
-              ["Risk review", "Concentration and allocation signals highlight positions that deserve attention."],
-              ["Research only", "The workspace supports analysis and scenario review, not trade execution."],
-            ].map(([title, body], index) => (
-              <div key={title} className="rounded-[1rem] bg-black/18 p-5">
-                <p className="font-mono text-xs text-cyan-100">0{index + 1}</p>
-                <h2 className="type-card-title mt-4 text-xl text-white">{title}</h2>
-                <p className="mt-3 text-sm leading-6 text-zinc-400">{body}</p>
-              </div>
-            ))}
-          </div>
+          <h2 className="type-card-title text-xl text-white">No holdings yet</h2>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">Your dashboard, planner, and risk review stay empty until you provide a real position. No sample holdings or estimated prices are inserted.</p>
         </section>
       ) : (
         <>
@@ -401,6 +491,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                       <span className="min-w-0">
                         <span className="block font-mono text-base text-white">{holding.asset.ticker}</span>
                         <span className="mt-1 block truncate text-xs text-zinc-500">{holding.asset.name}</span>
+                        <span className="mt-1 block text-[0.65rem] uppercase tracking-[0.12em] text-cyan-100/60">{assetClassLabel(holding.asset)}{holding.asset.countryCode ? ` · ${holding.asset.countryCode}` : ""}</span>
                       </span>
                       <span className={(holding.asset.dailyChangeBps ?? 0) >= 0 ? "font-mono text-sm text-emerald-200" : "font-mono text-sm text-amber-200"}>
                         {(holding.asset.dailyChangeBps ?? 0) >= 0 ? "+" : ""}
@@ -444,7 +535,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                       <tr
                         key={holding.id}
                         className={`text-zinc-300 transition hover:bg-white/[0.035] ${
-                          selectedTicker === holding.asset.ticker ? "bg-cyan-200/[0.055] text-zinc-100" : ""
+                          selectedTicker === holding.asset.ticker ? "bg-cyan-200/[0.055] text-cyan-50" : ""
                         }`}
                       >
                         <td className="py-4">
@@ -456,6 +547,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                           >
                             <span className="block font-mono text-white">{holding.asset.ticker}</span>
                             <span className="mt-1 block text-xs text-zinc-500">{holding.asset.name}</span>
+                            <span className="mt-1 block text-[0.65rem] uppercase tracking-[0.12em] text-cyan-100/60">{assetClassLabel(holding.asset)}{holding.asset.countryCode ? ` · ${holding.asset.countryCode}` : ""}</span>
                           </button>
                         </td>
                         <td className="py-4 font-mono">{holding.displayQuantity}</td>
@@ -527,7 +619,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                         void loadChart(selectedTicker, choice);
                       }}
                     className={`rounded-full border px-3 py-1.5 text-xs transition ${
-                        interval === choice ? "border-cyan-200/50 bg-cyan-200/12 text-cyan-50" : "border-white/10 bg-white/[0.03] text-zinc-400 hover:bg-white/[0.06]"
+                        interval === choice ? "border-cyan-200/50 bg-cyan-200/12 text-cyan-50" : "border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.06]"
                       }`}
                     >
                       {choice}
@@ -661,7 +753,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                       type="button"
                       onClick={() => setRiskLens(value as typeof riskLens)}
                     className={`rounded-[0.85rem] border px-3 py-2 text-xs transition ${
-                        riskLens === value ? "border-cyan-200/45 bg-cyan-200/10 text-cyan-50" : "border-white/10 bg-white/[0.03] text-zinc-400 hover:bg-white/[0.06]"
+                        riskLens === value ? "border-cyan-200/45 bg-cyan-200/10 text-cyan-50" : "border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.06]"
                       }`}
                     >
                       {label}

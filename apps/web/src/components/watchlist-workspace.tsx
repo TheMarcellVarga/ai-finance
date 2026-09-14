@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { Activity, AlertTriangle, CheckCircle2, Plus, Radar, RefreshCw, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { AssetPicker } from "@/components/asset-picker";
 import type { FinanceWatchlistResponse } from "@/lib/finance-api";
 
 type Watchlist = FinanceWatchlistResponse["data"];
@@ -126,7 +127,7 @@ export function WatchlistWorkspace({ initialWatchlist, initialMeta, initialError
             </p>
             <h1 className="type-display mt-6 text-3xl text-white sm:text-5xl">Market movement review</h1>
             <p className="mt-4 text-sm leading-6 text-zinc-400">
-              Track provider-backed equities and ETFs with visible freshness, movement, and research notes. This surface supports monitoring and follow-up research only.
+              Track provider-backed assets across global markets with visible class, geography, freshness, movement, and research notes. This surface supports monitoring and follow-up research only.
             </p>
           </div>
           <div className="glass-surface rounded-[1rem] p-5">
@@ -134,9 +135,9 @@ export function WatchlistWorkspace({ initialWatchlist, initialMeta, initialError
               <Radar className="mt-1 size-5 text-cyan-200" />
               <div>
                 <p className="text-sm text-zinc-400">Largest move</p>
-                <p className="mt-1 truncate font-mono text-2xl text-white">{largestMove?.asset.ticker ?? "N/A"}</p>
+                <p className="mt-1 truncate font-mono text-2xl text-white">{largestMove?.asset.ticker ?? "No tickers"}</p>
                 <p className="mt-1 text-sm text-zinc-500">
-                  {largestMove ? `${formatBps(largestMove.asset.dailyChangeBps)} provider-reported move` : "Refresh after starting the finance API."}
+                  {largestMove ? `${formatBps(largestMove.asset.dailyChangeBps)} provider-reported move` : "Add your first ticker below."}
                 </p>
               </div>
             </div>
@@ -189,8 +190,9 @@ export function WatchlistWorkspace({ initialWatchlist, initialMeta, initialError
                     <div className="flex flex-wrap items-center gap-3">
                       <p className="font-mono text-lg text-white">{item.asset.ticker}</p>
                       <span className="rounded-full bg-white/[0.03] px-2 py-1 text-xs text-zinc-500">
-                        {item.asset.exchange || item.asset.type}
+                        {item.asset.exchange || item.asset.assetClass || item.asset.type}
                       </span>
+                      {item.asset.countryCode ? <span className="rounded-full bg-white/[0.03] px-2 py-1 text-xs text-zinc-500">{item.asset.countryCode}</span> : null}
                       {item.asset.sector ? (
                         <span className="rounded-full bg-cyan-200/8 px-2 py-1 text-xs text-cyan-100/80">
                           {item.asset.sector}
@@ -221,7 +223,7 @@ export function WatchlistWorkspace({ initialWatchlist, initialMeta, initialError
                 <Search className="size-5 text-cyan-200" />
                 <h2 className="mt-4 text-xl font-medium text-white">Start with a provider-backed ticker.</h2>
                 <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-400">
-                  Add an equity or ETF to populate price, movement, source, and freshness metadata from the finance API.
+                  Add any provider-backed asset to populate class, market, price, movement, source, and freshness metadata from the finance API.
                 </p>
               </div>
             )}
@@ -234,16 +236,15 @@ export function WatchlistWorkspace({ initialWatchlist, initialMeta, initialError
               <Plus className="size-5 text-cyan-200" />
               <h2 className="type-card-title text-lg text-white">Add ticker</h2>
             </div>
-            <label className="mt-5 block text-sm text-zinc-300" htmlFor="watchlist-ticker">
-              Ticker
-            </label>
-            <input
-              id="watchlist-ticker"
-              value={ticker}
-              onChange={(event) => setTicker(event.target.value.toUpperCase())}
-              className="mt-2 h-10 w-full rounded-[0.75rem] border border-white/10 bg-zinc-950/70 px-3 font-mono text-sm text-white outline-none transition focus:border-cyan-200/40"
-              aria-label="Ticker symbol, for example VTI"
-            />
+            <div className="mt-5">
+              <AssetPicker
+                value={ticker}
+                onChange={setTicker}
+                inputId="watchlist-asset"
+                label="Global asset"
+                description="Search all provider-exposed classes and markets by symbol or name."
+              />
+            </div>
             <label className="mt-4 block text-sm text-zinc-300" htmlFor="watchlist-notes">
               Research note
             </label>

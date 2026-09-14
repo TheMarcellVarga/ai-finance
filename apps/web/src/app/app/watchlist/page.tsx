@@ -1,5 +1,5 @@
 import { WatchlistWorkspace } from "@/components/watchlist-workspace";
-import { loadRealProviderWatchlist } from "@/lib/finance-api";
+import { FinanceWorkspaceEmptyError, loadRealProviderWatchlist } from "@/lib/finance-api";
 import { authenticatedSessionToken } from "@/lib/server/identity";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,9 @@ export default async function WatchlistPage() {
   try {
     payload = await loadRealProviderWatchlist(authToken);
   } catch (error) {
-    initialError = error instanceof Error ? error.message : "The watchlist feed is unavailable.";
+    if (!(error instanceof FinanceWorkspaceEmptyError)) {
+      initialError = error instanceof Error ? error.message : "The watchlist feed is unavailable.";
+    }
   }
 
   return (

@@ -12,21 +12,31 @@ import (
 )
 
 const getAssetByTicker = `-- name: GetAssetByTicker :one
-select id, ticker, name, exchange, asset_type, sector, industry, cik
+select id, ticker, name, exchange, asset_type, asset_class, country_code, country_name, region, currency, mic, isin, cusip, figi, provider_symbol, sector, industry, cik
 from assets
 where ticker = upper($1::text)
 limit 1
 `
 
 type GetAssetByTickerRow struct {
-	ID        pgtype.UUID `json:"id"`
-	Ticker    string      `json:"ticker"`
-	Name      string      `json:"name"`
-	Exchange  string      `json:"exchange"`
-	AssetType string      `json:"asset_type"`
-	Sector    pgtype.Text `json:"sector"`
-	Industry  pgtype.Text `json:"industry"`
-	Cik       pgtype.Text `json:"cik"`
+	ID             pgtype.UUID `json:"id"`
+	Ticker         string      `json:"ticker"`
+	Name           string      `json:"name"`
+	Exchange       string      `json:"exchange"`
+	AssetType      string      `json:"asset_type"`
+	AssetClass     string      `json:"asset_class"`
+	CountryCode    pgtype.Text `json:"country_code"`
+	CountryName    pgtype.Text `json:"country_name"`
+	Region         pgtype.Text `json:"region"`
+	Currency       pgtype.Text `json:"currency"`
+	Mic            pgtype.Text `json:"mic"`
+	Isin           pgtype.Text `json:"isin"`
+	Cusip          pgtype.Text `json:"cusip"`
+	Figi           pgtype.Text `json:"figi"`
+	ProviderSymbol pgtype.Text `json:"provider_symbol"`
+	Sector         pgtype.Text `json:"sector"`
+	Industry       pgtype.Text `json:"industry"`
+	Cik            pgtype.Text `json:"cik"`
 }
 
 func (q *Queries) GetAssetByTicker(ctx context.Context, ticker string) (GetAssetByTickerRow, error) {
@@ -38,6 +48,16 @@ func (q *Queries) GetAssetByTicker(ctx context.Context, ticker string) (GetAsset
 		&i.Name,
 		&i.Exchange,
 		&i.AssetType,
+		&i.AssetClass,
+		&i.CountryCode,
+		&i.CountryName,
+		&i.Region,
+		&i.Currency,
+		&i.Mic,
+		&i.Isin,
+		&i.Cusip,
+		&i.Figi,
+		&i.ProviderSymbol,
 		&i.Sector,
 		&i.Industry,
 		&i.Cik,
@@ -46,7 +66,7 @@ func (q *Queries) GetAssetByTicker(ctx context.Context, ticker string) (GetAsset
 }
 
 const searchAssets = `-- name: SearchAssets :many
-select id, ticker, name, exchange, asset_type, sector, industry, cik
+select id, ticker, name, exchange, asset_type, asset_class, country_code, country_name, region, currency, mic, isin, cusip, figi, provider_symbol, sector, industry, cik
 from assets
 where ticker ilike '%' || $1::text || '%'
    or name ilike '%' || $1::text || '%'
@@ -60,14 +80,24 @@ type SearchAssetsParams struct {
 }
 
 type SearchAssetsRow struct {
-	ID        pgtype.UUID `json:"id"`
-	Ticker    string      `json:"ticker"`
-	Name      string      `json:"name"`
-	Exchange  string      `json:"exchange"`
-	AssetType string      `json:"asset_type"`
-	Sector    pgtype.Text `json:"sector"`
-	Industry  pgtype.Text `json:"industry"`
-	Cik       pgtype.Text `json:"cik"`
+	ID             pgtype.UUID `json:"id"`
+	Ticker         string      `json:"ticker"`
+	Name           string      `json:"name"`
+	Exchange       string      `json:"exchange"`
+	AssetType      string      `json:"asset_type"`
+	AssetClass     string      `json:"asset_class"`
+	CountryCode    pgtype.Text `json:"country_code"`
+	CountryName    pgtype.Text `json:"country_name"`
+	Region         pgtype.Text `json:"region"`
+	Currency       pgtype.Text `json:"currency"`
+	Mic            pgtype.Text `json:"mic"`
+	Isin           pgtype.Text `json:"isin"`
+	Cusip          pgtype.Text `json:"cusip"`
+	Figi           pgtype.Text `json:"figi"`
+	ProviderSymbol pgtype.Text `json:"provider_symbol"`
+	Sector         pgtype.Text `json:"sector"`
+	Industry       pgtype.Text `json:"industry"`
+	Cik            pgtype.Text `json:"cik"`
 }
 
 func (q *Queries) SearchAssets(ctx context.Context, arg SearchAssetsParams) ([]SearchAssetsRow, error) {
@@ -85,6 +115,16 @@ func (q *Queries) SearchAssets(ctx context.Context, arg SearchAssetsParams) ([]S
 			&i.Name,
 			&i.Exchange,
 			&i.AssetType,
+			&i.AssetClass,
+			&i.CountryCode,
+			&i.CountryName,
+			&i.Region,
+			&i.Currency,
+			&i.Mic,
+			&i.Isin,
+			&i.Cusip,
+			&i.Figi,
+			&i.ProviderSymbol,
 			&i.Sector,
 			&i.Industry,
 			&i.Cik,

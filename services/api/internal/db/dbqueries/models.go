@@ -78,17 +78,27 @@ type AiToolRun struct {
 }
 
 type Asset struct {
-	ID        pgtype.UUID        `json:"id"`
-	Ticker    string             `json:"ticker"`
-	Name      string             `json:"name"`
-	Exchange  string             `json:"exchange"`
-	AssetType string             `json:"asset_type"`
-	Sector    pgtype.Text        `json:"sector"`
-	Industry  pgtype.Text        `json:"industry"`
-	Cik       pgtype.Text        `json:"cik"`
-	Metadata  []byte             `json:"metadata"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	ID             pgtype.UUID        `json:"id"`
+	Ticker         string             `json:"ticker"`
+	Name           string             `json:"name"`
+	Exchange       string             `json:"exchange"`
+	AssetType      string             `json:"asset_type"`
+	AssetClass     string             `json:"asset_class"`
+	CountryCode    pgtype.Text        `json:"country_code"`
+	CountryName    pgtype.Text        `json:"country_name"`
+	Region         pgtype.Text        `json:"region"`
+	Currency       pgtype.Text        `json:"currency"`
+	Mic            pgtype.Text        `json:"mic"`
+	Isin           pgtype.Text        `json:"isin"`
+	Cusip          pgtype.Text        `json:"cusip"`
+	Figi           pgtype.Text        `json:"figi"`
+	ProviderSymbol pgtype.Text        `json:"provider_symbol"`
+	Sector         pgtype.Text        `json:"sector"`
+	Industry       pgtype.Text        `json:"industry"`
+	Cik            pgtype.Text        `json:"cik"`
+	Metadata       []byte             `json:"metadata"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
 type AuditLog struct {

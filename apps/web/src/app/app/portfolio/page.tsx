@@ -1,5 +1,5 @@
 import { PortfolioWorkspace } from "@/components/portfolio-workspace";
-import { loadIntradayChart, loadRealProviderPortfolio } from "@/lib/finance-api";
+import { FinanceWorkspaceEmptyError, loadIntradayChart, loadRealProviderPortfolio } from "@/lib/finance-api";
 import { authenticatedSessionToken } from "@/lib/server/identity";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +35,9 @@ export default async function PortfolioPage({ searchParams }: PortfolioPageProps
       }
     }
   } catch (error) {
-    initialError = error instanceof Error ? error.message : "The real finance API request failed.";
+    if (!(error instanceof FinanceWorkspaceEmptyError)) {
+      initialError = error instanceof Error ? error.message : "The real finance API request failed.";
+    }
   }
 
   return (
