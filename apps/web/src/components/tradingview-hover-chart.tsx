@@ -17,12 +17,19 @@ import { VargaTrendChart } from "@/components/varga-trend-chart";
 import type { CryptoChartPayload } from "@/lib/crypto-chart";
 import type { CryptoMonitorInterval, CryptoMonitorProvider, CryptoMonitorRow, CryptoMonitorScope } from "@/lib/crypto-monitor";
 import { getTradingViewChartUrl } from "@/lib/tradingview-url";
-import { calculateVargaTrend, type VargaTrendResult } from "@/lib/varga-trend";
+import {
+  calculateVargaTrend,
+  calculateVargaTrendBacktest,
+  selectVargaTrendCase,
+  type VargaTrendBacktest,
+  type VargaTrendCase,
+  type VargaTrendResult,
+} from "@/lib/varga-trend";
 
 const HOVER_DELAY_MS = 1_000;
 const CLOSE_GRACE_MS = 180;
-const POPOVER_WIDTH = 432;
-const POPOVER_HEIGHT = 330;
+const POPOVER_WIDTH = 780;
+const POPOVER_HEIGHT = 430;
 const VIEWPORT_GUTTER = 12;
 
 type TradingViewHoverChartProps = {
@@ -70,6 +77,36 @@ function getPopoverPosition(anchor: DOMRect): PopoverPosition {
     : Math.max(VIEWPORT_GUTTER, aboveTop);
 
   return { top, left, width };
+}
+
+function formatPrice(value: number | null) {
+  if (value == null) return "—";
+  const digits = value >= 1_000 ? 2 : value >= 1 ? 4 : value >= 0.01 ? 6 : 8;
+  return value.toLocaleString("en-US", { maximumFractionDigits: digits });
+}
+
+function formatPercent(value: number | null) {
+  return value == null ? "—" : `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
+}
+
+function formatCase(selected: VargaTrendCase | null, side: "long" | "short") {
+  if (!selected) return "Not enough completed trades";
+  const active = side === "long" ? selected.direction === 1 : selected.direction === -1;
+  const direction = selected.direction === 1 ? "BULL" : "BEAR";
+  const winRate = selected.stats.winRate == null ? "—" : `${selected.stats.winRate.toFixed(1)}%`;
+  const averageWin = selected.stats.averageWinPercent == null ? "—" : `+${selected.stats.averageWinPercent.toFixed(1)}%`;
+  return `${selected.timeframe.toUpperCase()} ${direction} ${active ? "ACTIVE" : "WAIT"} · WR ${winRate} · Avg win ${averageWin} (${selected.stats.trades})`;
+}
+
+function ResearchRow({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "bull" | "bear" | "neutral" }) {
+  return (
+    <div className="grid min-h-7 grid-cols-[6.2rem_minmax(0,1fr)] items-center border-b border-white/[0.06] last:border-b-0">
+      <span className="px-2.5 text-[0.6rem] text-zinc-500">{label}</span>
+      <span className={`border-l border-white/[0.06] px-2.5 text-right font-mono text-[0.58rem] ${tone === "bull" ? "text-emerald-300" : tone === "bear" ? "text-rose-300" : "text-zinc-300"}`}>
+        {value}
+      </span>
+    </div>
+  );
 }
 
 function TradingViewChartPopover({
@@ -151,6 +188,23 @@ function TradingViewChartPopover({
       return null;
     }
   }, [chartPayload]);
+  const backtests = useMemo<Partial<Record<"1h" | "4h" | "1d" | "1w" | "1M", VargaTrendBacktest>>>(() => {
+    if (!chartPayload) return {};
+    const calculated: Partial<Record<"1h" | "4h" | "1d" | "1w" | "1M", VargaTrendBacktest>> = {};
+    for (const [timeframe, candles] of Object.entries(chartPayload.data.analysisCandles)) {
+      if (candles.length < 12) continue;
+      try {
+        calculated[timeframe as keyof typeof calculated] = calculateVargaTrendBacktest(candles);
+      } catch {
+        // An individual timeframe can be unavailable for newly listed assets.
+      }
+    }
+    return calculated;
+  }, [chartPayload]);
+  const bestLong = useMemo(() => selectVargaTrendCase(backtests, "long"), [backtests]);
+  const bestShort = useMemo(() => selectVargaTrendCase(backtests, "short"), [backtests]);
+  const weeklyLong = backtests["1w"];
+  const weeklyHistoryStart = chartPayload?.data.analysisCandles["1w"][0]?.openTime ?? null;
   const stance = trendResult && dailyResult && weeklyResult
     ? trendResult.trend === 1 && dailyResult.trend === 1 && weeklyResult.trend === 1
       ? "ALIGNED BULL"
@@ -161,7 +215,7 @@ function TradingViewChartPopover({
 
   return createPortal(
     <aside
-      className="fixed z-[90] overflow-hidden rounded-[1rem] border border-cyan-100/15 bg-[#081011]/[.98] shadow-[0_24px_80px_rgba(0,0,0,.55)] ring-1 ring-black/40"
+      className="fixed z-[90] max-h-[calc(100vh-1.5rem)] overflow-y-auto rounded-[1rem] border border-cyan-100/15 bg-[#081011]/[.98] shadow-[0_24px_80px_rgba(0,0,0,.55)] ring-1 ring-black/40"
       style={{ top: position.top, left: position.left, width: position.width }}
       role="dialog"
       aria-label={`${row.baseAsset} chart preview`}
@@ -173,7 +227,7 @@ function TradingViewChartPopover({
       <div className="flex items-center justify-between gap-4 border-b border-white/[0.07] px-4 py-3">
         <div className="min-w-0">
           <p className="font-mono text-sm text-white">{row.baseAsset}<span className="text-zinc-600">/{row.quoteAsset}</span></p>
-          <p className="mt-1 text-[0.62rem] uppercase tracking-[0.14em] text-zinc-500">VargaTrend · {interval}</p>
+          <p className="mt-1 text-[0.62rem] uppercase tracking-[0.14em] text-zinc-500">VargaTrend research inspector · {interval}</p>
         </div>
         <a
           href={tradingViewChartUrl}
@@ -204,15 +258,37 @@ function TradingViewChartPopover({
           </div>
         </div>
       ) : chartPayload && trendResult ? (
-        <VargaTrendChart
-          baseAsset={row.baseAsset}
-          candles={chartPayload.data.candles}
-          result={trendResult}
-        />
+        <div className="grid md:grid-cols-[minmax(0,1fr)_19rem]">
+          <VargaTrendChart
+            baseAsset={row.baseAsset}
+            candles={chartPayload.data.candles}
+            result={trendResult}
+          />
+          <div className="border-t border-white/[0.07] bg-white/[0.018] md:border-l md:border-t-0">
+            <ResearchRow label="Trend" value={trendResult.trend === 1 ? "BULLISH" : "BEARISH"} tone={trendResult.trend === 1 ? "bull" : "bear"} />
+            <ResearchRow label="Confirm" value="CLOSED CANDLE" />
+            <ResearchRow label="Next flip" value={formatPrice(trendResult.nextFlipLevel)} />
+            <ResearchRow label="Last flip" value={formatPrice(trendResult.lastFlipLevel)} />
+            <ResearchRow label="Flip date" value={trendResult.lastFlipTime == null ? "—" : new Date(trendResult.lastFlipTime).toISOString().slice(0, 10)} />
+            <ResearchRow label="Since flip" value={formatPercent(trendResult.sinceFlipPercent)} tone={(trendResult.sinceFlipPercent ?? 0) >= 0 ? "bull" : "bear"} />
+            <ResearchRow label="Weekly" value={weeklyResult?.trend === 1 ? "BULLISH" : weeklyResult ? "BEARISH" : "—"} tone={weeklyResult?.trend === 1 ? "bull" : weeklyResult ? "bear" : "neutral"} />
+            <ResearchRow label="Daily" value={dailyResult?.trend === 1 ? "BULLISH" : dailyResult ? "BEARISH" : "—"} tone={dailyResult?.trend === 1 ? "bull" : dailyResult ? "bear" : "neutral"} />
+            <ResearchRow label="Stance" value={stance} tone={stance === "ALIGNED BULL" ? "bull" : stance === "ALIGNED BEAR" ? "bear" : "neutral"} />
+            <ResearchRow
+              label="Weekly bull"
+              value={weeklyLong ? `${weeklyLong.result.trend === 1 ? "ACTIVE" : "WAIT"} · WR ${weeklyLong.long.winRate == null ? "—" : `${weeklyLong.long.winRate.toFixed(1)}%`} · Avg win ${weeklyLong.long.averageWinPercent == null ? "—" : `+${weeklyLong.long.averageWinPercent.toFixed(1)}%`} (${weeklyLong.long.trades})` : "Not enough history"}
+              tone={weeklyLong?.result.trend === 1 ? "bull" : "neutral"}
+            />
+            <ResearchRow label="Best long TF" value={formatCase(bestLong, "long")} tone={bestLong?.direction === 1 ? "bull" : "neutral"} />
+            <ResearchRow label="Best short TF" value={formatCase(bestShort, "short")} tone={bestShort?.direction === -1 ? "bear" : "neutral"} />
+          </div>
+        </div>
       ) : null}
 
       <div className="flex items-center justify-between gap-3 border-t border-white/[0.07] px-4 py-2 text-[0.62rem] text-zinc-600">
-        <span>{stance} · closed candles</span>
+        <span>
+          1H / 4H / 1D / 1W / 1M · weekly history from {weeklyHistoryStart == null ? "—" : new Date(weeklyHistoryStart).toISOString().slice(0, 10)} · next-open simulation · excludes fees, slippage and funding · not financial advice
+        </span>
         <a className="shrink-0 text-zinc-500 transition-colors hover:text-cyan-100" href={tradingViewChartUrl} target="_blank" rel="noreferrer">
           Open TradingView
         </a>

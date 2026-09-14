@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:overview-charts": "node --import tsx --test src/components/overview-chart-utils.test.ts",
-    "test:crypto-monitor": "node --import tsx --test src/lib/crypto-monitor.test.ts src/lib/crypto-supertrend.test.ts",
+    "test:crypto-monitor": "node --import tsx --test src/lib/crypto-monitor.test.ts src/lib/crypto-supertrend.test.ts src/lib/varga-trend.test.ts",
     "test:structured-research": "node --import tsx --test src/lib/ai/structured-research.test.ts",
     "test:research-review": "node --import tsx --test src/lib/ai/research-review.test.ts",
     "test:reviewed-markdown": "node --import tsx --test src/lib/ai/reviewed-markdown.test.ts",

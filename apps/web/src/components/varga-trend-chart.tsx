@@ -16,7 +16,7 @@ import {
 import { useEffect, useMemo, useRef } from "react";
 
 import type { CryptoCandle } from "@/lib/crypto-supertrend";
-import type { VargaTrendResult } from "@/lib/varga-trend";
+import { calculateSimpleMovingAverage, type VargaTrendResult } from "@/lib/varga-trend";
 
 const DEFAULT_VISIBLE_CANDLES = 60;
 const CHART_HEIGHT = 320;
@@ -114,6 +114,26 @@ export function VargaTrendChart({ baseAsset, candles, result }: VargaTrendChartP
       lastValueVisible: true,
     });
     candleSeries.setData(candleData);
+
+    const movingAverages = [
+      { period: 50, color: "#67e8f9" },
+      { period: 100, color: "#fbbf24" },
+      { period: 200, color: "#e879f9" },
+    ] as const;
+    for (const movingAverage of movingAverages) {
+      const series = chart.addSeries(LineSeries, {
+        color: movingAverage.color,
+        lineWidth: 1,
+        crosshairMarkerVisible: false,
+        lastValueVisible: false,
+        priceLineVisible: false,
+      });
+      series.setData(calculateSimpleMovingAverage(candles, movingAverage.period).map((point) => (
+        point.value == null
+          ? { time: toChartTime(point.openTime) }
+          : { time: toChartTime(point.openTime), value: point.value }
+      )));
+    }
 
     const bullishSeries = chart.addSeries(LineSeries, {
       color: "#4caf50",
@@ -228,6 +248,11 @@ export function VargaTrendChart({ baseAsset, candles, result }: VargaTrendChartP
 
   return (
     <div ref={containerRef} className="relative h-[20rem] w-full overflow-hidden" role="img" aria-label={`${baseAsset} VargaTrend candlestick chart`}>
+      <div className="pointer-events-none absolute left-3 top-2 z-10 flex gap-2 font-mono text-[0.52rem] uppercase tracking-[0.08em]" aria-hidden="true">
+        <span className="text-cyan-300">SMA 50</span>
+        <span className="text-amber-300">SMA 100</span>
+        <span className="text-fuchsia-300">SMA 200</span>
+      </div>
       <svg ref={fillSvgRef} className="pointer-events-none absolute inset-0 z-[3] size-full" preserveAspectRatio="none" aria-hidden="true">
         <path ref={bullishFillRef} fill="rgba(76,175,80,0.15)" />
         <path ref={bearishFillRef} fill="rgba(242,54,69,0.15)" />

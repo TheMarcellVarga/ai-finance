@@ -547,9 +547,9 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
               <Bitcoin className="size-4" />
               Crypto research monitor
             </div>
-            <h1 className="type-display mt-5 text-3xl text-white sm:text-5xl">Supertrend market map</h1>
+            <h1 className="type-display mt-5 text-3xl text-white sm:text-5xl">VargaTrend market map</h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-400">
-              Compare confirmed Supertrend states across the most liquid {payload?.meta.providerLabel ?? provider} dollar-quoted spot markets. Signals are descriptive research indicators, not trade instructions.
+              Compare confirmed VargaTrend states across the most liquid {payload?.meta.providerLabel ?? provider} dollar-quoted spot markets. Hover a market for the multi-timeframe long and short research record. Signals are descriptive indicators, not trade instructions.
             </p>
           </div>
           <div className="flex flex-col items-start gap-2 text-xs text-zinc-500 lg:items-end">
@@ -689,7 +689,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
               </span>
             </label>
             <label className="min-w-[8.75rem] flex-1 2xl:min-w-0">
-              <span className="sr-only">Supertrend timeframe</span>
+              <span className="sr-only">VargaTrend timeframe</span>
               <span className="relative block">
                 <select
                   value={interval}
@@ -824,7 +824,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
         )}
 
         <footer className="flex flex-col gap-2 border-t border-white/[0.06] px-4 py-3 text-[0.68rem] text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
-          <span>{rows.length} visible markets. ATR {payload?.meta.atrPeriod ?? 10} x {payload?.meta.atrMultiplier ?? 3}.</span>
+          <span>{rows.length} visible markets. VargaTrend ATR {payload?.meta.atrPeriod ?? 10} × {payload?.meta.atrMultiplier ?? 3}.</span>
           <span className="inline-flex items-center gap-1.5"><Clock3 className="size-3" />Values use closed candles. Not financial advice.</span>
         </footer>
       </section>

@@ -44,7 +44,8 @@ const DEFAULT_LIMIT = 80;
 const MAX_LIMIT = 150;
 const OKX_KLINE_PAGE_LIMIT = 300;
 const MAX_KLINE_HISTORY_PAGES = 8;
-const CHART_CANDLE_LIMIT = 180;
+const CHART_CANDLE_LIMIT = 260;
+const ANALYSIS_CANDLE_LIMIT = OKX_KLINE_PAGE_LIMIT * MAX_KLINE_HISTORY_PAGES;
 const CCXT_KLINE_PAGE_LIMIT = 500;
 const ATR_PERIOD = 10;
 const ATR_MULTIPLIER = 3;
@@ -167,14 +168,19 @@ export function normalizeCryptoMonitorLimit(value?: string | null) {
 }
 
 async function fetchOkxJson<T>(path: string): Promise<T[]> {
-  const response = await fetch(`${OKX_API_BASE}${path}`, {
-    cache: "no-store",
-    headers: { Accept: "application/json" },
-    signal: AbortSignal.timeout(12_000),
-  });
+  let response: Response | null = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    response = await fetch(`${OKX_API_BASE}${path}`, {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (response.status !== 429 || attempt === 2) break;
+    await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+  }
 
-  if (!response.ok) {
-    throw new Error(`OKX market data returned HTTP ${response.status}.`);
+  if (!response?.ok) {
+    throw new Error(`OKX market data returned HTTP ${response?.status ?? "unknown"}.`);
   }
 
   const payload = (await response.json()) as OkxEnvelope<T>;
@@ -466,6 +472,85 @@ async function fetchRecentOkxCandles(symbol: string, interval: CryptoMonitorInte
   return parseOkxCandles(rows, interval).slice(-CHART_CANDLE_LIMIT);
 }
 
+async function fetchOkxAnalysisCandles(symbol: string, interval: "1h" | "4h" | "1d" | "1w") {
+  const candles: CryptoCandle[] = [];
+  let after: string | null = null;
+
+  for (let page = 0; page < MAX_KLINE_HISTORY_PAGES; page += 1) {
+    const params = new URLSearchParams({
+      instId: symbol,
+      bar: okxBarForInterval(interval),
+      limit: String(OKX_KLINE_PAGE_LIMIT),
+    });
+    if (after) params.set("after", after);
+
+    const rows = await fetchOkxJson<unknown[]>(`/api/v5/market/history-candles?${params.toString()}`);
+    if (rows.length === 0) break;
+    candles.push(...parseOkxCandles(rows, interval));
+
+    const oldestTimestamp = rows.reduce<number | null>((oldest, row) => {
+      const timestamp = Number(row[0]);
+      return Number.isFinite(timestamp) && (oldest == null || timestamp < oldest) ? timestamp : oldest;
+    }, null);
+    if (oldestTimestamp == null || String(oldestTimestamp) === after || rows.length < OKX_KLINE_PAGE_LIMIT) break;
+    after = String(oldestTimestamp);
+  }
+
+  return mergeCandles(candles).slice(-ANALYSIS_CANDLE_LIMIT);
+}
+
+async function fetchCcxtAnalysisCandles(
+  provider: CryptoMonitorProvider,
+  symbol: string,
+  interval: "1h" | "4h" | "1d" | "1w",
+  scope: CryptoMonitorScope,
+) {
+  const exchange = getCcxtExchange(provider, scope);
+  const resolution = getCcxtTimeframe(interval, exchange);
+  const aggregationFactor = Math.max(1, Math.ceil(CCXT_INTERVALS[interval] / resolution.sourceMilliseconds));
+  const sourcePageLimit = Math.min(CCXT_KLINE_PAGE_LIMIT, 1_000);
+  const targetSourceCandles = ANALYSIS_CANDLE_LIMIT * aggregationFactor;
+  let since = Date.now() - targetSourceCandles * resolution.sourceMilliseconds;
+  const candles: CryptoCandle[] = [];
+
+  for (let page = 0; page < MAX_KLINE_HISTORY_PAGES; page += 1) {
+    const rows = await exchange.fetchOHLCV(symbol, resolution.timeframe, since, sourcePageLimit);
+    if (rows.length === 0) break;
+    candles.push(...parseCcxtCandles(rows, interval, resolution.sourceMilliseconds));
+
+    const newestTimestamp = Number(rows.at(-1)?.[0]);
+    if (!Number.isFinite(newestTimestamp) || newestTimestamp < since || rows.length < sourcePageLimit) break;
+    since = newestTimestamp + resolution.sourceMilliseconds;
+    if (since >= Date.now()) break;
+  }
+
+  return mergeCandles(candles).slice(-ANALYSIS_CANDLE_LIMIT);
+}
+
+function aggregateMonthlyCandles(dailyCandles: CryptoCandle[]) {
+  const buckets = new Map<number, CryptoCandle>();
+  const now = Date.now();
+
+  for (const candle of dailyCandles) {
+    const date = new Date(candle.openTime);
+    const openTime = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1);
+    const closeTime = Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1);
+    const existing = buckets.get(openTime);
+    buckets.set(openTime, {
+      openTime,
+      open: existing?.open ?? candle.open,
+      high: Math.max(existing?.high ?? candle.high, candle.high),
+      low: Math.min(existing?.low ?? candle.low, candle.low),
+      close: candle.close,
+      closeTime,
+    });
+  }
+
+  return [...buckets.values()]
+    .filter((candle) => candle.closeTime <= now)
+    .sort((left, right) => left.openTime - right.openTime);
+}
+
 export async function loadCryptoChart(
   symbol: string,
   interval: CryptoMonitorInterval,
@@ -492,23 +577,57 @@ export async function loadCryptoChart(
     return request;
   };
 
-  const [candles, dailyCandles, weeklyCandles] = await Promise.all([
-    loadInterval(interval),
-    loadInterval("1d"),
-    loadInterval("1w"),
-  ]);
+  const loadAnalysisInterval = (requestedInterval: "1h" | "4h" | "1d" | "1w") => (
+    scopedProvider === "okx"
+      ? fetchOkxAnalysisCandles(symbol, requestedInterval)
+      : fetchCcxtAnalysisCandles(scopedProvider, symbol, requestedInterval, normalizedScope)
+  );
+  let hourlyCandles: CryptoCandle[];
+  let fourHourCandles: CryptoCandle[];
+  let dailyCandles: CryptoCandle[];
+  let weeklyCandles: CryptoCandle[];
+  if (scopedProvider === "okx") {
+    weeklyCandles = await loadAnalysisInterval("1w");
+    dailyCandles = await loadAnalysisInterval("1d");
+    fourHourCandles = await loadAnalysisInterval("4h");
+    hourlyCandles = await loadAnalysisInterval("1h");
+  } else {
+    [hourlyCandles, fourHourCandles, dailyCandles, weeklyCandles] = await Promise.all([
+      loadAnalysisInterval("1h"),
+      loadAnalysisInterval("4h"),
+      loadAnalysisInterval("1d"),
+      loadAnalysisInterval("1w"),
+    ]);
+  }
+  const monthlyCandles = aggregateMonthlyCandles(dailyCandles);
+  const analysisCandles = {
+    "1h": hourlyCandles,
+    "4h": fourHourCandles,
+    "1d": dailyCandles,
+    "1w": weeklyCandles,
+    "1M": monthlyCandles,
+  };
+  const candles = interval in analysisCandles
+    ? analysisCandles[interval as keyof typeof analysisCandles].slice(-CHART_CANDLE_LIMIT)
+    : await loadInterval(interval);
 
   if (candles.length < ATR_PERIOD + 2) {
     throw new Error("Not enough closed candles to render VargaTrend.");
   }
 
   return {
-    data: { candles, dailyCandles, weeklyCandles },
+    data: { candles, analysisCandles, dailyCandles, weeklyCandles },
     meta: {
       provider: scopedProvider,
       interval,
       capturedAt: new Date().toISOString(),
       scope: normalizedScope,
+      analysis: {
+        atrPeriod: ATR_PERIOD,
+        atrMultiplier: ATR_MULTIPLIER,
+        execution: "next_candle_open",
+        maxCandlesPerTimeframe: ANALYSIS_CANDLE_LIMIT,
+      },
     },
   };
 }
