@@ -70,6 +70,14 @@ Never expose service-role keys, provider keys, webhook secrets, raw JWTs, or pri
 - `FINANCE_API_AUTH_MODE`, optional Next.js local override; set to `clerk` only when the Go API validates Clerk JWTs locally
 - `WEB_PORT`, optional local override for `scripts/dev-local`; defaults to `3000`
 
+The public asset-class monitor BFF uses the Go API as its primary source. If a
+Vercel deployment cannot reach `FINANCE_API_BASE_URL` (for example, because it
+was not configured or the API service is temporarily unavailable), the
+server-side monitor route falls back to the same free Yahoo Finance and
+Frankfurter/ECB sources directly. The fallback is read-only, keeps provider
+and freshness metadata visible, and applies only to public asset-monitor data;
+production deployments should still configure a reachable Go API origin.
+
 ## AI Configuration
 
 AI runtime should track:

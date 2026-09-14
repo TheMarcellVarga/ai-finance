@@ -1,4 +1,5 @@
 import type { FinanceAssetCatalog } from "@/lib/asset-catalog";
+import { loadDirectFreeAssetMonitor } from "@/lib/free-market-monitors";
 
 export type FinanceAsset = {
   ticker: string;
@@ -267,16 +268,24 @@ export async function loadRealProviderAssetCatalog(): Promise<FinanceAssetCatalo
 }
 
 export async function loadFreeAssetMonitor(assetClass: string): Promise<MarketMonitorResponse> {
-  const response = await financeFetch(`${financeApiBaseUrl}/v1/market-monitors/${encodeURIComponent(assetClass)}`, {
-    headers: { Accept: "application/json" },
-    cache: "no-store",
-  });
-  const text = await response.text();
-  const payload = parseFinancePayload(text);
-  if (!response.ok) {
-    throw new Error(payload?.error?.message ?? `Market monitor returned ${response.status}.`);
+  try {
+    const response = await financeFetch(`${financeApiBaseUrl}/v1/market-monitors/${encodeURIComponent(assetClass)}`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    const text = await response.text();
+    const payload = parseFinancePayload(text);
+    if (!response.ok) {
+      throw new Error(payload?.error?.message ?? `Market monitor returned ${response.status}.`);
+    }
+    return payload as MarketMonitorResponse;
+  } catch (financeApiError) {
+    try {
+      return await loadDirectFreeAssetMonitor(assetClass);
+    } catch {
+      throw financeApiError;
+    }
   }
-  return payload as MarketMonitorResponse;
 }
 
 export async function loadRealProviderPortfolio(authToken: string): Promise<FinancePortfolioResponse> {
