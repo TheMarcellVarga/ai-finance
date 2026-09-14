@@ -8,7 +8,7 @@ export default async function CryptoMonitorPage() {
   let initialError: string | undefined;
 
   try {
-    initialPayload = await loadCryptoMonitor("4h", 80);
+    initialPayload = await loadCryptoMonitor("4h", 20);
   } catch (error) {
     initialError = error instanceof Error ? error.message : "Crypto market data is temporarily unavailable.";
   }

@@ -17,10 +17,15 @@ import {
 } from "@/lib/crypto-exchanges";
 import { isFlipEligibleBaseAsset } from "@/lib/crypto-market-universe";
 import { calculateSupertrend, type CryptoCandle } from "@/lib/crypto-supertrend";
+import {
+  DEFAULT_CRYPTO_MONITOR_LIMIT,
+  MAX_CRYPTO_MONITOR_LIMIT,
+} from "@/lib/crypto-monitor-limits";
 import type { CryptoMonitorInterval } from "@/lib/crypto-monitor-intervals";
 
 export { isStablecoinAsset } from "@/lib/crypto-market-universe";
 export { cryptoMonitorIntervals, normalizeCryptoMonitorInterval } from "@/lib/crypto-monitor-intervals";
+export { normalizeCryptoMonitorLimit } from "@/lib/crypto-monitor-limits";
 export {
   CRYPTO_MONITOR_GLOBAL_SCOPE,
   CRYPTO_MONITOR_GLOBAL_SCOPE_LABEL,
@@ -40,8 +45,8 @@ const COINMARKETCAP_API_BASE = "https://pro-api.coinmarketcap.com/public-api/v1"
 const COINMARKETCAP_COIN_BASE = "https://coinmarketcap.com/currencies";
 const COINMARKETCAP_SEARCH_BASE = "https://coinmarketcap.com/coins/?q=";
 const COINCAP_ICON_BASE = "https://assets.coincap.io/assets/icons";
-const DEFAULT_LIMIT = 80;
-const MAX_LIMIT = 150;
+const DEFAULT_LIMIT = DEFAULT_CRYPTO_MONITOR_LIMIT;
+const MAX_LIMIT = MAX_CRYPTO_MONITOR_LIMIT;
 const OKX_KLINE_PAGE_LIMIT = 300;
 const MAX_KLINE_HISTORY_PAGES = 8;
 const CHART_CANDLE_LIMIT = 260;
@@ -157,14 +162,6 @@ function parseFiniteNumber(value: string | number | null | undefined, provider =
     throw new Error(`${provider} returned a non-numeric market value.`);
   }
   return parsed;
-}
-
-export function normalizeCryptoMonitorLimit(value?: string | null) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) {
-    return DEFAULT_LIMIT;
-  }
-  return Math.min(MAX_LIMIT, Math.max(20, Math.floor(parsed)));
 }
 
 async function fetchOkxJson<T>(path: string): Promise<T[]> {

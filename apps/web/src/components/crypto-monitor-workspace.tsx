@@ -437,7 +437,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
 
     try {
       const response = await fetch(
-        `/api/finance/crypto-monitor?provider=${encodeURIComponent(selectedProvider)}&interval=${selectedInterval}&scope=${selectedScope}&limit=80`,
+        `/api/finance/crypto-monitor?provider=${encodeURIComponent(selectedProvider)}&interval=${selectedInterval}&scope=${selectedScope}&limit=20`,
         { cache: "no-store" },
       );
       const data = (await response.json()) as CryptoMonitorPayload | RouteError;
