@@ -14,6 +14,7 @@
     "test:reviewed-markdown": "node --import tsx --test src/lib/ai/reviewed-markdown.test.ts",
     "test:evidence-evaluation": "node --import tsx --test src/lib/ai/evidence-evaluation.test.ts",
     "test:goal-scenario": "node --import tsx --test src/lib/ai/research-intelligence.test.ts",
+    "test:education": "node --import tsx --test src/lib/education.test.ts",
     "eval:evidence": "node --import tsx scripts/evaluate-evidence-workspace.ts",
     "test:phase3": "npm run test:structured-research",
     "test:phase4": "npm run test:structured-research",

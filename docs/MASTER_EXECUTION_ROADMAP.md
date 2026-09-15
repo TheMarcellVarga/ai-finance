@@ -596,6 +596,29 @@ Acceptance gate:
 
 Completion evidence: `docs/UPGRADE_PHASE_6_COMPLETION.md`.
 
+## Education System Extension Track
+
+Status: complete in local-first v1 mode. Server-synced education artifacts and provider-backed historical lab data remain a follow-on boundary when the education persistence/API contract is approved.
+
+Primary skills: `nextjs-fintech-ui`, `finance-product-guardrails`.
+
+Support skills: `security-review-fintech`, `go-finance-api`.
+
+This extension was explicitly requested through `docs/EDUCATION_PLAN.md` after the original Phase 9 completion pass. It adds a research-education layer without changing the product boundary: no brokerage, wallet signing, trade execution, personalized advice, or return promises.
+
+Completed artifacts:
+- `/app/learn` course dashboard with nine original modules, eighteen reviewed lessons, objectives, worked examples, interactive exercises, quizzes, common mistakes, next actions, sources, and review dates.
+- `/app/learn/labs` with position sizing, expectancy, drawdown recovery, Supertrend anatomy, backtest integrity, and benchmark laboratories.
+- `/app/playbook`, `/app/journal`, and `/app/review` with locally saved risk declarations, strategy specifications, risk policies, constitutions, scanner observations, behavioral plans, audit checklists, scorecards, and execution checklists.
+- Money Scanner contextual `Study this state` links that carry the selected market, timeframe, state, flip level, and provider capture timestamp into the market-map lesson.
+- Pure, independently tested education calculations in `apps/web/src/lib/education.ts` with browser-local state persistence in `apps/web/src/lib/education-state.ts`.
+
+Acceptance gate:
+- Curriculum and labs use original educational content and clearly separate facts, assumptions, rules, and unknowns.
+- Saved artifacts are explicit, reviewable, and never presented as personalized advice or an order workflow.
+- Live scanner context remains provider-backed and timestamped; lab examples are labeled illustrative or user-entered assumptions.
+- Education calculation tests, app lint, and app build pass.
+
 ## AI Task Template
 Use this template for future agent tasks.
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   AlertTriangle,
@@ -10,6 +11,7 @@ import {
   ArrowUpDown,
   ArrowUpRight,
   Bitcoin,
+  BookOpenCheck,
   ChevronDown,
   Clock3,
   Database,
@@ -287,6 +289,27 @@ function getResearchUrl(row: Pick<CryptoMonitorRow, "baseAsset" | "researchUrl">
   return row.researchUrl || `${COINMARKETCAP_SEARCH_URL}${encodeURIComponent(row.baseAsset)}`;
 }
 
+function getLessonUrl(row: CryptoMonitorRow, interval: CryptoMonitorInterval, capturedAt: string | undefined, lessonSlug: string) {
+  const params = new URLSearchParams({
+    market: row.symbol,
+    state: row.trend,
+    timeframe: interval,
+    flipLevel: row.nextFlipLevel.toFixed(4),
+  });
+  if (capturedAt) params.set("capturedAt", capturedAt);
+  return `/app/learn/understand-the-market-map/${lessonSlug}?${params.toString()}`;
+}
+
+function getEducationUrl(row: CryptoMonitorRow, interval: CryptoMonitorInterval, capturedAt?: string) {
+  return getLessonUrl(row, interval, capturedAt, "read-a-scanner-row");
+}
+
+function getLabUrl(row: CryptoMonitorRow, interval: CryptoMonitorInterval, capturedAt?: string) {
+  const params = new URLSearchParams({ market: row.symbol, state: row.trend, timeframe: interval, flipLevel: row.nextFlipLevel.toFixed(4) });
+  if (capturedAt) params.set("capturedAt", capturedAt);
+  return `/app/learn/labs?${params.toString()}`;
+}
+
 function getMarketRowKey(symbol: string) {
   return symbol.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 }
@@ -344,15 +367,16 @@ function LoadingRows() {
   );
 }
 
-function MarketRowMobile({ row, now }: { row: CryptoMonitorRow; now: number }) {
+function MarketRowMobile({ row, now, interval, capturedAt }: { row: CryptoMonitorRow; now: number; interval: CryptoMonitorInterval; capturedAt?: string }) {
   const TrendIcon = row.trend === "bullish" ? ArrowUpRight : ArrowDownRight;
+  const researchUrl = getResearchUrl(row);
   const content = (
     <>
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <CryptoAssetIcon baseAsset={row.baseAsset} iconUrl={row.iconUrl} size="size-9" />
           <div className="min-w-0">
-            <p className="truncate font-mono text-sm text-white">{row.baseAsset}<span className="text-zinc-600">/{row.quoteAsset}</span></p>
+            <a href={researchUrl} target="_blank" rel="noreferrer" className="truncate font-mono text-sm text-white hover:text-cyan-100">{row.baseAsset}<span className="text-zinc-600">/{row.quoteAsset}</span></a>
             <p className="mt-1 font-mono text-xs text-zinc-500">{formatCompactCurrency(row.quoteVolume)} volume</p>
           </div>
         </div>
@@ -371,7 +395,7 @@ function MarketRowMobile({ row, now }: { row: CryptoMonitorRow; now: number }) {
         </div>
         <div>
           <p className="text-zinc-600">Last flip</p>
-          <p className="mt-1 font-mono text-zinc-200">{formatTimeAgo(row.lastFlipAt, row.historyComplete, now)}</p>
+          <Link href={getLessonUrl(row, interval, capturedAt, "supertrend-anatomy")} className="mt-1 inline-flex font-mono text-zinc-200 hover:text-cyan-100" title="Study how the trailing bands and confirmed flip work">{formatTimeAgo(row.lastFlipAt, row.historyComplete, now)}</Link>
         </div>
         <div>
           <p className="text-zinc-600">Flip level</p>
@@ -379,23 +403,23 @@ function MarketRowMobile({ row, now }: { row: CryptoMonitorRow; now: number }) {
         </div>
         <div>
           <p className="text-zinc-600">Distance</p>
-          <p className="mt-1 font-mono text-zinc-200">{row.distanceToFlipPercent.toFixed(2)}%</p>
+          <Link href={getLessonUrl(row, interval, capturedAt, "rules-and-invalidation")} className="mt-1 inline-flex font-mono text-zinc-200 hover:text-cyan-100" title="Study invalidation distance and declared rules">{row.distanceToFlipPercent.toFixed(2)}%</Link>
         </div>
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3">
+        <span className="text-[0.65rem] uppercase tracking-[0.12em] text-zinc-600">Descriptive state only</span>
+        <div className="flex items-center gap-3"><Link href={getEducationUrl(row, interval, capturedAt)} className="inline-flex items-center gap-1.5 text-xs text-cyan-100 hover:text-white"><BookOpenCheck className="size-3.5" aria-hidden="true" />Study this state</Link><Link href={getLabUrl(row, interval, capturedAt)} className="text-xs text-zinc-400 hover:text-white">Use in lab</Link></div>
       </div>
     </>
   );
 
   return (
-    <a
+    <article
       data-market-row={getMarketRowKey(row.symbol)}
-      href={getResearchUrl(row)}
-      target="_blank"
-      rel="noreferrer"
-      className="block border-b border-white/[0.06] px-4 py-4 transition-colors hover:bg-white/[0.022] focus-visible:bg-white/[0.04] focus-visible:outline-none last:border-b-0"
-      aria-label={`Open ${row.baseAsset} research page`}
+      className="block border-b border-white/[0.06] px-4 py-4 transition-colors hover:bg-white/[0.022] last:border-b-0"
     >
       {content}
-    </a>
+    </article>
   );
 }
 
@@ -766,6 +790,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
                     <SortableHeader column="nextFlipLevel" label="Flip level" sort={sort} onSort={handleHeaderSort} />
                     <SortableHeader column="distanceToFlipPercent" label="Distance" sort={sort} onSort={handleHeaderSort} />
                     <SortableHeader column="sinceFlipPercent" label="Since flip" sort={sort} onSort={handleHeaderSort} align="right" />
+                    <th className="px-4 py-2 text-right font-medium">Study</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -780,24 +805,14 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
                         provider={provider}
                         interval={interval}
                         scope={scope}
-                        className="group cursor-pointer border-t border-white/[0.05] transition-colors hover:bg-white/[0.022] focus-visible:bg-white/[0.04] focus-visible:outline-none"
+                        className="group border-t border-white/[0.05] transition-colors hover:bg-white/[0.022]"
                         dataMarketRow={getMarketRowKey(row.symbol)}
-                        role="link"
-                        tabIndex={0}
-                        ariaLabel={`Open ${row.baseAsset} research page`}
-                        onClick={() => window.open(researchUrl, "_blank", "noopener,noreferrer")}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            window.open(researchUrl, "_blank", "noopener,noreferrer");
-                          }
-                        }}
                       >
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-3">
                             <CryptoAssetIcon baseAsset={row.baseAsset} iconUrl={row.iconUrl} size="size-8" />
                             <div className="min-w-0">
-                              <p className="font-mono text-sm text-white">{row.baseAsset}<span className="text-zinc-600">/{row.quoteAsset}</span></p>
+                              <a href={researchUrl} target="_blank" rel="noreferrer" className="font-mono text-sm text-white hover:text-cyan-100 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/50">{row.baseAsset}<span className="text-zinc-600">/{row.quoteAsset}</span><span className="sr-only"> research</span></a>
                               <p className="mt-1 font-mono text-[0.67rem] text-zinc-600">{formatCompactCurrency(row.quoteVolume)} vol</p>
                             </div>
                             <ExternalLink className="size-3.5 shrink-0 text-zinc-700 transition-colors group-hover:text-cyan-200" aria-hidden="true" />
@@ -814,13 +829,16 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
                           </span>
                         </td>
                         <td className="px-4 py-3.5">
-                          <p className="font-mono text-xs text-zinc-200">{formatTimeAgo(row.lastFlipAt, row.historyComplete, now)}</p>
+                          <Link href={getLessonUrl(row, interval, payload?.meta.capturedAt, "supertrend-anatomy")} className="font-mono text-xs text-zinc-200 hover:text-cyan-100" title="Study how the trailing bands and confirmed flip work">{formatTimeAgo(row.lastFlipAt, row.historyComplete, now)}</Link>
                           <p className="mt-1 text-[0.65rem] text-zinc-600">Confirmed close</p>
                         </td>
                         <td className="px-4 py-3.5 font-mono text-xs text-zinc-200">{formatPrice(row.nextFlipLevel)}</td>
-                        <td className="px-4 py-3.5 font-mono text-xs text-cyan-100">{row.distanceToFlipPercent.toFixed(2)}%</td>
+                        <td className="px-4 py-3.5 font-mono text-xs text-cyan-100"><Link href={getLessonUrl(row, interval, payload?.meta.capturedAt, "rules-and-invalidation")} className="hover:text-white" title="Study invalidation distance and declared rules">{row.distanceToFlipPercent.toFixed(2)}%</Link></td>
                         <td className={`px-5 py-3.5 text-right font-mono text-xs ${row.sinceFlipPercent == null ? "text-zinc-600" : row.sinceFlipPercent >= 0 ? "text-emerald-100" : "text-rose-100"}`}>
                           {formatPercent(row.sinceFlipPercent)}
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-2"><Link href={getEducationUrl(row, interval, payload?.meta.capturedAt)} className="inline-flex items-center gap-1.5 rounded-[0.6rem] border border-cyan-200/15 bg-cyan-200/[0.035] px-2 py-1.5 text-[0.68rem] text-cyan-100/80 transition hover:bg-cyan-200/[0.1] hover:text-white" title={`Study ${row.baseAsset} scanner state`}><BookOpenCheck className="size-3.5" aria-hidden="true" />Study</Link><Link href={getLabUrl(row, interval, payload?.meta.capturedAt)} className="text-[0.68rem] text-zinc-400 hover:text-white" title={`Use ${row.baseAsset} as lab context`}>Lab</Link></div>
                         </td>
                       </TradingViewHoverChart>
                     );
@@ -830,7 +848,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
             </div>
 
             <div className="md:hidden">
-              {rows.map((row) => <MarketRowMobile key={row.symbol} row={row} now={now} />)}
+              {rows.map((row) => <MarketRowMobile key={row.symbol} row={row} now={now} interval={interval} capturedAt={payload?.meta.capturedAt} />)}
             </div>
           </>
         )}
