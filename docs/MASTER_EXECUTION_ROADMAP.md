@@ -609,14 +609,15 @@ This extension was explicitly requested through `docs/EDUCATION_PLAN.md` after t
 Completed artifacts:
 - `/app/learn` course dashboard with nine original modules, eighteen reviewed lessons, objectives, worked examples, interactive exercises, quizzes, common mistakes, next actions, sources, and review dates.
 - `/app/learn/labs` with position sizing, expectancy, drawdown recovery, Supertrend anatomy, backtest integrity, and benchmark laboratories.
-- `/app/playbook`, `/app/journal`, and `/app/review` with locally saved risk declarations, strategy specifications, risk policies, constitutions, scanner observations, behavioral plans, audit checklists, scorecards, and execution checklists.
-- Money Scanner contextual `Study this state` links that carry the selected market, timeframe, state, flip level, and provider capture timestamp into the market-map lesson.
+- `/app/playbook`, `/app/journal`, and `/app/review` with locally saved risk declarations, strategy specifications, risk policies, constitutions, market observations, behavioral plans, audit checklists, scorecards, and execution checklists.
+- Market Monitor contextual `Study this state` links that carry the selected market, timeframe, state, flip level, and provider capture timestamp into the market-map lesson.
+- VargaTrend Market Monitor defaults to the lifetime auto mode from the supplied script: ATR periods 10–20, fixed multiplier 3, five completed bullish sections minimum, and 40% minimum win rate; the UI discloses provider-bounded history, in-sample research, next-candle-open simulation, and fallback warm-up.
 - Pure, independently tested education calculations in `apps/web/src/lib/education.ts` with browser-local state persistence in `apps/web/src/lib/education-state.ts`.
 
 Acceptance gate:
 - Curriculum and labs use original educational content and clearly separate facts, assumptions, rules, and unknowns.
 - Saved artifacts are explicit, reviewable, and never presented as personalized advice or an order workflow.
-- Live scanner context remains provider-backed and timestamped; lab examples are labeled illustrative or user-entered assumptions.
+- Live market-monitor context remains provider-backed and timestamped; lab examples are labeled illustrative or user-entered assumptions.
 - Education calculation tests, app lint, and app build pass.
 
 ## AI Task Template

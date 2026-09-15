@@ -285,6 +285,12 @@ function trendClasses(trend: CryptoTrend) {
     : "border-rose-300/15 bg-rose-300/8 text-rose-100";
 }
 
+function autoPeriodLabel(row: Pick<CryptoMonitorRow, "atrPeriod" | "atrMultiplier" | "autoSelectionReady">) {
+  return row.autoSelectionReady
+    ? `Auto ATR ${row.atrPeriod} × ${row.atrMultiplier}`
+    : `Auto warm-up · ATR ${row.atrPeriod} × ${row.atrMultiplier}`;
+}
+
 function getResearchUrl(row: Pick<CryptoMonitorRow, "baseAsset" | "researchUrl">) {
   return row.researchUrl || `${COINMARKETCAP_SEARCH_URL}${encodeURIComponent(row.baseAsset)}`;
 }
@@ -301,7 +307,7 @@ function getLessonUrl(row: CryptoMonitorRow, interval: CryptoMonitorInterval, ca
 }
 
 function getEducationUrl(row: CryptoMonitorRow, interval: CryptoMonitorInterval, capturedAt?: string) {
-  return getLessonUrl(row, interval, capturedAt, "read-a-scanner-row");
+  return getLessonUrl(row, interval, capturedAt, "read-a-market-row");
 }
 
 function getLabUrl(row: CryptoMonitorRow, interval: CryptoMonitorInterval, capturedAt?: string) {
@@ -385,6 +391,7 @@ function MarketRowMobile({ row, now, interval, capturedAt }: { row: CryptoMonito
             <TrendIcon className="size-3" />
             {row.trend}
           </span>
+          <span className="text-right text-[0.6rem] uppercase tracking-[0.08em] text-zinc-600">{autoPeriodLabel(row)}</span>
           <ExternalLink className="mt-1 size-3.5 shrink-0 text-zinc-600" aria-hidden="true" />
         </div>
       </div>
@@ -598,6 +605,10 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
               <ShieldCheck className="size-3.5" aria-hidden="true" />
               {payload?.meta.scopeLabel ?? "Singapore / MAS-authorised DPT providers"} {singaporeOnly ? "· default" : "· global view"}
             </span>
+            <span className="inline-flex items-center gap-1.5 text-amber-100/75">
+              Auto mode on · ATR {payload?.meta.atrPeriodMin ?? 10}–{payload?.meta.atrPeriodMax ?? 20} × {payload?.meta.atrMultiplier ?? 3}
+            </span>
+            <span>Minimum {payload?.meta.autoMinimumTrades ?? 5} completed bullish sections · {payload?.meta.autoMinimumWinRate ?? 40}% win rate</span>
             <span>Last refresh: {formatCapturedAt(payload?.meta.capturedAt, localTimeReady)}</span>
             {payload && payload.meta.failedMarkets > 0 ? (
               <span className="text-amber-200/80">
@@ -610,7 +621,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
 
       <section className="grid grid-cols-2 overflow-hidden rounded-[1.1rem] border border-white/[0.06] bg-[#090e0f]/95 lg:grid-cols-4">
         <div className="p-4 sm:p-5">
-          <p className="text-xs text-zinc-500">Markets scanned</p>
+          <p className="text-xs text-zinc-500">Markets monitored</p>
           <p className="mt-2 font-mono text-2xl text-white">{payload?.meta.returnedMarkets ?? "--"}</p>
           <p className="mt-1 text-xs text-zinc-600">Top dollar-quoted markets</p>
         </div>
@@ -761,7 +772,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
           <div className="flex items-start gap-3 p-6">
             <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-200" />
             <div>
-              <h2 className="text-sm font-medium text-white">Market scan unavailable</h2>
+              <h2 className="text-sm font-medium text-white">Market monitor unavailable</h2>
               <p className="mt-2 text-sm leading-6 text-zinc-400">{error}</p>
               <Button className="mt-4" size="sm" variant="outline" onClick={() => void loadMarkets(provider, interval, scope)}>
                 Try again
@@ -827,6 +838,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
                             <TrendIcon className="size-3" />
                             {row.trend}
                           </span>
+                          <p className="mt-1 text-[0.6rem] uppercase tracking-[0.08em] text-zinc-600">{autoPeriodLabel(row)}</p>
                         </td>
                         <td className="px-4 py-3.5">
                           <Link href={getLessonUrl(row, interval, payload?.meta.capturedAt, "supertrend-anatomy")} className="font-mono text-xs text-zinc-200 hover:text-cyan-100" title="Study how the trailing bands and confirmed flip work">{formatTimeAgo(row.lastFlipAt, row.historyComplete, now)}</Link>
@@ -838,7 +850,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
                           {formatPercent(row.sinceFlipPercent)}
                         </td>
                         <td className="px-4 py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-2"><Link href={getEducationUrl(row, interval, payload?.meta.capturedAt)} className="inline-flex items-center gap-1.5 rounded-[0.6rem] border border-cyan-200/15 bg-cyan-200/[0.035] px-2 py-1.5 text-[0.68rem] text-cyan-100/80 transition hover:bg-cyan-200/[0.1] hover:text-white" title={`Study ${row.baseAsset} scanner state`}><BookOpenCheck className="size-3.5" aria-hidden="true" />Study</Link><Link href={getLabUrl(row, interval, payload?.meta.capturedAt)} className="text-[0.68rem] text-zinc-400 hover:text-white" title={`Use ${row.baseAsset} as lab context`}>Lab</Link></div>
+                          <div className="flex items-center justify-end gap-2"><Link href={getEducationUrl(row, interval, payload?.meta.capturedAt)} className="inline-flex items-center gap-1.5 rounded-[0.6rem] border border-cyan-200/15 bg-cyan-200/[0.035] px-2 py-1.5 text-[0.68rem] text-cyan-100/80 transition hover:bg-cyan-200/[0.1] hover:text-white" title={`Study ${row.baseAsset} monitor state`}><BookOpenCheck className="size-3.5" aria-hidden="true" />Study</Link><Link href={getLabUrl(row, interval, payload?.meta.capturedAt)} className="text-[0.68rem] text-zinc-400 hover:text-white" title={`Use ${row.baseAsset} as lab context`}>Lab</Link></div>
                         </td>
                       </TradingViewHoverChart>
                     );
@@ -854,7 +866,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
         )}
 
         <footer className="flex flex-col gap-2 border-t border-white/[0.06] px-4 py-3 text-[0.68rem] text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
-          <span>{rows.length} visible markets. VargaTrend ATR {payload?.meta.atrPeriod ?? 10} × {payload?.meta.atrMultiplier ?? 3}.</span>
+          <span>{rows.length} visible markets. Auto ATR {payload?.meta.atrPeriodMin ?? 10}–{payload?.meta.atrPeriodMax ?? 20} × {payload?.meta.atrMultiplier ?? 3}; provider-bounded, in-sample history; rows may remain on the fallback during warm-up.</span>
           <span className="inline-flex items-center gap-1.5"><Clock3 className="size-3" />Values use closed candles. Not financial advice.</span>
         </footer>
       </section>

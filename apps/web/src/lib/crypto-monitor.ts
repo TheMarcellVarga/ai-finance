@@ -16,12 +16,20 @@ import {
   type CryptoMonitorProvider,
 } from "@/lib/crypto-exchanges";
 import { isFlipEligibleBaseAsset } from "@/lib/crypto-market-universe";
-import { calculateSupertrend, type CryptoCandle } from "@/lib/crypto-supertrend";
+import type { CryptoCandle } from "@/lib/crypto-supertrend";
 import {
   DEFAULT_CRYPTO_MONITOR_LIMIT,
   MAX_CRYPTO_MONITOR_LIMIT,
 } from "@/lib/crypto-monitor-limits";
 import type { CryptoMonitorInterval } from "@/lib/crypto-monitor-intervals";
+import {
+  calculateVargaTrendAuto,
+  VARGA_TREND_AUTO_MIN_TRADES,
+  VARGA_TREND_AUTO_MIN_WIN_RATE,
+  VARGA_TREND_AUTO_MULTIPLIER,
+  VARGA_TREND_AUTO_PERIOD_MAX,
+  VARGA_TREND_AUTO_PERIOD_MIN,
+} from "@/lib/varga-trend";
 
 export { isStablecoinAsset } from "@/lib/crypto-market-universe";
 export { cryptoMonitorIntervals, normalizeCryptoMonitorInterval } from "@/lib/crypto-monitor-intervals";
@@ -56,8 +64,8 @@ const MONITOR_FETCH_CONCURRENCY = 8;
 const CHART_CANDLE_LIMIT = 260;
 const ANALYSIS_CANDLE_LIMIT = OKX_KLINE_PAGE_LIMIT * MAX_KLINE_HISTORY_PAGES;
 const CCXT_KLINE_PAGE_LIMIT = 500;
-const ATR_PERIOD = 10;
-const ATR_MULTIPLIER = 3;
+const ATR_PERIOD = VARGA_TREND_AUTO_PERIOD_MIN;
+const ATR_MULTIPLIER = VARGA_TREND_AUTO_MULTIPLIER;
 const CCXT_QUOTE_ASSETS = new Set(["USD", "USDC", "USDT"]);
 const CCXT_INTERVALS = {
   "1m": 60_000,
@@ -88,6 +96,10 @@ export type CryptoMonitorRow = {
   dailyChangePercent: number;
   quoteVolume: number;
   trend: CryptoTrend;
+  parameterMode: "auto";
+  atrPeriod: number;
+  atrMultiplier: number;
+  autoSelectionReady: boolean;
   lastFlipAt: string | null;
   lastFlipLevel: number | null;
   nextFlipLevel: number;
@@ -118,6 +130,12 @@ export type CryptoMonitorPayload = {
     failedMarkets: number;
     atrPeriod: number;
     atrMultiplier: number;
+    parameterMode: "auto";
+    atrPeriodMin: number;
+    atrPeriodMax: number;
+    autoMinimumTrades: number;
+    autoMinimumWinRate: number;
+    historyCoverage: "provider-bounded";
     availableProviders: ReturnType<typeof getCryptoExchangeCatalog>;
     failureReasons: string[];
     scope: CryptoMonitorScope;
@@ -626,6 +644,12 @@ export async function loadCryptoChart(
       analysis: {
         atrPeriod: ATR_PERIOD,
         atrMultiplier: ATR_MULTIPLIER,
+        parameterMode: "auto" as const,
+        atrPeriodMin: VARGA_TREND_AUTO_PERIOD_MIN,
+        atrPeriodMax: VARGA_TREND_AUTO_PERIOD_MAX,
+        autoMinimumTrades: VARGA_TREND_AUTO_MIN_TRADES,
+        autoMinimumWinRate: VARGA_TREND_AUTO_MIN_WIN_RATE,
+        historyCoverage: "provider-bounded" as const,
         execution: "next_candle_open",
         maxCandlesPerTimeframe: ANALYSIS_CANDLE_LIMIT,
       },
@@ -660,8 +684,12 @@ async function fetchOkxCandleHistory(instId: string, interval: CryptoMonitorInte
 
     candles.push(...pageCandles);
     const merged = mergeCandles(candles);
-    if (calculateSupertrend(merged).lastFlipAt != null) {
-      return { candles: merged, historyComplete: false };
+    try {
+      if (calculateVargaTrendAuto(merged).auto.selectionReady) {
+        return { candles: merged, historyComplete: false };
+      }
+    } catch {
+      // Keep loading bounded history until auto mode has enough evidence or the provider ends the series.
     }
 
     if (rows.length < OKX_KLINE_PAGE_LIMIT) {
@@ -703,8 +731,12 @@ async function fetchCcxtCandleHistory(
 
     candles.push(...result.candles);
     const merged = mergeCandles(candles);
-    if (calculateSupertrend(merged).lastFlipAt != null) {
-      return { candles: merged, historyComplete: false };
+    try {
+      if (calculateVargaTrendAuto(merged).auto.selectionReady) {
+        return { candles: merged, historyComplete: false };
+      }
+    } catch {
+      // Keep loading bounded history until auto mode has enough evidence or the provider ends the series.
     }
 
     const oldestOpenTime = result.candles[0].openTime;
@@ -792,7 +824,8 @@ async function loadOkxCryptoMonitor(
   const settled = await mapWithConcurrency(selected, MONITOR_FETCH_CONCURRENCY, async (ticker) => {
     try {
       const history = await fetchOkxCandleHistory(ticker.instId, interval);
-      const supertrend = calculateSupertrend(history.candles);
+      const analysis = calculateVargaTrendAuto(history.candles);
+      const supertrend = analysis.result;
       const market = eligibleInstruments.get(ticker.instId)!;
       const price = parseFiniteNumber(ticker.last, "OKX");
       const open24h = parseFiniteNumber(ticker.open24h || price, "OKX");
@@ -814,7 +847,11 @@ async function loadOkxCryptoMonitor(
           dailyChangePercent: open24h > 0 ? (price / open24h - 1) * 100 : 0,
           quoteVolume: parseFiniteNumber(ticker.volCcy24h, "OKX"),
           trend: supertrend.trend === 1 ? ("bullish" as const) : ("bearish" as const),
-          lastFlipAt: supertrend.lastFlipAt ? new Date(supertrend.lastFlipAt).toISOString() : null,
+          parameterMode: analysis.parameterMode,
+          atrPeriod: analysis.atrPeriod,
+          atrMultiplier: analysis.atrMultiplier,
+          autoSelectionReady: analysis.auto.selectionReady,
+          lastFlipAt: supertrend.lastFlipTime ? new Date(supertrend.lastFlipTime).toISOString() : null,
           lastFlipLevel: supertrend.lastFlipLevel,
           nextFlipLevel: supertrend.nextFlipLevel,
           distanceToFlipPercent: Math.abs((price - supertrend.nextFlipLevel) / price) * 100,
@@ -846,6 +883,12 @@ async function loadOkxCryptoMonitor(
       failedMarkets: selected.length - data.length,
       atrPeriod: ATR_PERIOD,
       atrMultiplier: ATR_MULTIPLIER,
+      parameterMode: "auto" as const,
+      atrPeriodMin: VARGA_TREND_AUTO_PERIOD_MIN,
+      atrPeriodMax: VARGA_TREND_AUTO_PERIOD_MAX,
+      autoMinimumTrades: VARGA_TREND_AUTO_MIN_TRADES,
+      autoMinimumWinRate: VARGA_TREND_AUTO_MIN_WIN_RATE,
+      historyCoverage: "provider-bounded" as const,
       availableProviders: getCryptoExchangeCatalog(scope),
       failureReasons: [],
       scope,
@@ -939,7 +982,8 @@ async function loadCcxtCryptoMonitor(
   const settled = await mapWithConcurrency(selected, MONITOR_FETCH_CONCURRENCY, async ({ symbol, ticker, market, volume }) => {
     try {
       const history = await fetchCcxtCandleHistory(provider, symbol, interval, scope);
-      const supertrend = calculateSupertrend(history.candles);
+      const analysis = calculateVargaTrendAuto(history.candles);
+      const supertrend = analysis.result;
       const baseAsset = market.base;
       const metadata = coinGeckoMetadata.get(baseAsset.toUpperCase());
       const coinMarketCap = coinMarketCapSlugs.get(baseAsset.toUpperCase());
@@ -960,7 +1004,11 @@ async function loadCcxtCryptoMonitor(
           dailyChangePercent: getCcxtDailyChange(ticker, price),
           quoteVolume: volume,
           trend: supertrend.trend === 1 ? ("bullish" as const) : ("bearish" as const),
-          lastFlipAt: supertrend.lastFlipAt ? new Date(supertrend.lastFlipAt).toISOString() : null,
+          parameterMode: analysis.parameterMode,
+          atrPeriod: analysis.atrPeriod,
+          atrMultiplier: analysis.atrMultiplier,
+          autoSelectionReady: analysis.auto.selectionReady,
+          lastFlipAt: supertrend.lastFlipTime ? new Date(supertrend.lastFlipTime).toISOString() : null,
           lastFlipLevel: supertrend.lastFlipLevel,
           nextFlipLevel: supertrend.nextFlipLevel,
           distanceToFlipPercent: Math.abs((price - supertrend.nextFlipLevel) / price) * 100,
@@ -994,6 +1042,12 @@ async function loadCcxtCryptoMonitor(
       failedMarkets: selected.length - data.length,
       atrPeriod: ATR_PERIOD,
       atrMultiplier: ATR_MULTIPLIER,
+      parameterMode: "auto" as const,
+      atrPeriodMin: VARGA_TREND_AUTO_PERIOD_MIN,
+      atrPeriodMax: VARGA_TREND_AUTO_PERIOD_MAX,
+      autoMinimumTrades: VARGA_TREND_AUTO_MIN_TRADES,
+      autoMinimumWinRate: VARGA_TREND_AUTO_MIN_WIN_RATE,
+      historyCoverage: "provider-bounded" as const,
       availableProviders: getCryptoExchangeCatalog(scope),
       failureReasons: [...failureReasons].slice(0, 3),
       scope,

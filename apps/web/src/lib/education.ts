@@ -330,13 +330,13 @@ export const learningModules: LearningModule[] = [
     artifactType: "observation",
     lessons: [
       makeLesson({
-        slug: "read-a-scanner-row",
-        title: "Read a scanner row without jumping to a conclusion",
-        objective: "Separate objective fields in a scanner row from the assumptions required to act on them.",
+        slug: "read-a-market-row",
+        title: "Read a market row without jumping to a conclusion",
+        objective: "Separate objective fields in a market-monitor row from the assumptions required to act on them.",
         estimatedMinutes: 8,
         sources: [FIDELITY_SOURCES[0], ...FINRA_SOURCES],
         sections: [
-          { heading: "Objective fields", body: "The Money Scanner can show a market, price, change, trend state, last confirmed flip, active flip level, distance, and time of the candle close. These describe the loaded provider snapshot.", evidenceType: "fact" },
+          { heading: "Objective fields", body: "The Market Monitor can show a market, price, change, trend state, last confirmed flip, active flip level, distance, and time of the candle close. These describe the loaded provider snapshot.", evidenceType: "fact" },
           { heading: "Read the fields", body: "OHLCV records open, high, low, close, and volume for a stated candle interval. A return is a change between observations; it is not the same thing as a price level. Changing the timeframe changes the observation window and can change the story.", evidenceType: "fact" },
           { heading: "What it does not say", body: "A bullish state does not establish future direction, suitability, liquidity, expected return, or a complete strategy. Trend describes directional persistence in a chosen measure; momentum describes the rate or persistence of recent change. Neither removes stale-data or execution risk.", evidenceType: "unknown" },
           { heading: "Breadth and freshness", body: "Market breadth summarizes participation across a defined universe, but the meaning depends on membership, weighting, and timestamp. A fresh provider timestamp is evidence about capture time—not a promise that every underlying value is current.", evidenceType: "fact" },
@@ -344,7 +344,7 @@ export const learningModules: LearningModule[] = [
         ],
         workedExample: "Observation: ‘The 4-hour state is bullish and the latest candle closed at the captured timestamp.’ Assumption: ‘A strategy would need a declared entry, invalidation, sizing, and no-trade rule.’",
         commonMistakes: ["Calling a state a signal to buy.", "Ignoring the candle-close timestamp.", "Mixing a personal rule into an objective observation."],
-        nextAction: "Open the Money Scanner, choose one row, and save an Annotated Market Observation.",
+        nextAction: "Open the Market Monitor, choose one row, and save an Annotated Market Observation.",
         exercise: { prompt: "Which sentence is an objective observation?", options: ["The weekly state changed from bearish to bullish.", "This is a strong opportunity.", "I should enter before it moves."], answer: "The weekly state changed from bearish to bullish.", explanation: "The first statement reports a displayed state without adding a forecast or instruction." },
         quiz: [
           { id: "q1", prompt: "What belongs in the objective observation section?", options: ["Displayed state and timestamp", "A promised return", "A hidden entry order"], answer: "Displayed state and timestamp", explanation: "Objective observations should be traceable to the visible data snapshot." },
@@ -635,7 +635,7 @@ export const learningModules: LearningModule[] = [
           { heading: "Operational failure", body: "Exchange downtime, alert delivery failure, API limits, and custody or counterparty events can prevent an otherwise valid rule from being observed or acted on.", evidenceType: "unknown" },
           { heading: "Pause first", body: "A safe process defines what happens when evidence is unavailable: record the gap, avoid inventing a value, and resume only after the declared condition is restored.", evidenceType: "rule" },
         ],
-        workedExample: "If a scanner row is marked stale, a journal entry can record the last known state and the missing information. It should not transform that old state into a current claim.",
+        workedExample: "If a market-monitor row is marked stale, a journal entry can record the last known state and the missing information. It should not transform that old state into a current claim.",
         commonMistakes: ["Filling a missing quote with an estimate and presenting it as live.", "Assuming an alert was delivered.", "Treating venue availability as an implementation detail."],
         nextAction: "Add a stale-data pause condition and fallback note to your Execution Checklist.",
         exercise: { prompt: "What should happen when a quote is stale?", options: ["Label it and pause the decision", "Invent a current value", "Call it real-time"], answer: "Label it and pause the decision", explanation: "The process should disclose missing information rather than hide it." },

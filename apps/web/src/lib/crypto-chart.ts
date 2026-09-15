@@ -17,6 +17,12 @@ export type CryptoChartPayload = {
     analysis: {
       atrPeriod: number;
       atrMultiplier: number;
+      parameterMode: "auto";
+      atrPeriodMin: number;
+      atrPeriodMax: number;
+      autoMinimumTrades: number;
+      autoMinimumWinRate: number;
+      historyCoverage: "provider-bounded";
       execution: "next_candle_open";
       maxCandlesPerTimeframe: number;
     };

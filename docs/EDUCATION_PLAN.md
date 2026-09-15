@@ -6,7 +6,7 @@ Build an original, interactive trading-education system inside the existing
 `ai-finance` application.
 
 The education system should connect directly with the existing Supertrend
-Market Map / Money Scanner and teach the user how to:
+Market Map / Market Monitor and teach the user how to:
 
 - Understand market and indicator data.
 - Turn observations into explicit mechanical rules.
@@ -19,9 +19,9 @@ Market Map / Money Scanner and teach the user how to:
 This is an educational and analytical product. It must not promise returns,
 provide personalised buy/sell instructions, or execute trades.
 
-Do not copy Bull Mania or any other paid course's proprietary content,
-terminology, lesson text, screenshots, or trading rules. Develop original
-material from established market, statistical, and risk-management principles.
+Do not copy any paid course's proprietary content, terminology, lesson text,
+screenshots, branding, or trading rules. Develop original material from
+established market, statistical, and risk-management principles.
 
 ---
 
@@ -32,7 +32,7 @@ material from established market, statistical, and risk-management principles.
 3. Identify the existing:
    - Framework and routing conventions
    - Component and styling system
-   - Scanner and Supertrend domain models
+   - Market-monitor and Supertrend domain models
    - Market-data services
    - Authentication and persistence approach
    - Testing framework
@@ -77,7 +77,7 @@ Clearly distinguish:
 
 Education should not feel like an unrelated video library. Lessons and
 interactive labs should use the same concepts, components and data visible in
-the market scanner.
+the market monitor.
 
 ### Protect against backtest theatre
 
@@ -111,7 +111,7 @@ Adapt route names to the repository's existing conventions.
 
 Suggested primary navigation:
 
-`Market Map · Scanner · Learn · Playbook · Journal`
+`Market Map · Monitor · Learn · Playbook · Journal`
 
 ---
 
@@ -174,7 +174,7 @@ Topics:
 
 Interactive outcome:
 
-The user selects a scanner row and explains:
+The user selects a market-monitor row and explains:
 
 - What the displayed state objectively says
 - What it does not say
@@ -438,9 +438,9 @@ Use identical dates, cash flows and costs.
 
 ---
 
-## Scanner Integration
+## Market Monitor Integration
 
-Add contextual education without cluttering the primary scanner workflow.
+Add contextual education without cluttering the primary market-monitor workflow.
 
 Potential interactions:
 
@@ -449,7 +449,7 @@ Potential interactions:
 - Link `last flip` to the relevant Supertrend lesson
 - Link `distance` to the volatility and invalidation lessons
 - Send a selected market into a lab
-- Save a scanner state as a journal observation
+- Save a monitor snapshot as a journal observation
 - Display data timestamp and stale-data status
 - Explain objective facts separately from user-authored strategy rules
 

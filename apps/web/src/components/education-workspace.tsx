@@ -60,7 +60,7 @@ function SafeBoundary() {
   return (
     <div className="flex items-start gap-3 rounded-[0.95rem] border border-cyan-200/10 bg-cyan-200/[0.035] p-4 text-xs leading-5 text-zinc-400">
       <ShieldCheck className="mt-0.5 size-4 shrink-0 text-cyan-100/75" aria-hidden="true" />
-      <p>Education and decision support only. No lesson, lab, or scanner state is a personalized recommendation, return promise, or order instruction.</p>
+      <p>Education and decision support only. No lesson, lab, or monitor snapshot is a personalized recommendation, return promise, or order instruction.</p>
     </div>
   );
 }
@@ -92,14 +92,14 @@ export function EducationDashboard() {
             </div>
             <h1 className="type-display mt-5 text-4xl text-white sm:text-6xl">Build a process you can inspect.</h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-300/80">
-              An original, interactive course for reading the Money Scanner, defining mechanical rules, sizing risk, testing evidence, and reviewing behavior without pretending uncertainty is gone.
+              An original, interactive course for reading the Market Monitor, defining mechanical rules, sizing risk, testing evidence, and reviewing behavior without pretending uncertainty is gone.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href={`/app/learn/${nextModule.slug}/${inProgressLesson.slug}`} className="inline-flex h-10 items-center gap-2 rounded-lg bg-cyan-100 px-4 text-sm font-medium text-[#071012] transition hover:bg-white">
                 {completedLessons > 0 ? "Continue study" : "Start with module 00"}<ArrowRight className="size-4" aria-hidden="true" />
               </Link>
               <Link href="/app/crypto-monitor" className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.025] px-4 text-sm text-zinc-200 transition hover:bg-white/[0.07] hover:text-white">
-                Open Money Scanner<ExternalLink className="size-3.5" aria-hidden="true" />
+                Open Market Monitor<ExternalLink className="size-3.5" aria-hidden="true" />
               </Link>
             </div>
           </div>
@@ -220,13 +220,13 @@ export function EducationLessonPage({ module, lesson }: { module: LearningModule
   const exerciseCorrect = exerciseAnswer === lesson.exercise.answer;
   const lessonComplete = submitted && exerciseSubmitted && exerciseCorrect && scorePercent >= 67;
   const artifactHref = getArtifactHref(module.artifactType);
-  const scannerMarket = searchParams.get("market");
-  const scannerState = searchParams.get("state");
-  const scannerTimeframe = searchParams.get("timeframe");
-  const scannerFlipLevel = searchParams.get("flipLevel");
-  const scannerCapturedAt = searchParams.get("capturedAt");
-  const journalHref = scannerMarket
-    ? `/app/journal?market=${encodeURIComponent(scannerMarket)}&state=${encodeURIComponent(scannerState ?? "descriptive")}&timeframe=${encodeURIComponent(scannerTimeframe ?? "selected")}&flipLevel=${encodeURIComponent(scannerFlipLevel ?? "not-supplied")}&capturedAt=${encodeURIComponent(scannerCapturedAt ?? "not-supplied")}`
+  const monitorMarket = searchParams.get("market");
+  const monitorState = searchParams.get("state");
+  const monitorTimeframe = searchParams.get("timeframe");
+  const monitorFlipLevel = searchParams.get("flipLevel");
+  const monitorCapturedAt = searchParams.get("capturedAt");
+  const journalHref = monitorMarket
+    ? `/app/journal?market=${encodeURIComponent(monitorMarket)}&state=${encodeURIComponent(monitorState ?? "descriptive")}&timeframe=${encodeURIComponent(monitorTimeframe ?? "selected")}&flipLevel=${encodeURIComponent(monitorFlipLevel ?? "not-supplied")}&capturedAt=${encodeURIComponent(monitorCapturedAt ?? "not-supplied")}`
     : "/app/journal";
 
   function markProgress(status: "in_progress" | "completed", quizScore?: number, countAttempt = true) {
@@ -265,7 +265,7 @@ export function EducationLessonPage({ module, lesson }: { module: LearningModule
       <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-600"><Link href="/app/learn" className="hover:text-cyan-100">Learn</Link><ChevronRight className="size-3" aria-hidden="true" /><Link href={`/app/learn/${module.slug}`} className="hover:text-cyan-100">Module {module.number}</Link><ChevronRight className="size-3" aria-hidden="true" /><span>{lesson.title}</span></div>
       <section className="section-shell rounded-[1.25rem] p-6 sm:p-8"><div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.15em] text-cyan-100/75"><span className="font-mono">Module {module.number}</span><span className="text-zinc-700">/</span><span className="inline-flex items-center gap-2"><Clock3 className="size-3.5" aria-hidden="true" />{lesson.estimatedMinutes} min</span><span className="text-zinc-700">/</span><span>Content v{lesson.contentVersion}</span></div><h1 className="type-display mt-6 max-w-4xl text-4xl text-white sm:text-6xl">{lesson.title}</h1><p className="mt-5 max-w-3xl text-sm leading-6 text-zinc-300/80"><span className="mr-2 font-medium text-cyan-100">Objective</span>{lesson.objective}</p></section>
       <SafeBoundary />
-      {scannerMarket ? <section className="rounded-[1.05rem] border border-cyan-200/15 bg-cyan-200/[0.035] p-5 sm:p-6"><div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div><p className="text-xs uppercase tracking-[0.14em] text-cyan-100/70">Scanner context attached</p><h2 className="mt-2 text-xl text-white">{scannerMarket}</h2><p className="mt-2 text-sm leading-6 text-zinc-400">The Money Scanner recorded a <span className="text-cyan-100">{scannerState ?? "descriptive"}</span> state on the <span className="font-mono text-zinc-300">{scannerTimeframe ?? "selected"}</span> timeframe. Treat this as a provider snapshot to annotate, not as a trade instruction.</p></div><div className="grid grid-cols-2 gap-3 text-xs lg:min-w-56"><div className="rounded-[0.75rem] bg-black/20 p-3"><p className="text-zinc-600">Flip level</p><p className="mt-2 font-mono text-zinc-200">{scannerFlipLevel ?? "Not supplied"}</p></div><div className="rounded-[0.75rem] bg-black/20 p-3"><p className="text-zinc-600">Captured</p><p className="mt-2 font-mono text-zinc-200">{scannerCapturedAt ? new Date(scannerCapturedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "Not supplied"}</p></div></div></div><Link href={journalHref} className="mt-4 inline-flex items-center gap-2 text-xs text-cyan-100 hover:text-white">Save as an annotated observation<ArrowRight className="size-3.5" aria-hidden="true" /></Link></section> : null}
+      {monitorMarket ? <section className="rounded-[1.05rem] border border-cyan-200/15 bg-cyan-200/[0.035] p-5 sm:p-6"><div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div><p className="text-xs uppercase tracking-[0.14em] text-cyan-100/70">Market monitor context attached</p><h2 className="mt-2 text-xl text-white">{monitorMarket}</h2><p className="mt-2 text-sm leading-6 text-zinc-400">The Market Monitor recorded a <span className="text-cyan-100">{monitorState ?? "descriptive"}</span> state on the <span className="font-mono text-zinc-300">{monitorTimeframe ?? "selected"}</span> timeframe. Treat this as a provider snapshot to annotate, not as a trade instruction.</p></div><div className="grid grid-cols-2 gap-3 text-xs lg:min-w-56"><div className="rounded-[0.75rem] bg-black/20 p-3"><p className="text-zinc-600">Flip level</p><p className="mt-2 font-mono text-zinc-200">{monitorFlipLevel ?? "Not supplied"}</p></div><div className="rounded-[0.75rem] bg-black/20 p-3"><p className="text-zinc-600">Captured</p><p className="mt-2 font-mono text-zinc-200">{monitorCapturedAt ? new Date(monitorCapturedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "Not supplied"}</p></div></div></div><Link href={journalHref} className="mt-4 inline-flex items-center gap-2 text-xs text-cyan-100 hover:text-white">Save as an annotated observation<ArrowRight className="size-3.5" aria-hidden="true" /></Link></section> : null}
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_19rem]">
         <article className="space-y-4">
@@ -284,7 +284,7 @@ export function EducationLessonPage({ module, lesson }: { module: LearningModule
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1fr_0.85fr]">
-        <div className="glass-surface rounded-[1.05rem] p-5 sm:p-6"><div className="flex items-center justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Save a practical note</p><p className="mt-2 text-sm text-zinc-300">What will you look for differently in the scanner or your next review?</p></div><Target className="size-4 text-amber-100/70" aria-hidden="true" /></div><textarea value={studyNote} onChange={(event) => setStudyNote(event.target.value)} rows={4} maxLength={800} placeholder="Write one observation, assumption, or process rule..." className="mt-4 w-full resize-y rounded-[0.8rem] border border-white/10 bg-black/20 p-3 text-sm leading-6 text-white outline-none placeholder:text-zinc-700 focus:border-cyan-200/30" /><div className="mt-3 flex items-center justify-between gap-3"><span className="text-[0.68rem] text-zinc-600">{studyNote.length}/800</span><Button type="button" variant="outline" onClick={saveStudyNote} disabled={!hydrated || !studyNote.trim()}>Save note</Button></div>{saved ? <p className="mt-3 text-xs text-emerald-100/80">Study note saved to your local artifact record.</p> : null}</div>
+        <div className="glass-surface rounded-[1.05rem] p-5 sm:p-6"><div className="flex items-center justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Save a practical note</p><p className="mt-2 text-sm text-zinc-300">What will you look for differently in the market monitor or your next review?</p></div><Target className="size-4 text-amber-100/70" aria-hidden="true" /></div><textarea value={studyNote} onChange={(event) => setStudyNote(event.target.value)} rows={4} maxLength={800} placeholder="Write one observation, assumption, or process rule..." className="mt-4 w-full resize-y rounded-[0.8rem] border border-white/10 bg-black/20 p-3 text-sm leading-6 text-white outline-none placeholder:text-zinc-700 focus:border-cyan-200/30" /><div className="mt-3 flex items-center justify-between gap-3"><span className="text-[0.68rem] text-zinc-600">{studyNote.length}/800</span><Button type="button" variant="outline" onClick={saveStudyNote} disabled={!hydrated || !studyNote.trim()}>Save note</Button></div>{saved ? <p className="mt-3 text-xs text-emerald-100/80">Study note saved to your local artifact record.</p> : null}</div>
         <div className="glass-surface rounded-[1.05rem] p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Sources & review</p><div className="mt-4 space-y-3">{lesson.sources.map((source) => <a key={source.href} href={source.href} target="_blank" rel="noreferrer" className="flex items-start gap-2 text-xs leading-5 text-cyan-100/75 hover:text-white"><ExternalLink className="mt-0.5 size-3 shrink-0" aria-hidden="true" />{source.label}</a>)}</div><p className="mt-5 border-t border-white/[0.06] pt-4 text-[0.68rem] leading-5 text-zinc-600">Content last reviewed {lesson.lastReviewedAt}. Sources are educational references; confirm current rules and data before relying on them.</p></div>
       </section>
       <LessonNavigation module={module} lesson={lesson} />

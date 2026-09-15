@@ -11,7 +11,7 @@ const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/app", label: "Overview", icon: CircleGauge },
   { href: "/app/portfolio", label: "Portfolio", icon: WalletCards },
   { href: "/app/monitors", label: "Asset monitors", icon: Layers3 },
-  { href: "/app/crypto-monitor", label: "Money scanner", icon: FlaskConical },
+  { href: "/app/crypto-monitor", label: "Market monitor", icon: FlaskConical },
   { href: "/app/research", label: "Research", icon: BookMarked },
   { href: "/app/research/evaluations", label: "Evaluations", icon: FlaskConical },
   { href: "/app/learn", label: "Learn", icon: BookOpenCheck },

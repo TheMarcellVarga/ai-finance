@@ -18,6 +18,7 @@ import type { CryptoChartPayload } from "@/lib/crypto-chart";
 import type { CryptoMonitorInterval, CryptoMonitorProvider, CryptoMonitorRow, CryptoMonitorScope } from "@/lib/crypto-monitor";
 import { getTradingViewChartUrl } from "@/lib/tradingview-url";
 import {
+  calculateVargaTrendAuto,
   calculateVargaTrend,
   calculateVargaTrendBacktest,
   selectVargaTrendCase,
@@ -158,16 +159,24 @@ function TradingViewChartPopover({
     return () => controller.abort();
   }, [interval, provider, row.symbol, scope]);
 
-  const trendResult = useMemo<VargaTrendResult | null>(() => {
+  const chartHistory = useMemo(() => {
     if (!chartPayload) {
+      return [];
+    }
+    return chartPayload.data.analysisCandles[interval as keyof typeof chartPayload.data.analysisCandles] ?? chartPayload.data.candles;
+  }, [chartPayload, interval]);
+
+  const trendAnalysis = useMemo(() => {
+    if (chartHistory.length === 0) {
       return null;
     }
     try {
-      return calculateVargaTrend(chartPayload.data.candles);
+      return calculateVargaTrendAuto(chartHistory);
     } catch {
       return null;
     }
-  }, [chartPayload]);
+  }, [chartHistory]);
+  const trendResult = trendAnalysis?.result ?? null;
   const dailyResult = useMemo<VargaTrendResult | null>(() => {
     if (!chartPayload || chartPayload.data.dailyCandles.length < 12) {
       return null;
@@ -261,18 +270,24 @@ function TradingViewChartPopover({
         <div className="grid md:grid-cols-[minmax(0,1fr)_19rem]">
           <VargaTrendChart
             baseAsset={row.baseAsset}
-            candles={chartPayload.data.candles}
+            candles={chartHistory}
             result={trendResult}
           />
           <div className="border-t border-white/[0.07] bg-white/[0.018] md:border-l md:border-t-0">
             <ResearchRow label="Trend" value={trendResult.trend === 1 ? "BULLISH" : "BEARISH"} tone={trendResult.trend === 1 ? "bull" : "bear"} />
+            <ResearchRow
+              label="Mode"
+              value={trendAnalysis?.auto.selectionReady
+                ? `AUTO · ATR ${trendAnalysis.atrPeriod} × ${trendAnalysis.atrMultiplier} · ${trendAnalysis.auto.completedBullishSections} sections · ${trendAnalysis.auto.minimumTrades}+ / ${trendAnalysis.auto.minimumWinRate}% WR`
+                : `AUTO WARM-UP · fallback ATR ${trendAnalysis?.atrPeriod ?? 10} × ${trendAnalysis?.atrMultiplier ?? 3} · needs ${chartPayload?.meta.analysis.autoMinimumTrades ?? 5}+ / ${chartPayload?.meta.analysis.autoMinimumWinRate ?? 40}% WR`}
+            />
             <ResearchRow label="Confirm" value="CLOSED CANDLE" />
             <ResearchRow label="Next flip" value={formatPrice(trendResult.nextFlipLevel)} />
             <ResearchRow label="Last flip" value={formatPrice(trendResult.lastFlipLevel)} />
             <ResearchRow label="Flip date" value={trendResult.lastFlipTime == null ? "—" : new Date(trendResult.lastFlipTime).toISOString().slice(0, 10)} />
             <ResearchRow label="Since flip" value={formatPercent(trendResult.sinceFlipPercent)} tone={(trendResult.sinceFlipPercent ?? 0) >= 0 ? "bull" : "bear"} />
-            <ResearchRow label="Weekly" value={weeklyResult?.trend === 1 ? "BULLISH" : weeklyResult ? "BEARISH" : "—"} tone={weeklyResult?.trend === 1 ? "bull" : weeklyResult ? "bear" : "neutral"} />
-            <ResearchRow label="Daily" value={dailyResult?.trend === 1 ? "BULLISH" : dailyResult ? "BEARISH" : "—"} tone={dailyResult?.trend === 1 ? "bull" : dailyResult ? "bear" : "neutral"} />
+            <ResearchRow label="Weekly" value={weeklyResult ? `${weeklyResult.trend === 1 ? "BULLISH" : "BEARISH"} · CUSTOM ATR` : "—"} tone={weeklyResult?.trend === 1 ? "bull" : weeklyResult ? "bear" : "neutral"} />
+            <ResearchRow label="Daily" value={dailyResult ? `${dailyResult.trend === 1 ? "BULLISH" : "BEARISH"} · CUSTOM ATR` : "—"} tone={dailyResult?.trend === 1 ? "bull" : dailyResult ? "bear" : "neutral"} />
             <ResearchRow label="Stance" value={stance} tone={stance === "ALIGNED BULL" ? "bull" : stance === "ALIGNED BEAR" ? "bear" : "neutral"} />
             <ResearchRow
               label="Weekly bull"
@@ -287,7 +302,7 @@ function TradingViewChartPopover({
 
       <div className="flex items-center justify-between gap-3 border-t border-white/[0.07] px-4 py-2 text-[0.62rem] text-zinc-600">
         <span>
-          1H / 4H / 1D / 1W / 1M · weekly history from {weeklyHistoryStart == null ? "—" : new Date(weeklyHistoryStart).toISOString().slice(0, 10)} · next-open simulation · excludes fees, slippage and funding · not financial advice
+          Auto ATR {chartPayload?.meta.analysis.atrPeriodMin ?? 10}–{chartPayload?.meta.analysis.atrPeriodMax ?? 20} × {chartPayload?.meta.analysis.atrMultiplier ?? 3} · provider-bounded history · in-sample research · 1H / 4H / 1D / 1W / 1M · weekly history from {weeklyHistoryStart == null ? "—" : new Date(weeklyHistoryStart).toISOString().slice(0, 10)} · next-candle-open simulation · excludes fees, slippage and funding · not financial advice
         </span>
         <a className="shrink-0 text-zinc-500 transition-colors hover:text-cyan-100" href={tradingViewChartUrl} target="_blank" rel="noreferrer">
           Open TradingView

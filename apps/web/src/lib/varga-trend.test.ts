@@ -4,6 +4,7 @@ import test from "node:test";
 import type { CryptoCandle } from "./crypto-supertrend";
 import {
   calculateSimpleMovingAverage,
+  calculateVargaTrendAuto,
   calculateVargaTrendBacktest,
   selectVargaTrendCase,
   type VargaTrendBacktest,
@@ -90,4 +91,19 @@ test("calculates SMA 50, 100 and 200 from closed prices", () => {
   assert.equal(calculateSimpleMovingAverage(candles, 50)[49].value, 25.5);
   assert.equal(calculateSimpleMovingAverage(candles, 100)[99].value, 50.5);
   assert.equal(calculateSimpleMovingAverage(candles, 200)[199].value, 100.5);
+});
+
+test("auto mode selects only an eligible ATR period and exposes warm-up state", () => {
+  const analysis = calculateVargaTrendAuto(alternatingCandles(240));
+
+  assert.equal(analysis.parameterMode, "auto");
+  assert.equal(analysis.auto.selectedMultiplier, 3);
+  assert.ok(analysis.atrPeriod >= 10 && analysis.atrPeriod <= 20);
+  assert.equal(analysis.auto.selectionReady, analysis.auto.selectedPeriod != null);
+
+  if (analysis.auto.selectionReady) {
+    assert.ok(analysis.auto.completedBullishSections >= analysis.auto.minimumTrades);
+    assert.ok((analysis.auto.winRatePercent ?? 0) >= analysis.auto.minimumWinRate);
+    assert.ok((analysis.auto.geometricAverageTradePercent ?? 0) > 0);
+  }
 });
