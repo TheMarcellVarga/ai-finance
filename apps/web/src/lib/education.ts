@@ -3,6 +3,7 @@ export type LessonStatus = "not_started" | "in_progress" | "completed";
 export type SourceReference = {
   label: string;
   href: string;
+  scope?: string;
 };
 
 export type LessonSection = {
@@ -92,6 +93,7 @@ export type PersonalRiskDeclaration = {
 
 export type StrategySpecification = {
   id: string;
+  seriesId: string;
   name: string;
   version: number;
   hypothesis: string;
@@ -123,16 +125,18 @@ export type PortfolioRiskPolicy = {
 };
 
 export type BacktestAuditChecklist = {
-  universeAndDates: boolean;
-  pointInTimeData: boolean;
-  outOfSample: boolean;
-  costsIncluded: boolean;
-  executionDelay: boolean;
-  delistedAssets: boolean;
-  reproducible: boolean;
+  universeAndDates: EvidenceStatus;
+  pointInTimeData: EvidenceStatus;
+  outOfSample: EvidenceStatus;
+  costsIncluded: EvidenceStatus;
+  executionDelay: EvidenceStatus;
+  delistedAssets: EvidenceStatus;
+  reproducible: EvidenceStatus;
   limitations: string;
   updatedAt: string;
 };
+
+export type EvidenceStatus = "confirmed" | "missing" | "unknown";
 
 export type StrategyScorecard = {
   observations: string;
@@ -187,6 +191,13 @@ export type JournalEntry = {
   strategyVersion?: number;
   ruleViolations: string[];
   review?: string;
+  recordedAt?: string;
+  marketContext?: {
+    state: string;
+    timeframe: string;
+    flipLevel: string;
+    capturedAt?: string;
+  };
 };
 
 export type LearningArtifact = {
@@ -207,50 +218,63 @@ export type EducationState = {
   executionChecklist?: ExecutionChecklist;
   triggerPlan?: BehaviouralTriggerPlan;
   constitution?: TradingConstitution;
+  constitutionVersions: TradingConstitution[];
   journalEntries: JournalEntry[];
   artifacts: LearningArtifact[];
 };
 
-export const EDUCATION_STORAGE_KEY = "aperture.education.v1";
-export const CONTENT_REVIEW_DATE = "2026-09-15";
+export const EDUCATION_STORAGE_KEY = "aperture.education.v2";
+export const CONTENT_REVIEW_DATE = "2026-09-18";
 
 export function createEmptyEducationState(): EducationState {
   return {
     progress: {},
     strategySpecifications: [],
+    constitutionVersions: [],
     journalEntries: [],
     artifacts: [],
   };
 }
 
 const SEC_SOURCES: SourceReference[] = [
-  { label: "SEC Investor.gov · Saving and Investing", href: "https://www.investor.gov/introduction-investing" },
-  { label: "SEC Investor.gov · How fees and expenses affect your portfolio", href: "https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins/updated" },
+  { label: "SEC Investor.gov · Introduction to investing", href: "https://www.investor.gov/introduction-investing", scope: "General risk, diversification, emergency-fund separation, and long-horizon investing context." },
+  { label: "SEC Investor.gov · How fees and expenses affect your portfolio", href: "https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins/updated", scope: "How transaction and ongoing fees reduce investment outcomes." },
 ];
 const FINRA_SOURCES: SourceReference[] = [
-  { label: "FINRA · Investing basics", href: "https://www.finra.org/investors/investing" },
-  { label: "FINRA · Order types", href: "https://www.finra.org/investors/investing/investment-products/stocks/order-types" },
+  { label: "FINRA · Investing", href: "https://www.finra.org/investors/investing", scope: "Investor education index and current product-risk references." },
+  { label: "FINRA · Order types", href: "https://www.finra.org/investors/investing/investment-products/stocks/order-types", scope: "Market, limit, stop, and stop-limit execution tradeoffs." },
 ];
 const CME_SOURCES: SourceReference[] = [
-  { label: "CME Group · Position and risk management", href: "https://www.cmegroup.com/education/courses/things-to-know-before-trading-cme-futures/position-and-risk-management" },
+  { label: "CME Group · Position and risk management", href: "https://www.cmegroup.com/education/courses/things-to-know-before-trading-cme-futures/position-and-risk-management", scope: "Educational context for risk boundaries and position planning; not a source for the app’s bespoke formulas." },
 ];
 const FIDELITY_SOURCES: SourceReference[] = [
-  { label: "Fidelity · Average True Range (ATR)", href: "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/atr" },
+  { label: "Fidelity · Average True Range (ATR)", href: "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/atr", scope: "True-range inputs, Wilder-style ATR smoothing, and ATR’s non-directional volatility interpretation—not Supertrend rules." },
 ];
 const CFA_SOURCES: SourceReference[] = [
-  { label: "CFA Institute · Understanding investment risk", href: "https://www.cfainstitute.org/insights/articles/understanding-investment-risk" },
-  { label: "CFA Institute · Portfolio risk and return", href: "https://www.cfainstitute.org/insights/professional-learning/refresher-readings/2026/portfolio-risk-return-part-2" },
+  { label: "CFA Institute · Understanding investment risk", href: "https://www.cfainstitute.org/insights/articles/understanding-investment-risk", scope: "General discussion of investment-risk concepts and limits of single risk measures." },
+  { label: "CFA Institute · Portfolio risk and return", href: "https://www.cfainstitute.org/insights/professional-learning/refresher-readings/2026/portfolio-risk-return-part-2", scope: "Beta, systematic risk, CAPM assumptions, and risk-adjusted performance measures." },
 ];
+const BACKTEST_SOURCE: SourceReference = {
+  label: "CFA Institute · Backtesting & Simulation",
+  href: "https://www.cfainstitute.org/insights/professional-learning/refresher-readings/2026/backtesting-and-simulation",
+  scope: "Rolling-window design, look-ahead and survivorship bias, simulation limits, and sensitivity analysis.",
+};
+const BEHAVIOUR_SOURCE: SourceReference = {
+  label: "SEC Investor.gov · Behavioral Patterns of U.S. Investors",
+  href: "https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins-72",
+  scope: "Documented investor-behavior patterns including disposition, past-performance, familiarity, mania/panic, momentum, and noise trading.",
+};
+const ORDER_QUALIFIERS_SOURCE: SourceReference = {
+  label: "FINRA · Time Parameters and Qualifiers on Stock Orders",
+  href: "https://www.finra.org/investors/insights/time-parameters-qualifiers-stock-orders",
+  scope: "Partial fills, time-in-force choices, and execution qualifiers.",
+};
 
 function makeLesson(input: Omit<Lesson, "id" | "contentVersion" | "lastReviewedAt">): Lesson {
   return {
     ...input,
-    sections: input.sections.map((section) => ({
-      ...section,
-      sourceLabels: section.sourceLabels ?? input.sources.map((source) => source.label),
-    })),
     id: `lesson-${input.slug}`,
-    contentVersion: 1,
+    contentVersion: 2,
     lastReviewedAt: CONTENT_REVIEW_DATE,
   };
 }
@@ -358,7 +382,7 @@ export const learningModules: LearningModule[] = [
         estimatedMinutes: 10,
         sources: [FIDELITY_SOURCES[0]],
         sections: [
-          { heading: "True range", body: "True range is the largest of the current high-low range and the gaps from the previous close to the current high or low. It keeps overnight or between-candle movement visible.", evidenceType: "fact" },
+          { heading: "True range", body: "True range is the largest of the current high-low range and the gaps from the previous close to the current high or low. It keeps overnight or between-candle movement visible.", evidenceType: "fact", sourceLabels: [FIDELITY_SOURCES[0].label] },
           { heading: "ATR and bands", body: "ATR smooths true range over a period. A Supertrend-style trail places bands around a midpoint using an ATR multiplier, then carries forward a band until a confirmed close crosses the prior trail.", evidenceType: "fact" },
           { heading: "Lag is a feature", body: "A confirmed close only arrives after movement has happened. The trail can reduce noise in a directional move while flipping repeatedly in a sideways range.", evidenceType: "fact" },
         ],
@@ -498,10 +522,10 @@ export const learningModules: LearningModule[] = [
         title: "Bias can look like edge",
         objective: "Identify look-ahead, survivorship, and data-quality failures before trusting a backtest result.",
         estimatedMinutes: 9,
-        sources: [CME_SOURCES[0], SEC_SOURCES[0]],
+        sources: [BACKTEST_SOURCE, SEC_SOURCES[0]],
         sections: [
-          { heading: "Look-ahead bias", body: "Look-ahead bias uses information that was not available at the moment the decision would have been made. Even a small timestamp mistake can make a rule appear more precise than it was.", evidenceType: "fact" },
-          { heading: "Survivorship bias", body: "A universe containing only assets that remain visible today can omit delisted or failed instruments. The surviving sample may be healthier than the historical opportunity set.", evidenceType: "fact" },
+          { heading: "Look-ahead bias", body: "Look-ahead bias uses information that was not available at the moment the decision would have been made. Even a small timestamp mistake can make a rule appear more precise than it was.", evidenceType: "fact", sourceLabels: [BACKTEST_SOURCE.label] },
+          { heading: "Survivorship bias", body: "A universe containing only assets that remain visible today can omit delisted or failed instruments. The surviving sample may be healthier than the historical opportunity set.", evidenceType: "fact", sourceLabels: [BACKTEST_SOURCE.label] },
           { heading: "Data quality", body: "Missing candles, adjusted prices, duplicate bars, timezone mismatches, and stale quotes should be logged and either handled or excluded with a reason.", evidenceType: "rule" },
         ],
         workedExample: "A strategy that selects today’s top assets and then tests them back to 2018 has used future membership information. The historical universe needs to be reconstructed at each point in time.",
@@ -518,7 +542,7 @@ export const learningModules: LearningModule[] = [
         title: "Costs, delay, and walk-forward checks",
         objective: "Stress a result with realistic costs and preserve an out-of-sample evaluation path.",
         estimatedMinutes: 8,
-        sources: [FINRA_SOURCES[1], CME_SOURCES[0]],
+        sources: [FINRA_SOURCES[1], BACKTEST_SOURCE],
         sections: [
           { heading: "Costs are part of the rule", body: "Fees, spread, slippage, and execution delay convert a theoretical fill into a modeled outcome. They should be explicit inputs rather than a footnote.", evidenceType: "fact" },
           { heading: "In-sample versus out-of-sample", body: "In-sample data is used to define or tune a rule; out-of-sample data is held back until the choices are frozen. A walk-forward design repeats that separation through time, but it still cannot remove data, regime, or implementation uncertainty.", evidenceType: "fact" },
@@ -609,9 +633,9 @@ export const learningModules: LearningModule[] = [
         title: "A chart price is not a fill",
         objective: "Explain how order type, spread, liquidity, and partial fills change the path from a rule to an outcome.",
         estimatedMinutes: 8,
-        sources: [FINRA_SOURCES[1]],
+        sources: [FINRA_SOURCES[1], ORDER_QUALIFIERS_SOURCE],
         sections: [
-          { heading: "Order types", body: "Market, limit, stop, and stop-limit orders express different tradeoffs between price control and execution certainty. The education workspace describes them; it does not submit them.", evidenceType: "fact" },
+          { heading: "Order types", body: "Market, limit, stop, and stop-limit orders express different tradeoffs between price control and execution certainty. The education workspace describes them; it does not submit them.", evidenceType: "fact", sourceLabels: [FINRA_SOURCES[1].label] },
           { heading: "Liquidity", body: "A displayed price can be a small slice of available depth. Wider spreads, thin books, and partial fills can make the realized average price differ from the chart.", evidenceType: "fact" },
           { heading: "Checklist", body: "Record the data timestamp, venue status, spread assumption, fallback alert, and counterparty questions before treating a simulation as representative.", evidenceType: "rule" },
         ],
@@ -662,7 +686,7 @@ export const learningModules: LearningModule[] = [
         title: "A good decision can lose",
         objective: "Separate process quality from outcome quality and recognize outcome bias in review.",
         estimatedMinutes: 7,
-        sources: [SEC_SOURCES[0], FINRA_SOURCES[0]],
+        sources: [BEHAVIOUR_SOURCE, FINRA_SOURCES[0]],
         sections: [
           { heading: "Outcome bias", body: "Outcome bias judges the quality of a decision mainly by what happened next. A rule-consistent decision can have a poor outcome, and a rule-breaking decision can have a lucky outcome.", evidenceType: "fact" },
           { heading: "Review the evidence", body: "A journal should compare the declared rule, available evidence, assumptions, and actual behavior. Profit or loss can be a separate field, not the only grade.", evidenceType: "rule" },
@@ -682,7 +706,7 @@ export const learningModules: LearningModule[] = [
         title: "FOMO, revenge, and rule drift",
         objective: "Identify predictable stress triggers and pre-commit to responses that preserve learning quality.",
         estimatedMinutes: 8,
-        sources: FINRA_SOURCES,
+        sources: [BEHAVIOUR_SOURCE, ...FINRA_SOURCES],
         sections: [
           { heading: "Common triggers", body: "FOMO, loss aversion, confirmation bias, overconfidence, hesitation, revenge behavior, and sunk-cost thinking can each change a rule after the evidence is visible.", evidenceType: "fact" },
           { heading: "A response is a rule", body: "A trigger-response plan can say ‘wait for the next confirmed close’, ‘stop reviewing after a defined loss’, or ‘ask a second reviewer before changing a rule’. These are process controls, not performance claims.", evidenceType: "rule" },
@@ -706,8 +730,8 @@ export const learningModules: LearningModule[] = [
     description: "Move deliberately from historical research to paper practice and only then review whether a controlled experiment is appropriate.",
     order: 8,
     icon: "flag",
-    topics: ["historical testing", "paper trading", "forward testing", "small-capital live testing", "scaling requirements", "pause conditions", "strategy retirement", "monthly review", "rule-change governance"],
-    artifactLabel: "Trading Constitution",
+    topics: ["historical testing", "paper trading", "forward testing", "live-practice boundary", "evidence requirements", "pause conditions", "strategy retirement", "monthly review", "rule-change governance"],
+    artifactLabel: "Research Practice Constitution",
     artifactType: "constitution",
     lessons: [
       makeLesson({
@@ -724,7 +748,7 @@ export const learningModules: LearningModule[] = [
         ],
         workedExample: "A clean historical result can justify a paper-test design, not a conclusion that live capital is appropriate. The next step should be chosen from evidence and boundaries, not excitement.",
         commonMistakes: ["Treating backtest approval as live approval.", "Scaling after a short favorable streak.", "Skipping operational rehearsal."],
-        nextAction: "Draft a versioned Trading Constitution with acknowledgement and retirement conditions.",
+        nextAction: "Draft a versioned Research Practice Constitution with acknowledgement and retirement conditions.",
         exercise: { prompt: "What does historical testing establish?", options: ["How a rule behaved in the tested historical assumptions", "That the future will repeat", "That live execution is safe"], answer: "How a rule behaved in the tested historical assumptions", explanation: "The conclusion must remain bounded by the data and assumptions." },
         quiz: [
           { id: "q1", prompt: "What changes when moving from paper to live practice?", options: ["Real financial and execution consequences", "The need for rules", "The existence of uncertainty"], answer: "Real financial and execution consequences", explanation: "Live practice adds consequences that historical and paper tests cannot fully represent." },
@@ -786,7 +810,10 @@ export type PositionSizeResult = {
   riskPerUnit: number;
   costPerUnit: number;
   totalRiskPerUnit: number;
+  riskLimitedUnits: number;
+  cashLimitedUnits: number;
   maximumUnits: number;
+  bindingConstraint: "risk budget" | "available capital" | "none";
   monetaryRisk: number;
   portfolioExposure: number;
   estimatedAllInLoss: number;
@@ -802,11 +829,18 @@ export function calculatePositionSize(inputs: PositionSizeInputs): PositionSizeR
   const riskPerUnit = Math.abs(entryPrice - invalidationPrice);
   const costPerUnit = entryPrice * costPercent / 100;
   const totalRiskPerUnit = riskPerUnit + costPerUnit;
-  const maximumUnits = totalRiskPerUnit > 0 ? permittedRisk / totalRiskPerUnit : 0;
+  const riskLimitedUnits = totalRiskPerUnit > 0 ? permittedRisk / totalRiskPerUnit : 0;
+  const cashLimitedUnits = entryPrice > 0 ? accountCapital / entryPrice : 0;
+  const maximumUnits = Math.min(riskLimitedUnits, cashLimitedUnits);
+  const bindingConstraint = maximumUnits <= 0
+    ? "none"
+    : riskLimitedUnits <= cashLimitedUnits
+      ? "risk budget"
+      : "available capital";
   const monetaryRisk = maximumUnits * riskPerUnit;
   const portfolioExposure = maximumUnits * entryPrice;
   const estimatedAllInLoss = maximumUnits * totalRiskPerUnit;
-  return { permittedRisk, riskPerUnit, costPerUnit, totalRiskPerUnit, maximumUnits, monetaryRisk, portfolioExposure, estimatedAllInLoss };
+  return { permittedRisk, riskPerUnit, costPerUnit, totalRiskPerUnit, riskLimitedUnits, cashLimitedUnits, maximumUnits, bindingConstraint, monetaryRisk, portfolioExposure, estimatedAllInLoss };
 }
 
 export type ExpectancyInputs = {
@@ -857,11 +891,11 @@ export function calculateRecoveryPercent(lossPercent: number) {
 
 export type BacktestIntegrityInputs = {
   headlineEdgePercent: number;
-  fees: boolean;
-  spread: boolean;
-  slippage: boolean;
-  executionDelay: boolean;
-  delistedAssets: boolean;
+  feeDragPercent: number;
+  spreadDragPercent: number;
+  slippageDragPercent: number;
+  executionDelayDragPercent: number;
+  survivorshipStatus: EvidenceStatus;
   overfitPenalty: number;
 };
 
@@ -872,20 +906,14 @@ export type BacktestIntegrityResult = {
 };
 
 export function calculateBacktestIntegrity(inputs: BacktestIntegrityInputs): BacktestIntegrityResult {
-  const drags = [
-    inputs.fees ? 0.08 : 0,
-    inputs.spread ? 0.1 : 0,
-    inputs.slippage ? 0.14 : 0,
-    inputs.executionDelay ? 0.18 : 0,
-    inputs.delistedAssets ? 0.12 : 0,
-    Math.max(0, Number.isFinite(inputs.overfitPenalty) ? inputs.overfitPenalty : 0),
-  ];
+  const finiteDrag = (value: number) => Math.max(0, Number.isFinite(value) ? value : 0);
+  const drags = [inputs.feeDragPercent, inputs.spreadDragPercent, inputs.slippageDragPercent, inputs.executionDelayDragPercent, inputs.overfitPenalty].map(finiteDrag);
   const totalDragPercent = drags.reduce((total, drag) => total + drag, 0);
   const headlineEdgePercent = Number.isFinite(inputs.headlineEdgePercent) ? inputs.headlineEdgePercent : 0;
   const adjustedEdgePercent = headlineEdgePercent - totalDragPercent;
   const warnings = [
-    inputs.executionDelay ? "Execution delay is modeled; a close is not assumed to be fillable." : "Execution delay is disabled; the result may be optimistic.",
-    inputs.delistedAssets ? "The universe includes a delisted-asset stress allowance." : "Survivorship risk remains visible until the historical universe is reconstructed.",
+    inputs.executionDelayDragPercent > 0 ? "An explicit execution-delay drag is included; the assumed value still needs evidence." : "Execution-delay drag is zero; the result may be optimistic.",
+    inputs.survivorshipStatus === "confirmed" ? "The point-in-time universe is marked reconstructed; retain the supporting evidence." : inputs.survivorshipStatus === "missing" ? "Point-in-time membership is missing, so the adjusted edge cannot resolve survivorship bias." : "Survivorship status is unknown; do not treat the adjusted edge as an audited result.",
     inputs.overfitPenalty > 0 ? "Parameter fragility is being penalized." : "No parameter-overfit penalty is applied.",
   ];
   return { adjustedEdgePercent, totalDragPercent, warnings };

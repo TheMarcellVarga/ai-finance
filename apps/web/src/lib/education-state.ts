@@ -1,71 +1,156 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { createEmptyEducationState, EDUCATION_STORAGE_KEY, type EducationState } from "@/lib/education";
+import {
+  createEmptyEducationState,
+  EDUCATION_STORAGE_KEY,
+  type BacktestAuditChecklist,
+  type EducationState,
+  type EvidenceStatus,
+  type StrategySpecification,
+} from "@/lib/education";
 
-const EDUCATION_CHANGE_EVENT = "aperture-education-change";
+const MAX_PROGRESS_RECORDS = 100;
+const MAX_STRATEGY_VERSIONS = 50;
+const MAX_CONSTITUTION_VERSIONS = 25;
+const MAX_JOURNAL_ENTRIES = 200;
+const MAX_ARTIFACTS = 300;
 
-function readState(): EducationState {
-  if (typeof window === "undefined") return createEmptyEducationState();
+type EducationStateContextValue = {
+  state: EducationState;
+  updateState: (update: (current: EducationState) => EducationState) => void;
+  hydrated: boolean;
+  persistenceError: string | null;
+};
+
+const EducationStateContext = createContext<EducationStateContextValue | null>(null);
+
+export function getEducationStorageKey(userId: string) {
+  return `${EDUCATION_STORAGE_KEY}.account.${userId}`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeEvidenceStatus(value: unknown): EvidenceStatus {
+  if (value === "confirmed" || value === true) return "confirmed";
+  if (value === "missing" || value === false) return "missing";
+  return "unknown";
+}
+
+function normalizeBacktestAudit(value: unknown): BacktestAuditChecklist | undefined {
+  if (!isRecord(value)) return undefined;
+  return {
+    universeAndDates: normalizeEvidenceStatus(value.universeAndDates),
+    pointInTimeData: normalizeEvidenceStatus(value.pointInTimeData),
+    outOfSample: normalizeEvidenceStatus(value.outOfSample),
+    costsIncluded: normalizeEvidenceStatus(value.costsIncluded),
+    executionDelay: normalizeEvidenceStatus(value.executionDelay),
+    delistedAssets: normalizeEvidenceStatus(value.delistedAssets),
+    reproducible: normalizeEvidenceStatus(value.reproducible),
+    limitations: typeof value.limitations === "string" ? value.limitations : "",
+    updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : "",
+  };
+}
+
+function normalizeStrategy(value: StrategySpecification): StrategySpecification {
+  return { ...value, seriesId: value.seriesId || `legacy-${value.name.trim().toLowerCase()}` };
+}
+
+export function parseEducationState(raw: string | null): EducationState {
+  if (!raw) return createEmptyEducationState();
   try {
-    const raw = window.localStorage.getItem(EDUCATION_STORAGE_KEY);
-    if (!raw) return createEmptyEducationState();
     const parsed = JSON.parse(raw) as Partial<EducationState>;
-    const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+    const progressEntries = isRecord(parsed.progress) ? Object.entries(parsed.progress).slice(0, MAX_PROGRESS_RECORDS) : [];
+    const strategies = Array.isArray(parsed.strategySpecifications)
+      ? parsed.strategySpecifications.slice(0, MAX_STRATEGY_VERSIONS).map((item) => normalizeStrategy(item))
+      : [];
+    const constitutionVersions = Array.isArray(parsed.constitutionVersions)
+      ? parsed.constitutionVersions.slice(0, MAX_CONSTITUTION_VERSIONS)
+      : parsed.constitution
+        ? [parsed.constitution]
+        : [];
     return {
       ...createEmptyEducationState(),
       ...parsed,
-      progress: isRecord(parsed.progress) ? parsed.progress as EducationState["progress"] : {},
-      strategySpecifications: Array.isArray(parsed.strategySpecifications) ? parsed.strategySpecifications : [],
-      journalEntries: Array.isArray(parsed.journalEntries) ? parsed.journalEntries : [],
-      artifacts: Array.isArray(parsed.artifacts) ? parsed.artifacts : [],
+      progress: Object.fromEntries(progressEntries),
+      strategySpecifications: strategies,
+      constitutionVersions,
+      journalEntries: Array.isArray(parsed.journalEntries) ? parsed.journalEntries.slice(0, MAX_JOURNAL_ENTRIES) : [],
+      artifacts: Array.isArray(parsed.artifacts) ? parsed.artifacts.slice(0, MAX_ARTIFACTS) : [],
+      backtestAudit: normalizeBacktestAudit(parsed.backtestAudit),
     };
   } catch {
     return createEmptyEducationState();
   }
 }
 
-export function useEducationState() {
+function boundedState(state: EducationState): EducationState {
+  return {
+    ...state,
+    progress: Object.fromEntries(Object.entries(state.progress).slice(-MAX_PROGRESS_RECORDS)),
+    strategySpecifications: state.strategySpecifications.slice(0, MAX_STRATEGY_VERSIONS),
+    constitutionVersions: state.constitutionVersions.slice(0, MAX_CONSTITUTION_VERSIONS),
+    journalEntries: state.journalEntries.slice(0, MAX_JOURNAL_ENTRIES),
+    artifacts: state.artifacts.slice(0, MAX_ARTIFACTS),
+  };
+}
+
+export function EducationStateProvider({ userId, children }: { userId: string; children: ReactNode }) {
+  const storageKey = useMemo(() => getEducationStorageKey(userId), [userId]);
   const [state, setState] = useState<EducationState>(createEmptyEducationState);
   const [hydrated, setHydrated] = useState(false);
-  const lastWrittenState = useRef<string | null>(null);
+  const [persistenceError, setPersistenceError] = useState<string | null>(null);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setState(readState());
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setState(parseEducationState(window.localStorage.getItem(storageKey)));
       setHydrated(true);
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, []);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [storageKey]);
 
   useEffect(() => {
-    function handleChange() {
-      setState(readState());
-    }
     function handleStorage(event: StorageEvent) {
-      if (event.key === EDUCATION_STORAGE_KEY) handleChange();
+      if (event.key === storageKey) setState(parseEducationState(event.newValue));
     }
-    window.addEventListener(EDUCATION_CHANGE_EVENT, handleChange);
     window.addEventListener("storage", handleStorage);
-    return () => {
-      window.removeEventListener(EDUCATION_CHANGE_EVENT, handleChange);
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, []);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [storageKey]);
 
   useEffect(() => {
     if (!hydrated) return;
-    const serialized = JSON.stringify(state);
-    if (serialized === lastWrittenState.current) return;
-    window.localStorage.setItem(EDUCATION_STORAGE_KEY, serialized);
-    lastWrittenState.current = serialized;
-    window.dispatchEvent(new Event(EDUCATION_CHANGE_EVENT));
-  }, [hydrated, state]);
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      try {
+        window.localStorage.setItem(storageKey, JSON.stringify(state));
+        setPersistenceError(null);
+      } catch {
+        setPersistenceError("This browser could not save the study record. Shorten large notes, then try again.");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrated, state, storageKey]);
 
   const updateState = useCallback((update: (current: EducationState) => EducationState) => {
-    setState((current) => update(current));
+    setState((current) => boundedState(update(current)));
   }, []);
 
-  return { state, updateState, hydrated };
+  const value = useMemo(() => ({ state, updateState, hydrated, persistenceError }), [state, updateState, hydrated, persistenceError]);
+  return createElement(EducationStateContext.Provider, { value }, children);
+}
+
+export function useEducationState() {
+  const value = useContext(EducationStateContext);
+  if (!value) throw new Error("useEducationState must be used inside EducationStateProvider.");
+  return value;
 }

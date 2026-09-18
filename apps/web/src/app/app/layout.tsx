@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import { AppShell } from "@/components/app-shell";
 import { clerkUnavailableMessage, hasClerkRuntimeKeys } from "@/lib/clerk-config";
+import { EducationStateProvider } from "@/lib/education-state";
 
 export default async function WorkspaceLayout({ children }: { children: ReactNode }) {
   if (!hasClerkRuntimeKeys()) {
@@ -21,5 +22,5 @@ export default async function WorkspaceLayout({ children }: { children: ReactNod
   if (!userId) {
     return redirectToSignIn();
   }
-  return <AppShell>{children}</AppShell>;
+  return <EducationStateProvider userId={userId}><AppShell>{children}</AppShell></EducationStateProvider>;
 }

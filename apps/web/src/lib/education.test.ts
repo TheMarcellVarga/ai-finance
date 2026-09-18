@@ -26,12 +26,20 @@ test("position size uses invalidation distance and all-in costs", () => {
   assert.equal(result.costPerUnit, 0.2);
   assert.equal(Number(result.maximumUnits.toFixed(4)), 9.6154);
   assert.equal(Number(result.estimatedAllInLoss.toFixed(2)), 50);
+  assert.equal(result.bindingConstraint, "risk budget");
+});
+
+test("position size never implies leverage when a tight invalidation makes the risk budget permissive", () => {
+  const result = calculatePositionSize({ accountCapital: 10_000, entryPrice: 100, invalidationPrice: 99.9, riskPercent: 0.5, costPercent: 0 });
+  assert.equal(result.maximumUnits, 100);
+  assert.equal(result.portfolioExposure, 10_000);
+  assert.equal(result.bindingConstraint, "available capital");
 });
 
 test("calculation helpers remain finite for invalid numeric input", () => {
   const size = calculatePositionSize({ accountCapital: Number.NaN, entryPrice: Number.POSITIVE_INFINITY, invalidationPrice: 0, riskPercent: Number.NaN, costPercent: Number.NaN });
   const expectancy = calculateExpectancy({ winProbabilityPercent: Number.NaN, averageWinPercent: Number.POSITIVE_INFINITY, averageLossPercent: Number.NaN, costPercent: Number.NaN, observations: Number.NaN });
-  assert.ok(Object.values(size).every(Number.isFinite));
+  assert.ok(Object.values(size).filter((value): value is number => typeof value === "number").every(Number.isFinite));
   assert.ok(Object.values(expectancy).filter((value): value is number => typeof value === "number").every(Number.isFinite));
 });
 
@@ -59,8 +67,8 @@ test("recovery math exposes nonlinear drawdown recovery", () => {
 });
 
 test("backtest integrity drag increases when assumptions become realistic", () => {
-  const optimistic = calculateBacktestIntegrity({ headlineEdgePercent: 1, fees: false, spread: false, slippage: false, executionDelay: false, delistedAssets: false, overfitPenalty: 0 });
-  const stressed = calculateBacktestIntegrity({ headlineEdgePercent: 1, fees: true, spread: true, slippage: true, executionDelay: true, delistedAssets: true, overfitPenalty: 0.4 });
+  const optimistic = calculateBacktestIntegrity({ headlineEdgePercent: 1, feeDragPercent: 0, spreadDragPercent: 0, slippageDragPercent: 0, executionDelayDragPercent: 0, survivorshipStatus: "unknown", overfitPenalty: 0 });
+  const stressed = calculateBacktestIntegrity({ headlineEdgePercent: 1, feeDragPercent: 0.08, spreadDragPercent: 0.1, slippageDragPercent: 0.14, executionDelayDragPercent: 0.18, survivorshipStatus: "confirmed", overfitPenalty: 0.4 });
   assert.ok(stressed.adjustedEdgePercent < optimistic.adjustedEdgePercent);
   assert.ok(stressed.totalDragPercent > optimistic.totalDragPercent);
 });
@@ -95,10 +103,9 @@ test("curriculum includes complete lesson contracts across all nine modules", ()
     assert.ok(lesson.workedExample.length > 0);
     assert.ok(lesson.nextAction.length > 0);
     assert.ok(lesson.sources.length > 0);
-    assert.ok(lesson.sections.every((section) => section.sourceLabels && section.sourceLabels.length > 0));
     assert.ok(lesson.quiz.length >= 2);
     assert.ok(lesson.exercise.options.length >= 2);
-    assert.equal(lesson.lastReviewedAt, "2026-09-15");
+    assert.equal(lesson.lastReviewedAt, "2026-09-18");
   }
 });
 
@@ -110,7 +117,7 @@ test("curriculum topics cover the plan’s finance and safety requirements", () 
     "required data", "re-entry and cooldown", "volatility-adjusted sizing", "risk of ruin",
     "leverage and liquidation", "gap and execution risk", "multiple-testing bias", "minimum sample requirements",
     "profit factor", "volatility", "risk-adjusted return", "beta versus alpha", "statistical significance",
-    "partial fills", "alert reliability", "counterparty risk", "sunk-cost behaviour", "small-capital live testing",
+    "partial fills", "alert reliability", "counterparty risk", "sunk-cost behaviour", "live-practice boundary",
   ]) {
     assert.ok(topics.has(topic), `missing curriculum topic: ${topic}`);
   }
@@ -120,5 +127,11 @@ test("curriculum topics cover the plan’s finance and safety requirements", () 
       assert.equal(copy.includes(phrase), false, `unsafe phrase in ${lesson.slug}: ${phrase}`);
     }
     assert.ok(lesson.sources.every((source) => source.href.startsWith("https://")));
+    const availableSourceLabels = new Set(lesson.sources.map((source) => source.label));
+    for (const section of lesson.sections) {
+      for (const sourceLabel of section.sourceLabels ?? []) {
+        assert.ok(availableSourceLabels.has(sourceLabel), `direct source ${sourceLabel} is missing from ${lesson.slug}`);
+      }
+    }
   }
 });

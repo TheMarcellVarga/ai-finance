@@ -609,16 +609,19 @@ This extension was explicitly requested through `docs/EDUCATION_PLAN.md` after t
 Completed artifacts:
 - `/app/learn` course dashboard with nine original modules, eighteen reviewed lessons, objectives, worked examples, interactive exercises, quizzes, common mistakes, next actions, sources, and review dates.
 - `/app/learn/labs` with position sizing, expectancy, drawdown recovery, Supertrend anatomy, backtest integrity, and benchmark laboratories.
-- `/app/playbook`, `/app/journal`, and `/app/review` with locally saved risk declarations, strategy specifications, risk policies, constitutions, market observations, behavioral plans, audit checklists, scorecards, and execution checklists.
+- `/app/playbook`, `/app/journal`, and `/app/review` with account-scoped browser records for risk declarations, versioned strategy specifications, risk policies, research-practice constitutions, timestamped market observations, behavioral plans, evidence-status audit checklists, scorecards, and execution checklists.
 - Market Monitor contextual `Study this state` links that carry the selected market, timeframe, state, flip level, and provider capture timestamp into the market-map lesson.
 - VargaTrend Market Monitor defaults to the lifetime auto mode from the supplied script: ATR periods 10–20, fixed multiplier 3, five completed bullish sections minimum, and 40% minimum win rate; the UI discloses provider-bounded history, in-sample research, next-candle-open simulation, and fallback warm-up.
-- Pure, independently tested education calculations in `apps/web/src/lib/education.ts` with browser-local state persistence in `apps/web/src/lib/education-state.ts`.
+- Pure, independently tested education calculations in `apps/web/src/lib/education.ts` with bounded, account-scoped browser persistence and legacy-state normalization in `apps/web/src/lib/education-state.ts`.
+- A cash-only position-sizing boundary caps modeled exposure at account capital; the backtest-integrity lab exposes every quantitative drag instead of inventing hidden penalties.
+- Source presentation distinguishes direct support for a specific factual section from broader further reading, with source scope and a current content-review date.
 
 Acceptance gate:
 - Curriculum and labs use original educational content and clearly separate facts, assumptions, rules, and unknowns.
 - Saved artifacts are explicit, reviewable, and never presented as personalized advice or an order workflow.
+- Browser-local records are isolated by authenticated account, enforce bounded history, preserve immutable constitution versions, and disclose that they are local-only rather than server-synced.
 - Live market-monitor context remains provider-backed and timestamped; lab examples are labeled illustrative or user-entered assumptions.
-- Education calculation tests, app lint, and app build pass.
+- Education calculation and persistence-migration tests, app lint, and app build pass.
 
 ## AI Task Template
 Use this template for future agent tasks.

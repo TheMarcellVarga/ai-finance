@@ -14,7 +14,7 @@ Market Map / Market Monitor and teach the user how to:
 - Backtest strategies without misleading themselves.
 - Compare active strategies against passive benchmarks.
 - Document decisions and identify behavioural mistakes.
-- Progress safely from learning to simulation and controlled live testing.
+- Progress safely from learning to simulation and evidence-based practice review without directing live trades.
 
 This is an educational and analytical product. It must not promise returns,
 provide personalised buy/sell instructions, or execute trades.
@@ -333,8 +333,8 @@ Topics:
 - Historical testing
 - Paper trading
 - Forward testing
-- Small-capital live testing
-- Scaling requirements
+- Live-practice boundary
+- Evidence requirements
 - Pause conditions
 - Strategy retirement
 - Monthly review
@@ -342,10 +342,12 @@ Topics:
 
 User artifact:
 
-`Trading Constitution`
+`Research Practice Constitution`
 
-The constitution should be versioned and require explicit acknowledgement when
-changed.
+The constitution should preserve immutable versions and require explicit
+acknowledgement when changed. In local-first v1, records must be scoped to the
+authenticated account in the browser and clearly disclosed as local-only; do
+not silently assign an unowned legacy browser record to a signed-in user.
 
 ---
 
