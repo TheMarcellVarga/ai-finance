@@ -1,4 +1,4 @@
-import { Show } from "@clerk/nextjs";
+import { Show, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
@@ -34,40 +34,51 @@ export function SiteHeader() {
                 </Link>
               ))}
             </nav>
-            {authConfigured ? (
-              <>
-                <Show when="signed-in">
-                  <Button asChild size="lg" className="hidden rounded-[0.95rem] px-5 md:inline-flex">
-                    <Link href="/app" prefetch={false}>
-                      Open workspace
-                      <ArrowRight data-icon="inline-end" />
-                    </Link>
+            <div className="flex shrink-0 items-center gap-2">
+              {authConfigured ? (
+                <>
+                  <Show when="signed-in">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 items-center gap-1.5 rounded-[0.9rem] border border-white/10 bg-white/[0.025] px-2.5 text-[0.8rem] text-zinc-200">
+                        <UserButton
+                          userProfileMode="navigation"
+                          userProfileUrl="/app/settings/account"
+                          appearance={{ elements: { avatarBox: "size-5" } }}
+                        />
+                        <Link href="/app/settings/account" className="hidden transition-colors hover:text-white sm:inline">
+                          Account
+                        </Link>
+                      </div>
+                      <Button asChild size="sm" className="rounded-[0.9rem]">
+                        <Link href="/app" prefetch={false}>
+                          Open workspace
+                          <ArrowRight data-icon="inline-end" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </Show>
+                  <Show when="signed-out">
+                    <div className="flex items-center gap-2">
+                      <Button asChild size="sm" variant="outline" className="rounded-[0.9rem]">
+                        <Link href="/sign-in">Sign in</Link>
+                      </Button>
+                      <Button asChild size="sm" className="hidden rounded-[0.9rem] sm:inline-flex">
+                        <Link href="/sign-up">Create account</Link>
+                      </Button>
+                    </div>
+                  </Show>
+                </>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Button asChild size="sm" variant="outline" className="rounded-[0.9rem]">
+                    <Link href="/sign-in">Sign in</Link>
                   </Button>
-                  <Button asChild size="sm" variant="outline" className="rounded-[0.9rem] md:hidden">
-                    <Link href="/app" prefetch={false}>Workspace</Link>
+                  <Button asChild size="sm" className="hidden rounded-[0.9rem] sm:inline-flex">
+                    <Link href="/sign-up">Create account</Link>
                   </Button>
-                </Show>
-                <Show when="signed-out">
-                  <div className="flex items-center gap-2">
-                    <Button asChild size="sm" variant="outline" className="rounded-[0.9rem]">
-                      <Link href="/sign-in">Sign in</Link>
-                    </Button>
-                    <Button asChild size="sm" className="hidden rounded-[0.9rem] sm:inline-flex">
-                      <Link href="/sign-up">Create account</Link>
-                    </Button>
-                  </div>
-                </Show>
-              </>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Button asChild size="sm" variant="outline" className="rounded-[0.9rem]">
-                  <Link href="/sign-in">Sign in</Link>
-                </Button>
-                <Button asChild size="sm" className="hidden rounded-[0.9rem] sm:inline-flex">
-                  <Link href="/sign-up">Create account</Link>
-                </Button>
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
