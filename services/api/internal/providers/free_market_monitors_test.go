@@ -28,7 +28,7 @@ func TestFreeMarketMonitorNormalizesYahooHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if row.Symbol != "AAPL" || row.DisplayValue != "$11.00" || math.Abs(row.DailyChangePercent-10) > 0.0001 {
+	if row.Symbol != "AAPL" || row.DisplayValue != "$11.00" || math.Abs(row.DailyChangePercent-4.7619047619) > 0.0001 {
 		t.Fatalf("unexpected normalized row: %#v", row)
 	}
 	if len(row.Sparkline) != 3 || row.Provider != "free-yahoo" {

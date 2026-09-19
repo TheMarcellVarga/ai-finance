@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
@@ -20,6 +21,22 @@ type WorkspaceStore struct {
 	mu         sync.Mutex
 	portfolios map[string]*Portfolio
 	watchlists map[string]*Watchlist
+}
+
+type WorkspaceRepository interface {
+	ListPortfolios(context.Context, string) ([]Portfolio, error)
+	CountPortfolios(context.Context, string) (int, error)
+	CreatePortfolio(context.Context, string, string, string, []Holding) (Portfolio, error)
+	GetPortfolio(context.Context, string, string) (Portfolio, error)
+	UpdatePortfolio(context.Context, string, string, string, string) (Portfolio, error)
+	DeletePortfolio(context.Context, string, string) error
+	AddHolding(context.Context, string, string, Asset, int64, int64, string) (Portfolio, error)
+	CountHoldings(context.Context, string) (int, error)
+	HasHolding(context.Context, string, string, string) (bool, error)
+	ListWatchlists(context.Context, string) ([]Watchlist, error)
+	CountWatchlists(context.Context, string) (int, error)
+	CreateWatchlist(context.Context, string, string, []Asset) (Watchlist, error)
+	AddWatchlistItem(context.Context, string, string, Asset, string) (Watchlist, error)
 }
 
 type Portfolio struct {
@@ -102,7 +119,7 @@ func NewWorkspaceStore() *WorkspaceStore {
 	}
 }
 
-func (s *WorkspaceStore) ListPortfolios(userID string) []Portfolio {
+func (s *WorkspaceStore) ListPortfolios(_ context.Context, userID string) ([]Portfolio, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -113,10 +130,10 @@ func (s *WorkspaceStore) ListPortfolios(userID string) []Portfolio {
 		}
 	}
 	sort.Slice(portfolios, func(i, j int) bool { return portfolios[i].Name < portfolios[j].Name })
-	return portfolios
+	return portfolios, nil
 }
 
-func (s *WorkspaceStore) CountPortfolios(userID string) int {
+func (s *WorkspaceStore) CountPortfolios(_ context.Context, userID string) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -126,10 +143,10 @@ func (s *WorkspaceStore) CountPortfolios(userID string) int {
 			count++
 		}
 	}
-	return count
+	return count, nil
 }
 
-func (s *WorkspaceStore) CreatePortfolio(userID, name, baseCurrency string, initialHoldings []Holding) (Portfolio, error) {
+func (s *WorkspaceStore) CreatePortfolio(_ context.Context, userID, name, baseCurrency string, initialHoldings []Holding) (Portfolio, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -158,13 +175,13 @@ func (s *WorkspaceStore) CreatePortfolio(userID, name, baseCurrency string, init
 		portfolio.Holdings = append(portfolio.Holdings, holding)
 		portfolio.Transactions = append(portfolio.Transactions, transactionForHolding(holding.Asset.Ticker, holding.Quantity, holding.AverageCostCents, holding.Notes))
 	}
-	s.recalculatePortfolio(portfolio)
+	recalculatePortfolio(portfolio)
 	s.portfolios[portfolio.ID] = portfolio
 
 	return clonePortfolio(portfolio), nil
 }
 
-func (s *WorkspaceStore) GetPortfolio(userID, id string) (Portfolio, error) {
+func (s *WorkspaceStore) GetPortfolio(_ context.Context, userID, id string) (Portfolio, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -175,7 +192,7 @@ func (s *WorkspaceStore) GetPortfolio(userID, id string) (Portfolio, error) {
 	return clonePortfolio(portfolio), nil
 }
 
-func (s *WorkspaceStore) UpdatePortfolio(userID, id, name, baseCurrency string) (Portfolio, error) {
+func (s *WorkspaceStore) UpdatePortfolio(_ context.Context, userID, id, name, baseCurrency string) (Portfolio, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -192,7 +209,7 @@ func (s *WorkspaceStore) UpdatePortfolio(userID, id, name, baseCurrency string) 
 	return clonePortfolio(portfolio), nil
 }
 
-func (s *WorkspaceStore) DeletePortfolio(userID, id string) error {
+func (s *WorkspaceStore) DeletePortfolio(_ context.Context, userID, id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -204,7 +221,7 @@ func (s *WorkspaceStore) DeletePortfolio(userID, id string) error {
 	return nil
 }
 
-func (s *WorkspaceStore) AddHolding(userID, portfolioID string, asset Asset, quantity int64, averageCostCents int64, notes string) (Portfolio, error) {
+func (s *WorkspaceStore) AddHolding(_ context.Context, userID, portfolioID string, asset Asset, quantity int64, averageCostCents int64, notes string) (Portfolio, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -232,7 +249,7 @@ func (s *WorkspaceStore) AddHolding(userID, portfolioID string, asset Asset, qua
 			}
 			portfolio.Transactions = append(portfolio.Transactions, transactionForHolding(asset.Ticker, quantity, averageCostCents, notes))
 			portfolio.DataFreshness = dataFreshnessFromAssets(portfolio.Holdings)
-			s.recalculatePortfolio(portfolio)
+			recalculatePortfolio(portfolio)
 			return clonePortfolio(portfolio), nil
 		}
 	}
@@ -248,11 +265,11 @@ func (s *WorkspaceStore) AddHolding(userID, portfolioID string, asset Asset, qua
 	})
 	portfolio.Transactions = append(portfolio.Transactions, transactionForHolding(asset.Ticker, quantity, averageCostCents, notes))
 	portfolio.DataFreshness = dataFreshnessFromAssets(portfolio.Holdings)
-	s.recalculatePortfolio(portfolio)
+	recalculatePortfolio(portfolio)
 	return clonePortfolio(portfolio), nil
 }
 
-func (s *WorkspaceStore) CountHoldings(userID string) int {
+func (s *WorkspaceStore) CountHoldings(_ context.Context, userID string) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -262,27 +279,27 @@ func (s *WorkspaceStore) CountHoldings(userID string) int {
 			count += len(portfolio.Holdings)
 		}
 	}
-	return count
+	return count, nil
 }
 
-func (s *WorkspaceStore) HasHolding(userID, portfolioID, ticker string) bool {
+func (s *WorkspaceStore) HasHolding(_ context.Context, userID, portfolioID, ticker string) (bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	portfolio, ok := s.portfolios[portfolioID]
 	if !ok || portfolio.UserID != userID {
-		return false
+		return false, nil
 	}
 	ticker = strings.ToUpper(strings.TrimSpace(ticker))
 	for _, holding := range portfolio.Holdings {
 		if holding.Asset.Ticker == ticker {
-			return true
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
-func (s *WorkspaceStore) ListWatchlists(userID string) []Watchlist {
+func (s *WorkspaceStore) ListWatchlists(_ context.Context, userID string) ([]Watchlist, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -293,10 +310,10 @@ func (s *WorkspaceStore) ListWatchlists(userID string) []Watchlist {
 		}
 	}
 	sort.Slice(watchlists, func(i, j int) bool { return watchlists[i].Name < watchlists[j].Name })
-	return watchlists
+	return watchlists, nil
 }
 
-func (s *WorkspaceStore) CountWatchlists(userID string) int {
+func (s *WorkspaceStore) CountWatchlists(_ context.Context, userID string) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -306,10 +323,10 @@ func (s *WorkspaceStore) CountWatchlists(userID string) int {
 			count++
 		}
 	}
-	return count
+	return count, nil
 }
 
-func (s *WorkspaceStore) CreateWatchlist(userID, name string, initialAssets []Asset) (Watchlist, error) {
+func (s *WorkspaceStore) CreateWatchlist(_ context.Context, userID, name string, initialAssets []Asset) (Watchlist, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -330,7 +347,7 @@ func (s *WorkspaceStore) CreateWatchlist(userID, name string, initialAssets []As
 	return cloneWatchlist(watchlist), nil
 }
 
-func (s *WorkspaceStore) AddWatchlistItem(userID, watchlistID string, asset Asset, notes string) (Watchlist, error) {
+func (s *WorkspaceStore) AddWatchlistItem(_ context.Context, userID, watchlistID string, asset Asset, notes string) (Watchlist, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -355,7 +372,7 @@ func (s *WorkspaceStore) AddWatchlistItem(userID, watchlistID string, asset Asse
 	return cloneWatchlist(watchlist), nil
 }
 
-func (s *WorkspaceStore) recalculatePortfolio(portfolio *Portfolio) {
+func recalculatePortfolio(portfolio *Portfolio) {
 	total := int64(0)
 	sectorTotals := map[string]int64{}
 	for i := range portfolio.Holdings {

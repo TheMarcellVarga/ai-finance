@@ -12,9 +12,11 @@ import (
 
 	"github.com/marcellvarga/ai-finance/services/api/internal/auth"
 	"github.com/marcellvarga/ai-finance/services/api/internal/config"
+	"github.com/marcellvarga/ai-finance/services/api/internal/db"
 	"github.com/marcellvarga/ai-finance/services/api/internal/httpapi"
 	"github.com/marcellvarga/ai-finance/services/api/internal/providers"
 	"github.com/marcellvarga/ai-finance/services/api/internal/research"
+	"github.com/marcellvarga/ai-finance/services/api/internal/store"
 )
 
 func main() {
@@ -46,6 +48,31 @@ func main() {
 	}
 	defer researchRuntime.Close()
 
+	var workspace store.WorkspaceRepository = store.NewWorkspaceStore()
+	var workspacePoolCloser func()
+	if cfg.DatabaseURL != "" {
+		workspacePool, poolErr := db.OpenPool(context.Background(), cfg.DatabaseURL)
+		if poolErr != nil {
+			logger.Error("failed to open workspace database", "error", poolErr)
+			os.Exit(1)
+		}
+		if poolErr = workspacePool.Ping(context.Background()); poolErr != nil {
+			workspacePool.Close()
+			logger.Error("failed to ping workspace database", "error", poolErr)
+			os.Exit(1)
+		}
+		workspace = store.NewPostgresWorkspaceStore(workspacePool)
+		workspacePoolCloser = workspacePool.Close
+	} else if cfg.Environment == "production" {
+		logger.Error("DATABASE_URL is required for persistent finance workspaces")
+		os.Exit(1)
+	} else {
+		logger.Warn("DATABASE_URL is not configured; finance workspaces will reset when the API restarts")
+	}
+	if workspacePoolCloser != nil {
+		defer workspacePoolCloser()
+	}
+
 	fmp := providers.FMPProvider{APIKey: cfg.FMPAPIKey}
 	twelveData := providers.TwelveDataProvider{APIKey: cfg.TwelveDataAPIKey}
 	freeMarketMonitors := providers.FreeMarketMonitorProvider{}
@@ -59,6 +86,7 @@ func main() {
 		Research:         researchRuntime.Store,
 		ResearchEmbedder: researchRuntime.Embedder,
 		DocumentStore:    researchRuntime.Storage,
+		Workspace:        workspace,
 		Logger:           logger,
 	})
 

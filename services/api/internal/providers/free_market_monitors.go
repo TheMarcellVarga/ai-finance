@@ -560,9 +560,9 @@ func normalizeYahooRow(instrument monitorInstrument, result struct {
 	if result.Meta.RegularMarketPrice != nil && isFinite(*result.Meta.RegularMarketPrice) && *result.Meta.RegularMarketPrice > 0 {
 		current = *result.Meta.RegularMarketPrice
 	}
-	if result.Meta.ChartPreviousClose != nil && isFinite(*result.Meta.ChartPreviousClose) && *result.Meta.ChartPreviousClose > 0 {
-		previous = *result.Meta.ChartPreviousClose
-	}
+	// Yahoo's chartPreviousClose is the close immediately before the requested
+	// chart range, not necessarily the prior session. The final two usable chart
+	// points are the reliable pair for a one-session movement calculation.
 	first := points[0].Value
 	capturedAt := points[len(points)-1].Timestamp
 	if result.Meta.RegularMarketTime > 0 {

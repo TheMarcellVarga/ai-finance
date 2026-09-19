@@ -22,7 +22,7 @@ type Options struct {
 	QuoteProvider    providers.QuoteProvider
 	ChartProvider    providers.IntradayProvider
 	MarketMonitor    providers.MarketMonitorProvider
-	Workspace        *store.WorkspaceStore
+	Workspace        store.WorkspaceRepository
 	Research         research.Store
 	ResearchEmbedder research.Embedder
 	DocumentStore    research.ObjectStorage
@@ -35,7 +35,7 @@ type server struct {
 	quoteProvider providers.QuoteProvider
 	chartProvider providers.IntradayProvider
 	marketMonitor providers.MarketMonitorProvider
-	workspace     *store.WorkspaceStore
+	workspace     store.WorkspaceRepository
 	research      research.Store
 	retriever     research.Retriever
 	documentStore research.ObjectStorage
@@ -316,15 +316,30 @@ func (s *server) me(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) usage(w http.ResponseWriter, r *http.Request) {
 	principal, _ := auth.PrincipalFromContext(r.Context())
+	portfolioCount, err := s.workspace.CountPortfolios(r.Context(), principal.ClerkUserID)
+	if err != nil {
+		writeStoreError(w, r, err)
+		return
+	}
+	holdingCount, err := s.workspace.CountHoldings(r.Context(), principal.ClerkUserID)
+	if err != nil {
+		writeStoreError(w, r, err)
+		return
+	}
+	watchlistCount, err := s.workspace.CountWatchlists(r.Context(), principal.ClerkUserID)
+	if err != nil {
+		writeStoreError(w, r, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"data": map[string]any{
 			"clerkUserId": principal.ClerkUserID,
 			"period":      time.Now().UTC().Format("2006-01"),
 			"plan":        freeEntitlements.Plan,
 			"features": []map[string]any{
-				{"feature": "portfolio", "used": s.workspace.CountPortfolios(principal.ClerkUserID), "limit": freeEntitlements.Portfolios, "status": "enforced"},
-				{"feature": "holding", "used": s.workspace.CountHoldings(principal.ClerkUserID), "limit": freeEntitlements.Holdings, "status": "enforced"},
-				{"feature": "watchlist", "used": s.workspace.CountWatchlists(principal.ClerkUserID), "limit": freeEntitlements.Watchlists, "status": "enforced"},
+				{"feature": "portfolio", "used": portfolioCount, "limit": freeEntitlements.Portfolios, "status": "enforced"},
+				{"feature": "holding", "used": holdingCount, "limit": freeEntitlements.Holdings, "status": "enforced"},
+				{"feature": "watchlist", "used": watchlistCount, "limit": freeEntitlements.Watchlists, "status": "enforced"},
 				{"feature": "portfolio_brief", "used": 0, "limit": freeEntitlements.AIBriefs, "status": "nextjs_metered"},
 			},
 		},
@@ -333,15 +348,25 @@ func (s *server) usage(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) listPortfolios(w http.ResponseWriter, r *http.Request) {
 	principal, _ := auth.PrincipalFromContext(r.Context())
+	portfolios, err := s.workspace.ListPortfolios(r.Context(), principal.ClerkUserID)
+	if err != nil {
+		writeStoreError(w, r, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"data": s.workspace.ListPortfolios(principal.ClerkUserID),
+		"data": portfolios,
 		"meta": phase4Meta(),
 	})
 }
 
 func (s *server) createPortfolio(w http.ResponseWriter, r *http.Request) {
 	principal, _ := auth.PrincipalFromContext(r.Context())
-	if s.workspace.CountPortfolios(principal.ClerkUserID) >= freeEntitlements.Portfolios {
+	portfolioCount, err := s.workspace.CountPortfolios(r.Context(), principal.ClerkUserID)
+	if err != nil {
+		writeStoreError(w, r, err)
+		return
+	}
+	if portfolioCount >= freeEntitlements.Portfolios {
 		writeError(w, r, http.StatusPaymentRequired, "entitlement_limit_reached", "The current plan portfolio limit has been reached.")
 		return
 	}
@@ -374,7 +399,7 @@ func (s *server) createPortfolio(w http.ResponseWriter, r *http.Request) {
 			Notes:            requested.Notes,
 		})
 	}
-	portfolio, err := s.workspace.CreatePortfolio(principal.ClerkUserID, body.Name, body.BaseCurrency, initialHoldings)
+	portfolio, err := s.workspace.CreatePortfolio(r.Context(), principal.ClerkUserID, body.Name, body.BaseCurrency, initialHoldings)
 	if err != nil {
 		writeStoreError(w, r, err)
 		return
@@ -385,7 +410,7 @@ func (s *server) createPortfolio(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) getPortfolio(w http.ResponseWriter, r *http.Request) {
 	principal, _ := auth.PrincipalFromContext(r.Context())
-	portfolio, err := s.workspace.GetPortfolio(principal.ClerkUserID, r.PathValue("id"))
+	portfolio, err := s.workspace.GetPortfolio(r.Context(), principal.ClerkUserID, r.PathValue("id"))
 	if err != nil {
 		writeStoreError(w, r, err)
 		return
@@ -403,7 +428,7 @@ func (s *server) updatePortfolio(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, http.StatusBadRequest, "invalid_json", "Request body must be valid JSON.")
 		return
 	}
-	portfolio, err := s.workspace.UpdatePortfolio(principal.ClerkUserID, r.PathValue("id"), body.Name, body.BaseCurrency)
+	portfolio, err := s.workspace.UpdatePortfolio(r.Context(), principal.ClerkUserID, r.PathValue("id"), body.Name, body.BaseCurrency)
 	if err != nil {
 		writeStoreError(w, r, err)
 		return
@@ -414,7 +439,7 @@ func (s *server) updatePortfolio(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) deletePortfolio(w http.ResponseWriter, r *http.Request) {
 	principal, _ := auth.PrincipalFromContext(r.Context())
-	if err := s.workspace.DeletePortfolio(principal.ClerkUserID, r.PathValue("id")); err != nil {
+	if err := s.workspace.DeletePortfolio(r.Context(), principal.ClerkUserID, r.PathValue("id")); err != nil {
 		writeStoreError(w, r, err)
 		return
 	}
@@ -434,7 +459,17 @@ func (s *server) addHolding(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, http.StatusBadRequest, "invalid_json", "Request body must be valid JSON.")
 		return
 	}
-	if !s.workspace.HasHolding(principal.ClerkUserID, r.PathValue("id"), body.Ticker) && s.workspace.CountHoldings(principal.ClerkUserID) >= freeEntitlements.Holdings {
+	hasHolding, err := s.workspace.HasHolding(r.Context(), principal.ClerkUserID, r.PathValue("id"), body.Ticker)
+	if err != nil {
+		writeStoreError(w, r, err)
+		return
+	}
+	holdingCount, err := s.workspace.CountHoldings(r.Context(), principal.ClerkUserID)
+	if err != nil {
+		writeStoreError(w, r, err)
+		return
+	}
+	if !hasHolding && holdingCount >= freeEntitlements.Holdings {
 		writeError(w, r, http.StatusPaymentRequired, "entitlement_limit_reached", "The current plan holding limit has been reached.")
 		return
 	}
@@ -444,7 +479,7 @@ func (s *server) addHolding(w http.ResponseWriter, r *http.Request) {
 		writeProviderOrStoreError(w, r, err)
 		return
 	}
-	portfolio, err := s.workspace.AddHolding(principal.ClerkUserID, r.PathValue("id"), asset, body.Quantity, body.AverageCostCents, body.Notes)
+	portfolio, err := s.workspace.AddHolding(r.Context(), principal.ClerkUserID, r.PathValue("id"), asset, body.Quantity, body.AverageCostCents, body.Notes)
 	if err != nil {
 		writeStoreError(w, r, err)
 		return
@@ -455,15 +490,25 @@ func (s *server) addHolding(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) listWatchlists(w http.ResponseWriter, r *http.Request) {
 	principal, _ := auth.PrincipalFromContext(r.Context())
+	watchlists, err := s.workspace.ListWatchlists(r.Context(), principal.ClerkUserID)
+	if err != nil {
+		writeStoreError(w, r, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"data": s.workspace.ListWatchlists(principal.ClerkUserID),
+		"data": watchlists,
 		"meta": phase4Meta(),
 	})
 }
 
 func (s *server) createWatchlist(w http.ResponseWriter, r *http.Request) {
 	principal, _ := auth.PrincipalFromContext(r.Context())
-	if s.workspace.CountWatchlists(principal.ClerkUserID) >= freeEntitlements.Watchlists {
+	watchlistCount, err := s.workspace.CountWatchlists(r.Context(), principal.ClerkUserID)
+	if err != nil {
+		writeStoreError(w, r, err)
+		return
+	}
+	if watchlistCount >= freeEntitlements.Watchlists {
 		writeError(w, r, http.StatusPaymentRequired, "entitlement_limit_reached", "The current plan watchlist limit has been reached.")
 		return
 	}
@@ -485,7 +530,7 @@ func (s *server) createWatchlist(w http.ResponseWriter, r *http.Request) {
 		}
 		initialAssets = append(initialAssets, asset)
 	}
-	watchlist, err := s.workspace.CreateWatchlist(principal.ClerkUserID, body.Name, initialAssets)
+	watchlist, err := s.workspace.CreateWatchlist(r.Context(), principal.ClerkUserID, body.Name, initialAssets)
 	if err != nil {
 		writeStoreError(w, r, err)
 		return
@@ -510,7 +555,7 @@ func (s *server) addWatchlistItem(w http.ResponseWriter, r *http.Request) {
 		writeProviderOrStoreError(w, r, err)
 		return
 	}
-	watchlist, err := s.workspace.AddWatchlistItem(principal.ClerkUserID, r.PathValue("id"), asset, body.Notes)
+	watchlist, err := s.workspace.AddWatchlistItem(r.Context(), principal.ClerkUserID, r.PathValue("id"), asset, body.Notes)
 	if err != nil {
 		writeStoreError(w, r, err)
 		return
