@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState } from "react";
 import { Globe2, Search, X } from "lucide-react";
 
 import type { FinanceAsset } from "@/lib/finance-api";
@@ -26,8 +26,7 @@ export function AssetPicker({ value, onChange, onSelect, label = "Asset", descri
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function search(event?: FormEvent) {
-    event?.preventDefault();
+  async function search() {
     const query = value.trim();
     if (query.length < 1) {
       setError("Enter a symbol or company/fund name first.");
@@ -65,7 +64,7 @@ export function AssetPicker({ value, onChange, onSelect, label = "Asset", descri
 
   return (
     <div className="min-w-0">
-      <form onSubmit={search}>
+      <div role="search">
         <div className="flex items-center justify-between gap-3">
           <label htmlFor={inputId} className="text-sm text-zinc-300">{label}</label>
           {results.length > 0 ? (
@@ -79,12 +78,18 @@ export function AssetPicker({ value, onChange, onSelect, label = "Asset", descri
             id={inputId}
             value={value}
             onChange={(event) => onChange(event.target.value.toUpperCase())}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void search();
+              }
+            }}
             className="h-11 min-w-0 flex-1 rounded-[0.75rem] border border-white/10 bg-zinc-950/70 px-3 font-mono text-base text-white outline-none focus:border-cyan-200/40"
             placeholder="Ticker, ISIN, or fund name"
             autoComplete="off"
             required
           />
-          <button type="submit" disabled={loading} className="inline-flex h-11 items-center gap-2 rounded-[0.75rem] border border-cyan-200/20 bg-cyan-200/10 px-3 text-xs text-cyan-50 transition hover:bg-cyan-200/15 disabled:opacity-50" aria-label="Search provider-backed assets">
+          <button type="button" onClick={() => void search()} disabled={loading} className="inline-flex h-11 items-center gap-2 rounded-[0.75rem] border border-cyan-200/20 bg-cyan-200/10 px-3 text-xs text-cyan-50 transition hover:bg-cyan-200/15 disabled:opacity-50" aria-label="Search provider-backed assets">
             <Search className={loading ? "size-4 animate-pulse" : "size-4"} />
             <span className="hidden sm:inline">{loading ? "Searching" : "Search"}</span>
           </button>
@@ -99,7 +104,7 @@ export function AssetPicker({ value, onChange, onSelect, label = "Asset", descri
           </label>
         </div>
         {description ? <p className="mt-2 text-xs leading-5 text-zinc-500">{description}</p> : null}
-      </form>
+      </div>
       {error ? <p className="mt-2 text-xs leading-5 text-amber-100/80">{error}</p> : null}
       {results.length > 0 ? (
         <div className="mt-3 overflow-hidden rounded-[0.85rem] border border-white/10 bg-zinc-950/90">
