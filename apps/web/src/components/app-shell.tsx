@@ -2,27 +2,17 @@ import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { BookMarked, BookOpenCheck, CircleGauge, FlaskConical, Goal, Layers3, Settings, ShieldCheck, Target, UserRound, WalletCards } from "lucide-react";
+import { BookOpenCheck, CircleGauge, Goal, Layers3, WalletCards } from "lucide-react";
 
 import { BrandMark } from "@/components/brand";
 import { WorkspaceParticleBloom } from "@/components/workspace-particle-bloom";
 
 const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/app", label: "Overview", icon: CircleGauge },
+  { href: "/app/monitors", label: "Markets", icon: Layers3 },
   { href: "/app/portfolio", label: "Portfolio", icon: WalletCards },
-  { href: "/app/monitors", label: "Asset monitors", icon: Layers3 },
-  { href: "/app/crypto-monitor", label: "Market monitor", icon: FlaskConical },
-  { href: "/app/research", label: "Research", icon: BookMarked },
-  { href: "/app/research/evaluations", label: "Evaluations", icon: FlaskConical },
+  { href: "/app/goals", label: "Plan", icon: Goal },
   { href: "/app/learn", label: "Learn", icon: BookOpenCheck },
-  { href: "/app/playbook", label: "Playbook", icon: Target },
-  { href: "/app/journal", label: "Journal", icon: BookMarked },
-  { href: "/app/review", label: "Review", icon: ShieldCheck },
-  { href: "/app/goals", label: "Goals", icon: Goal },
-  { href: "/app/risk", label: "Risk", icon: ShieldCheck },
-  { href: "/app/settings", label: "Settings", icon: Settings },
-  { href: "/app/settings/account", label: "Account", icon: UserRound },
-  { href: "/app/billing", label: "Billing", icon: WalletCards },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

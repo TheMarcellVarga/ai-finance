@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 
-import { AssetMonitorWorkspace } from "@/components/asset-monitor-workspace";
+import { UniversalMarketMonitor } from "@/components/universal-market-monitor";
 import { getAssetMonitorDefinition } from "@/lib/asset-monitors";
-import { loadFreeAssetMonitor } from "@/lib/finance-api";
 
 export const dynamic = "force-dynamic";
 
@@ -17,13 +16,5 @@ export default async function AssetClassMonitorPage({ params }: AssetMonitorPage
     notFound();
   }
 
-  let payload: Awaited<ReturnType<typeof loadFreeAssetMonitor>> | undefined;
-  let initialError: string | undefined;
-  try {
-    payload = await loadFreeAssetMonitor(assetClass);
-  } catch (error) {
-    initialError = error instanceof Error ? error.message : "The asset-class monitor is unavailable.";
-  }
-
-  return <AssetMonitorWorkspace assetClass={assetClass} initialError={initialError} initialPayload={payload} />;
+  return <UniversalMarketMonitor initialAssetClass={assetClass} />;
 }

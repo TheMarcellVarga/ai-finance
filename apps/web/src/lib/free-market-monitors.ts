@@ -1,4 +1,7 @@
 import type { MarketMonitorPoint, MarketMonitorResponse, MarketMonitorRow } from "@/lib/finance-api";
+import type { CryptoCandle } from "@/lib/crypto-supertrend";
+import type { CryptoMonitorInterval } from "@/lib/crypto-monitor-intervals";
+import { calculateVargaTrendAuto } from "@/lib/varga-trend";
 
 type DirectInstrument = {
   symbol: string;
@@ -223,7 +226,13 @@ type YahooChartPayload = {
         chartPreviousClose?: number | null;
       };
       timestamp?: number[];
-      indicators?: { quote?: Array<{ close?: Array<number | null>; volume?: Array<number | null> }> };
+      indicators?: { quote?: Array<{
+        open?: Array<number | null>;
+        high?: Array<number | null>;
+        low?: Array<number | null>;
+        close?: Array<number | null>;
+        volume?: Array<number | null>;
+      }> };
     }>;
   };
 };
@@ -241,12 +250,92 @@ function percentChange(current: number, previous: number) {
   return (current / previous - 1) * 100;
 }
 
+function referencePointAtOrBefore(points: MarketMonitorPoint[], timestampMs: number) {
+  let match: MarketMonitorPoint | undefined;
+  for (const point of points) {
+    if (new Date(point.timestamp).getTime() > timestampMs) break;
+    match = point;
+  }
+  return match;
+}
+
 function formatMonitorValue(value: number, format: DirectInstrument["format"], currency: string, unit?: string) {
   if (format === "percent") return `${value.toFixed(2)}%`;
   if (format === "rate") return `${value.toFixed(5)} ${unit ?? ""}`.trim();
   const prefix: Record<string, string> = { USD: "$", EUR: "€", GBP: "£", JPY: "¥", CNY: "¥", INR: "₹" };
   const symbol = prefix[currency] ?? `${currency} `;
   return unit ? `${symbol}${value.toFixed(4)} ${unit}` : `${symbol}${value.toFixed(2)}`;
+}
+
+const intervalMilliseconds: Record<CryptoMonitorInterval, number> = {
+  "1m": 60_000,
+  "3m": 180_000,
+  "5m": 300_000,
+  "15m": 900_000,
+  "30m": 1_800_000,
+  "1h": 3_600_000,
+  "2h": 7_200_000,
+  "4h": 14_400_000,
+  "6h": 21_600_000,
+  "12h": 43_200_000,
+  "1d": 86_400_000,
+  "3d": 259_200_000,
+  "1w": 604_800_000,
+};
+
+function yahooIntervalConfig(interval: CryptoMonitorInterval) {
+  if (interval === "1m" || interval === "3m") return { providerInterval: "1m", range: "5d", aggregate: interval === "3m" ? 3 : 1 };
+  if (interval === "5m" || interval === "15m" || interval === "30m") return { providerInterval: interval, range: "60d", aggregate: 1 };
+  if (["1h", "2h", "4h", "6h", "12h"].includes(interval)) return { providerInterval: "60m", range: "60d", aggregate: Number.parseInt(interval, 10) || 1 };
+  if (interval === "3d") return { providerInterval: "1d", range: "5y", aggregate: 3 };
+  if (interval === "1w") return { providerInterval: "1wk", range: "10y", aggregate: 1 };
+  return { providerInterval: "1d", range: "5y", aggregate: 1 };
+}
+
+function aggregateCandles(candles: CryptoCandle[], size: number, interval: CryptoMonitorInterval) {
+  if (size <= 1) return candles;
+  const aggregated: CryptoCandle[] = [];
+  for (let index = 0; index + size <= candles.length; index += size) {
+    const group = candles.slice(index, index + size);
+    aggregated.push({
+      openTime: group[0].openTime,
+      open: group[0].open,
+      closeTime: group.at(-1)!.closeTime,
+      high: Math.max(...group.map((candle) => candle.high)),
+      low: Math.min(...group.map((candle) => candle.low)),
+      close: group.at(-1)!.close,
+    });
+  }
+  return aggregated.map((candle) => ({ ...candle, closeTime: candle.openTime + intervalMilliseconds[interval] - 1 }));
+}
+
+function withVargaTrend(row: MarketMonitorRow, candles: CryptoCandle[], interval: CryptoMonitorInterval, signalBasis: "ohlc" | "close-derived") {
+  try {
+    const closedCandles = candles.length > 12 ? candles.slice(0, -1) : candles;
+    const analysis = calculateVargaTrendAuto(closedCandles);
+    const result = analysis.result;
+    return {
+      ...row,
+      trend: result.trend === 1 ? "bullish" as const : "bearish" as const,
+      atrPeriod: analysis.atrPeriod,
+      atrMultiplier: analysis.atrMultiplier,
+      autoSelectionReady: analysis.auto.selectionReady,
+      lastFlipAt: result.lastFlipTime == null ? null : new Date(result.lastFlipTime).toISOString(),
+      nextFlipLevel: result.nextFlipLevel,
+      distanceToFlipPercent: Math.abs((result.nextFlipLevel / result.close - 1) * 100),
+      sinceFlipPercent: result.sinceFlipPercent,
+      historyComplete: closedCandles.length >= 100,
+      signalInterval: interval,
+      signalBasis,
+    } satisfies MarketMonitorRow;
+  } catch (error) {
+    return {
+      ...row,
+      signalInterval: interval,
+      signalBasis,
+      signalUnavailableReason: error instanceof Error ? error.message : "VargaTrend history is unavailable.",
+    } satisfies MarketMonitorRow;
+  }
 }
 
 async function fetchJson<T>(endpoint: string): Promise<T> {
@@ -270,11 +359,12 @@ async function fetchJson<T>(endpoint: string): Promise<T> {
   }
 }
 
-async function fetchYahooInstrument(instrument: DirectInstrument): Promise<MarketMonitorRow> {
+async function fetchYahooInstrument(instrument: DirectInstrument, interval: CryptoMonitorInterval): Promise<MarketMonitorRow> {
   let lastError: unknown;
+  const config = yahooIntervalConfig(interval);
   for (const host of ["query1.finance.yahoo.com", "query2.finance.yahoo.com"]) {
     try {
-      const endpoint = `https://${host}/v8/finance/chart/${encodeURIComponent(instrument.symbol)}?range=3mo&interval=1d&includePrePost=false`;
+      const endpoint = `https://${host}/v8/finance/chart/${encodeURIComponent(instrument.symbol)}?range=${config.range}&interval=${config.providerInterval}&includePrePost=false`;
       const payload = await fetchJson<YahooChartPayload>(endpoint);
       const result = payload.chart?.result?.[0];
       const timestamps = result?.timestamp ?? [];
@@ -282,12 +372,26 @@ async function fetchYahooInstrument(instrument: DirectInstrument): Promise<Marke
       if (!result || !quote) throw new Error("Public chart had no quote series.");
 
       const points: MarketMonitorPoint[] = [];
+      const candles: CryptoCandle[] = [];
       let latestVolume = 0;
       for (let index = 0; index < timestamps.length; index += 1) {
         const timestamp = timestamps[index];
         const value = quote.close?.[index];
         if (!isFiniteNumber(timestamp) || !isFiniteNumber(value)) continue;
         points.push({ timestamp: new Date(timestamp * 1000).toISOString(), value });
+        const previousClose = candles.at(-1)?.close ?? value;
+        const open = quote.open?.[index];
+        const high = quote.high?.[index];
+        const low = quote.low?.[index];
+        const openValue = isFiniteNumber(open) ? open : previousClose;
+        candles.push({
+          openTime: timestamp * 1000,
+          open: openValue,
+          high: isFiniteNumber(high) ? high : Math.max(openValue, value),
+          low: isFiniteNumber(low) ? low : Math.min(openValue, value),
+          close: value,
+          closeTime: timestamp * 1000 + intervalMilliseconds[interval] - 1,
+        });
         const volume = quote.volume?.[index];
         if (isFiniteNumber(volume)) latestVolume = volume;
       }
@@ -295,17 +399,17 @@ async function fetchYahooInstrument(instrument: DirectInstrument): Promise<Marke
 
       const currentPoint = points[points.length - 1];
       const previousPoint = points[points.length - 2];
-      const firstPoint = points[0];
       const regularMarketPrice = result.meta?.regularMarketPrice;
-      const chartPreviousClose = result.meta?.chartPreviousClose;
       const current = isFiniteNumber(regularMarketPrice) && regularMarketPrice > 0 ? regularMarketPrice : currentPoint.value;
-      const previous = isFiniteNumber(chartPreviousClose) && chartPreviousClose > 0 ? chartPreviousClose : previousPoint.value;
+      const currentTimestamp = new Date(currentPoint.timestamp).getTime();
+      const previousDayPoint = referencePointAtOrBefore(points, currentTimestamp - 86_400_000) ?? previousPoint;
+      const trailingQuarterPoint = referencePointAtOrBefore(points, currentTimestamp - 90 * 86_400_000) ?? points[0];
       const marketTimestamp = result.meta?.regularMarketTime;
       const capturedAt = isFiniteNumber(marketTimestamp) && marketTimestamp > 0
         ? new Date(marketTimestamp * 1000).toISOString()
         : currentPoint.timestamp;
 
-      return {
+      const row: MarketMonitorRow = {
         symbol: instrument.symbol,
         name: instrument.name,
         venue: result.meta?.exchangeName,
@@ -313,8 +417,8 @@ async function fetchYahooInstrument(instrument: DirectInstrument): Promise<Marke
         unit: instrument.unit,
         price: current,
         displayValue: formatMonitorValue(current, instrument.format, result.meta?.currency || instrument.currency, instrument.unit),
-        dailyChangePercent: percentChange(current, previous),
-        monthlyChangePercent: percentChange(current, firstPoint.value),
+        dailyChangePercent: percentChange(current, previousDayPoint.value),
+        monthlyChangePercent: percentChange(current, trailingQuarterPoint.value),
         volume: latestVolume,
         sparkline: points.slice(-32),
         provider: "free-yahoo",
@@ -323,6 +427,7 @@ async function fetchYahooInstrument(instrument: DirectInstrument): Promise<Marke
         isProxy: instrument.isProxy,
         proxyNote: instrument.proxyNote,
       };
+      return withVargaTrend(row, aggregateCandles(candles, config.aggregate, interval), interval, "ohlc");
     } catch (error) {
       lastError = error;
     }
@@ -330,8 +435,8 @@ async function fetchYahooInstrument(instrument: DirectInstrument): Promise<Marke
   throw lastError instanceof Error ? lastError : new Error("Public quote unavailable.");
 }
 
-async function loadYahoo(definition: DirectMonitorDefinition) {
-  const settled = await Promise.allSettled(definition.instruments.map((instrument) => fetchYahooInstrument(instrument)));
+async function loadYahoo(definition: DirectMonitorDefinition, interval: CryptoMonitorInterval) {
+  const settled = await Promise.allSettled(definition.instruments.map((instrument) => fetchYahooInstrument(instrument, interval)));
   const rows: MarketMonitorRow[] = [];
   const failures: string[] = [];
   for (const [index, result] of settled.entries()) {
@@ -346,11 +451,11 @@ async function loadYahoo(definition: DirectMonitorDefinition) {
   return { rows, capturedAt, failures };
 }
 
-async function loadFrankfurter(definition: DirectMonitorDefinition) {
+async function loadFrankfurter(definition: DirectMonitorDefinition, interval: CryptoMonitorInterval) {
   const today = new Date();
   const endDate = today.toISOString().slice(0, 10);
   const start = new Date(today);
-  start.setUTCDate(start.getUTCDate() - 7);
+  start.setUTCDate(start.getUTCDate() - 730);
   const startDate = start.toISOString().slice(0, 10);
   const symbols = definition.instruments.map((instrument) => instrument.symbol.split("/")[1]).filter(Boolean).join(",");
   const endpoint = `https://api.frankfurter.dev/v1/${startDate}..${endDate}?base=USD&symbols=${encodeURIComponent(symbols)}`;
@@ -376,7 +481,18 @@ async function loadFrankfurter(definition: DirectMonitorDefinition) {
       const rate = payload.rates?.[date]?.[quote];
       return isFiniteNumber(rate) ? [{ timestamp: `${date}T00:00:00.000Z`, value: rate }] : [];
     });
-    rows.push({
+    const pointsForSignal = sparkline.map((point, index) => {
+      const previous = index > 0 ? sparkline[index - 1].value : point.value;
+      return {
+        openTime: new Date(point.timestamp).getTime(),
+        open: previous,
+        high: Math.max(previous, point.value),
+        low: Math.min(previous, point.value),
+        close: point.value,
+        closeTime: new Date(point.timestamp).getTime() + 86_400_000 - 1,
+      } satisfies CryptoCandle;
+    });
+    const row: MarketMonitorRow = {
       symbol: instrument.symbol,
       name: instrument.name,
       currency: instrument.currency,
@@ -385,11 +501,17 @@ async function loadFrankfurter(definition: DirectMonitorDefinition) {
       displayValue: formatMonitorValue(value, instrument.format, instrument.currency, instrument.unit),
       dailyChangePercent: isFiniteNumber(previous) ? percentChange(value, previous) : 0,
       monthlyChangePercent: sparkline.length > 0 ? percentChange(value, sparkline[0].value) : 0,
-      sparkline,
+      sparkline: sparkline.slice(-32),
       provider: "free-frankfurter",
       sourceUrl: "https://frankfurter.dev/",
       capturedAt,
-    });
+    };
+    if (interval === "1d" || interval === "3d" || interval === "1w") {
+      const size = interval === "3d" ? 3 : interval === "1w" ? 7 : 1;
+      rows.push(withVargaTrend(row, aggregateCandles(pointsForSignal, size, interval), interval, "close-derived"));
+    } else {
+      rows.push({ ...row, signalInterval: interval, signalBasis: "close-derived", signalUnavailableReason: "Intraday FX OHLC is unavailable from the configured reference-rate provider." });
+    }
   }
   return { rows, capturedAt, failures };
 }
@@ -411,10 +533,10 @@ function availableClasses() {
   ];
 }
 
-export async function loadDirectFreeAssetMonitor(assetClass: string): Promise<MarketMonitorResponse> {
+export async function loadDirectFreeAssetMonitor(assetClass: string, interval: CryptoMonitorInterval = "1d"): Promise<MarketMonitorResponse> {
   const definition = directMonitorDefinitions.find((item) => item.id === assetClass.trim().toLowerCase());
   if (!definition) throw new Error(`Unknown free asset-class monitor: ${assetClass}.`);
-  const result = definition.provider === "frankfurter" ? await loadFrankfurter(definition) : await loadYahoo(definition);
+  const result = definition.provider === "frankfurter" ? await loadFrankfurter(definition, interval) : await loadYahoo(definition, interval);
   if (result.rows.length === 0) throw new Error("The free public market monitor returned no usable rows.");
 
   return {
@@ -434,6 +556,8 @@ export async function loadDirectFreeAssetMonitor(assetClass: string): Promise<Ma
       quoteConvention: definition.quoteConvention,
       freshness: "Public delayed or daily reference data; direct BFF fallback is active because the finance API was unavailable.",
       failureReasons: result.failures,
+      interval,
+      signalMarkets: result.rows.filter((row) => row.trend).length,
       availableClasses: availableClasses(),
     },
   };

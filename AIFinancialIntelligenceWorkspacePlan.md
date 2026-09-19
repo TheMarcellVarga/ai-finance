@@ -9,13 +9,15 @@ Backend decision: use Go for the dedicated finance/data backend. Keep Next.js as
 
 ## Product Surfaces
 - Marketing: `/`, `/product`, `/pricing`, `/security`, `/blog`, `/terms`, `/privacy`.
-- App: `/app`, `/app/portfolio`, `/app/research`, `/app/goals`, `/app/watchlist`, `/app/risk`, `/app/settings`, `/app/billing`.
+- Primary app: `/app`, `/app/monitors`, `/app/portfolio`, `/app/goals` (presented as Plan), and `/app/learn`.
+- Supporting routes such as research, risk, watchlists, journals, playbooks, evaluations, billing, account, and settings remain contextual or account-level destinations rather than primary navigation.
 - Hero aesthetic: dark metal/glass, cinematic depth, subtle market-map visuals, dense dashboard previews, premium fintech tone. Responsive layouts for mobile, laptop, wide desktop.
 - Product and marketing pages should use licensed stock imagery and short stock video loops where they strengthen the product story: abstract market infrastructure, analysts at work, financial data walls, premium workstation shots, glass/metal UI closeups, and subtle motion backgrounds.
 - Generate an original logo and brand asset set for the product before implementation polish: wordmark, icon mark, favicon, app icon, social preview image, and dark/light-safe variants.
-- Main dashboard: portfolio value, allocation, volatility proxy, sector exposure, watchlist movers, saved AI briefs, goal progress, and risk warnings.
+- Main dashboard: current net position, portfolio allocation, monthly cash-flow signal, goal progress, market context, and data freshness.
 - AI research: prompt-based market questions, company/ETF research briefs, SEC filing summaries, watchlist summaries, and portfolio risk explanations with citations.
-- Goals/gamification: user defines target amount, time horizon, contribution cadence, and risk preference; app generates milestones, challenges, achievements, streaks, and progress states.
+- Plan: user enters income, recurring expenses, assets, a target amount, time horizon, and contribution cadence; the app renders a configurable scenario chart and an investment-potential calculator with explicit assumptions and no return promise.
+- Education remains first-class, but lessons and labs should be linked from the market, portfolio, and planning concept they explain.
 - Pricing: Free, Pro, Research Pro, Team/Advisor. Stripe controls subscriptions and entitlements.
 
 ## Architecture

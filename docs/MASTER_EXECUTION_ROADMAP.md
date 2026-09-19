@@ -623,6 +623,52 @@ Acceptance gate:
 - Live market-monitor context remains provider-backed and timestamped; lab examples are labeled illustrative or user-entered assumptions.
 - Education calculation and persistence-migration tests, app lint, and app build pass.
 
+## Product Simplification Track
+
+Status: active. This track supersedes the evidence workspace as the default product story without deleting its supporting infrastructure.
+
+Primary skill: product distillation and `nextjs-fintech-ui`.
+
+Support skills: `go-finance-api`, `supabase-finance-schema`, `finance-product-guardrails`, `security-review-fintech`.
+
+### Product boundary
+
+The primary experience is now five destinations: **Overview, Markets, Portfolio, Plan, and Learn**.
+
+- **Markets** consolidates global assets, asset-class monitors, crypto monitoring, and watch items into one searchable mega table with class filters and optional drill-downs.
+- `/app/crypto-monitor` is the canonical interaction contract for every monitor: timeframe controls, confirmed state, last flip, next flip level, distance, since-flip movement, sortable columns, contextual study/lab actions, freshness, and provider limitations.
+- **Portfolio** owns user-entered assets, holdings, allocation, concentration, and contextual research or risk explanation.
+- **Plan** combines income, recurring expenses, contribution capacity, goals, a configurable future chart, and an investment scenario calculator.
+- **Learn** retains the education system and links lessons contextually from Markets, Portfolio, and Plan.
+- Research, evaluations, risk, watchlists, journals, playbooks, reviews, billing, account, and settings are secondary capabilities. They remain reachable where relevant but do not occupy primary navigation.
+
+### Sequence
+
+1. Reduce primary navigation to the five-destination model and update overview language.
+2. Define owner-scoped income, expense, goal, scenario, and projection-assumption contracts before implementing UI forms.
+3. Build the Plan workspace around a single editable financial picture and one configurable projection chart.
+4. Consolidate market entry points behind asset-class filters while preserving provider coverage and freshness disclosures.
+5. Move research, risk, watchlist, and education entry points into contextual actions.
+6. Remove or archive redundant route-level surfaces only after their useful capability is reachable from the simplified flow.
+
+### Projection guardrails
+
+- Projections are scenario illustrations, never forecasts or personalized advice.
+- Every chart exposes starting value, contribution cadence, time horizon, nominal return assumption, fee assumption, and inflation treatment.
+- The default view must not imply a single expected outcome; use user-controlled assumptions and, where implemented, clearly labeled ranges.
+- No scenario may recommend a security, promise returns, or trigger trade execution.
+
+### Acceptance gate
+
+- A new user can describe the product after seeing the five primary destinations.
+- Mobile navigation fits without horizontal scrolling.
+- A user can enter income, expenses, assets, and a goal once and reuse them across Portfolio and Plan.
+- The projection chart can be changed by time horizon and assumptions, and every output displays its assumptions.
+- Market Monitor presents configured references from every supported class in one table, supports class filters, and reports partial provider failures and freshness.
+- The master table and each asset-class route share one monitor component and the same generalizable VargaTrend tools; provider-specific controls appear only where meaningful.
+- Education remains available and gains contextual links from the core workflows.
+- Supporting research and safety infrastructure remains functional without dominating the information architecture.
+
 ## AI Task Template
 Use this template for future agent tasks.
 

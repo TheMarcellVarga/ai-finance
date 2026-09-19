@@ -66,6 +66,18 @@ export type MarketMonitorRow = {
   capturedAt: string;
   isProxy?: boolean;
   proxyNote?: string;
+  trend?: "bullish" | "bearish";
+  atrPeriod?: number;
+  atrMultiplier?: number;
+  autoSelectionReady?: boolean;
+  lastFlipAt?: string | null;
+  nextFlipLevel?: number | null;
+  distanceToFlipPercent?: number | null;
+  sinceFlipPercent?: number | null;
+  historyComplete?: boolean;
+  signalInterval?: string;
+  signalBasis?: "ohlc" | "close-derived";
+  signalUnavailableReason?: string;
 };
 
 export type MarketMonitorResponse = {
@@ -85,6 +97,8 @@ export type MarketMonitorResponse = {
     quoteConvention: string;
     freshness: string;
     failureReasons: string[];
+    interval?: string;
+    signalMarkets?: number;
     availableClasses: Array<{
       id: string;
       label: string;

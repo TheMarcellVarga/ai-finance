@@ -19,7 +19,23 @@ Avoid names that imply brokerage, automated advice, guaranteed outcomes, or trad
 
 ## One-Sentence Product
 
-Aperture Financial Intelligence is an AI financial research workspace that helps users understand portfolios, assets, risks, goals, and filings through cited decision-support workflows.
+Aperture Financial Intelligence connects market context with a user's income, expenses, assets, and goals so they can understand whether they are on track and test the assumptions that could change the outcome.
+
+## Simplified Product Model
+
+The product has five primary destinations:
+
+| Destination | User job | Included capabilities |
+| --- | --- | --- |
+| Overview | Understand my current position and next useful action | Net position, goal status, cash-flow signal, freshness, contextual prompts |
+| Markets | See what is happening across the asset universe | One searchable mega table for supported asset classes, watch items, provider coverage, and class drill-downs |
+| Portfolio | Understand what I own | User-entered assets, holdings, allocation, concentration, source freshness, contextual risk/research |
+| Plan | Connect today's money to a future goal | Income, recurring expenses, contributions, goal settings, configurable projection chart, investment scenario calculator |
+| Learn | Build the knowledge to interpret the workspace | Existing curriculum, labs, progress, and contextual lessons |
+
+Research, risk explanations, watchlists, journals, playbooks, evaluations, billing, and settings remain supporting capabilities. They should be reached from the workflow that needs them or from account controls, not displayed as equal-weight primary destinations.
+
+The Crypto Monitor defines the canonical market-monitor interaction. The combined Markets table and every asset-class view reuse its generalizable controls and VargaTrend fields: timeframe, state filters, latest/nearest flip sorting, confirmed state, last flip, flip level, distance, since-flip movement, study/lab links, and explicit provider limitations.
 
 ## Target Users
 
@@ -47,14 +63,14 @@ Forbidden:
 
 ## MVP Golden Path
 
-1. Visitor lands on a premium fintech marketing page and understands the product is research and decision support.
+1. Visitor understands that Aperture connects personal finances with market context and scenario planning.
 2. User signs in through Clerk.
-3. User creates or loads a provider-backed research portfolio.
-4. User reviews allocation, concentration, watchlist, risk, and data freshness.
-5. User asks for a portfolio brief.
-6. The app streams a real AI response using application-owned data tools.
-7. The AI brief is schema-valid, persisted, cited where possible, and includes assumptions, freshness, confidence, and a not-financial-advice disclaimer.
-8. User saves the brief to the research room and can inspect citations.
+3. User enters income, recurring expenses, assets, and a goal amount with a target date.
+4. User sees one current financial picture: portfolio allocation, monthly surplus, goal gap, and data freshness.
+5. User adjusts contribution, time horizon, and explicitly labeled return assumptions on a future projection chart.
+6. User opens the filterable Market Monitor to inspect relevant asset classes without leaving the planning loop.
+7. Contextual research, risk explanation, or education is available when the user needs to understand an assumption.
+8. Saved scenarios remain reviewable and include assumptions, freshness, and a not-financial-advice disclaimer.
 
 ## Pricing Direction
 

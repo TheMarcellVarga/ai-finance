@@ -22,10 +22,13 @@ type WatchlistChartItem = MovementChartInput & {
 type OverviewChartsProps = {
   allocation: AllocationChartInput[];
   watchlist: WatchlistChartItem[];
-  provider?: string;
-  capturedAt?: string;
+  portfolioProvider?: string;
+  portfolioCapturedAt?: string;
+  movementProvider?: string;
+  movementCapturedAt?: string;
   portfolioEmpty?: boolean;
   watchlistEmpty?: boolean;
+  movementSource?: "watchlist" | "market";
 };
 
 const allocationColors = ["#a5f3fc", "#67e8f9", "#5eead4", "#fcd34d", "#94a3b8", "#c4b5fd"];
@@ -54,7 +57,7 @@ function formatSnapshot(value?: string) {
   }).format(new Date(value));
 }
 
-export function OverviewCharts({ allocation, watchlist, provider = "market data provider", capturedAt, portfolioEmpty = false, watchlistEmpty = false }: OverviewChartsProps) {
+export function OverviewCharts({ allocation, watchlist, portfolioProvider = "market data provider", portfolioCapturedAt, movementProvider = "market data provider", movementCapturedAt, portfolioEmpty = false, watchlistEmpty = false, movementSource = "watchlist" }: OverviewChartsProps) {
   const [activeAllocationIndex, setActiveAllocationIndex] = useState<number | null>(null);
   const allocationData = useMemo(() => normalizeAllocationData(allocation), [allocation]);
   const allocationTotal = totalWeightBps(allocationData);
@@ -153,7 +156,9 @@ export function OverviewCharts({ allocation, watchlist, provider = "market data 
         )}
 
         <p className="mt-6 text-xs leading-5 text-zinc-500">
-          Current snapshot · {provider} · {formatSnapshot(capturedAt)}. Allocation is a research signal, not a recommendation.
+          {portfolioEmpty
+            ? "Portfolio snapshot pending · add a holding to calculate owner-scoped value and allocation."
+            : `Current snapshot · ${portfolioProvider} · ${formatSnapshot(portfolioCapturedAt)}. Allocation is a research signal, not a recommendation.`}
         </p>
       </div>
 
@@ -162,7 +167,7 @@ export function OverviewCharts({ allocation, watchlist, provider = "market data 
           <div>
             <div className="flex items-center gap-2 text-sm text-white">
               <Radar className="size-4 text-amber-100" />
-              Monitor movement
+              {movementSource === "market" ? "Market movement" : "Monitor movement"}
             </div>
             <h2 className="type-card-title mt-3 text-2xl text-white">What changed today</h2>
           </div>
@@ -211,11 +216,13 @@ export function OverviewCharts({ allocation, watchlist, provider = "market data 
           </div>
         ) : (
           <p className="mt-6 rounded-[1rem] bg-amber-100/[0.035] p-4 text-sm leading-6 text-amber-50/75">
-            {watchlistEmpty ? "Add a ticker to build your watchlist from provider-backed prices. No sample symbols are inserted." : "Watchlist movement will appear when the provider-backed feed is available."}
+            {watchlistEmpty ? "Market movement will appear when the provider-backed feed is available." : "Watchlist movement will appear when the provider-backed feed is available."}
           </p>
         )}
 
-        <p className="mt-6 text-xs leading-5 text-zinc-500">Bars are scaled to the largest absolute move in this snapshot. They show market context, not a trade signal.</p>
+        <p className="mt-6 text-xs leading-5 text-zinc-500">
+          {movementProvider} · {formatSnapshot(movementCapturedAt)}. Bars are scaled to the largest absolute move in this {movementSource === "market" ? "public market" : "watchlist"} snapshot. They show market context, not a trade signal.
+        </p>
       </div>
     </section>
   );

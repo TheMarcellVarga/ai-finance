@@ -3,10 +3,9 @@ import {
   ArrowRight,
   BookOpenCheck,
   CircleGauge,
-  Clock3,
   Goal,
+  Layers3,
   Radar,
-  ShieldCheck,
   Sparkles,
   WalletCards,
 } from "lucide-react";
@@ -14,6 +13,7 @@ import {
 import { getUsageSummaryForToken } from "@/lib/billing/usage";
 import {
   FinanceWorkspaceEmptyError,
+  loadFreeAssetMonitor,
   loadFinanceUsage,
   loadRealProviderPortfolio,
   loadRealProviderWatchlist,
@@ -62,26 +62,59 @@ async function loadOverviewData(authToken: string) {
 
   const financeUsage = financeUsageResult.status === "fulfilled" ? financeUsageResult.value.data : null;
   const persistedUsage = usageResult.status === "fulfilled" ? usageResult.value : null;
+  const watchlist = watchlistResult.status === "fulfilled" ? watchlistResult.value.data : null;
+  let market: Awaited<ReturnType<typeof loadFreeAssetMonitor>> | null = null;
+  if (!watchlist?.items.length) {
+    try {
+      market = await loadFreeAssetMonitor("equities");
+    } catch {
+      market = null;
+    }
+  }
 
   return {
     portfolio: portfolioResult.status === "fulfilled" ? portfolioResult.value.data : null,
-    watchlist: watchlistResult.status === "fulfilled" ? watchlistResult.value.data : null,
+    watchlist,
     portfolioEmpty: portfolioResult.status === "rejected" && portfolioResult.reason instanceof FinanceWorkspaceEmptyError,
     watchlistEmpty: watchlistResult.status === "rejected" && watchlistResult.reason instanceof FinanceWorkspaceEmptyError,
     usage: persistedUsage,
     financeUsage,
     marketDataAvailable: financeUsageResult.status === "fulfilled",
+    market,
   };
 }
 
 export default async function AppOverviewPage() {
   const authToken = await authenticatedSessionToken();
-  const { portfolio, portfolioEmpty, watchlist, watchlistEmpty, usage, financeUsage, marketDataAvailable } = await loadOverviewData(authToken);
+  const { portfolio, portfolioEmpty, watchlist, watchlistEmpty, usage, financeUsage, marketDataAvailable, market } = await loadOverviewData(authToken);
   const topHolding = portfolio ? [...portfolio.holdings].sort((left, right) => right.weightBps - left.weightBps)[0] : undefined;
   const watchlistItems = watchlist ? [...watchlist.items].sort(
     (left, right) => Math.abs(right.asset.dailyChangeBps ?? 0) - Math.abs(left.asset.dailyChangeBps ?? 0),
   ) : undefined;
   const largestMove = watchlistItems?.[0];
+  const marketItems = market?.data
+    .map((item) => ({
+      id: `market-${item.symbol}`,
+      ticker: item.symbol,
+      name: item.name,
+      displayPrice: item.displayValue,
+      dailyChangeBps: Math.round(item.dailyChangePercent * 100),
+    }))
+    .sort((left, right) => Math.abs(right.dailyChangeBps) - Math.abs(left.dailyChangeBps)) ?? [];
+  const movementItems = watchlistItems?.length
+    ? watchlistItems.map((item) => ({
+      id: item.id,
+      ticker: item.asset.ticker,
+      name: item.asset.name,
+      displayPrice: item.asset.displayPrice,
+      dailyChangeBps: item.asset.dailyChangeBps,
+    }))
+    : marketItems;
+  const movementFocus = largestMove
+    ? { ticker: largestMove.asset.ticker, dailyChangeBps: largestMove.asset.dailyChangeBps, source: "watchlist" as const }
+    : marketItems[0]
+      ? { ticker: marketItems[0].ticker, dailyChangeBps: marketItems[0].dailyChangeBps, source: "market" as const }
+      : null;
   const aiUsage = usage?.features.find((feature) => feature.feature === "portfolio_brief")
     ?? financeUsage?.features.find((feature) => feature.feature === "portfolio_brief");
 
@@ -101,9 +134,11 @@ export default async function AppOverviewPage() {
       tone: portfolio && portfolio.summary.reviewFlags > 0 ? "amber" : "cyan",
     },
     {
-      label: "Watchlist focus",
-      value: largestMove?.asset.ticker ?? unavailableValue,
-      detail: largestMove ? `${formatMove(largestMove.asset.dailyChangeBps)} provider-reported move` : watchlistEmpty ? "Add a ticker to begin" : "Awaiting market feed",
+      label: movementFocus?.source === "market" ? "Market focus" : "Watchlist focus",
+      value: movementFocus?.ticker ?? unavailableValue,
+      detail: movementFocus
+        ? `${formatMove(movementFocus.dailyChangeBps)} ${movementFocus.source === "market" ? "public-market move" : "watchlist move"}`
+        : watchlistEmpty ? "Awaiting public market feed" : "Awaiting market feed",
       icon: Radar,
       tone: "cyan",
     },
@@ -116,30 +151,38 @@ export default async function AppOverviewPage() {
     },
   ];
 
-  const researchAreas = [
+  const coreAreas = [
     {
-      href: "/app/research",
-      eyebrow: "Research room",
-      title: "Source-backed briefings",
-      body: "Review filing highlights, retrieved evidence, citations, and follow-up questions.",
-      icon: BookOpenCheck,
-      meta: "Citations visible",
+      href: "/app/monitors",
+      eyebrow: "Markets",
+      title: "Scan every supported asset class",
+      body: "Filter the provider-backed market universe and keep freshness and coverage visible.",
+      icon: Layers3,
+      meta: "One market entry point",
+    },
+    {
+      href: "/app/portfolio",
+      eyebrow: "Portfolio",
+      title: "Understand what you own",
+      body: "Review holdings, allocation, concentration, and the source behind each value.",
+      icon: WalletCards,
+      meta: portfolio ? `${portfolio.summary.holdingCount} positions` : "Add your assets",
     },
     {
       href: "/app/goals",
-      eyebrow: "Goal intelligence",
-      title: "Scenario planning",
-      body: "Track milestones and contribution scenarios without return promises or suitability claims.",
+      eyebrow: "Plan",
+      title: "Connect today to a future goal",
+      body: "Set a target and compare contribution scenarios with every assumption visible.",
       icon: Goal,
-      meta: "Education focused",
+      meta: "Scenarios, not forecasts",
     },
     {
-      href: "/app/risk",
-      eyebrow: "Risk review",
-      title: "Allocation context",
-      body: "Surface concentration signals, assumptions, and the questions worth researching next.",
-      icon: ShieldCheck,
-      meta: portfolio ? `${portfolio.summary.reviewFlags} review flags` : "Snapshot pending",
+      href: "/app/learn",
+      eyebrow: "Learn",
+      title: "Understand the numbers",
+      body: "Keep the education system, labs, and saved progress close to the decision they explain.",
+      icon: BookOpenCheck,
+      meta: "Education retained",
     },
   ];
 
@@ -152,9 +195,9 @@ export default async function AppOverviewPage() {
             <p className="type-label inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
               Overview
             </p>
-            <h1 className="type-display mt-6 text-4xl text-white sm:text-5xl">Your research day, composed.</h1>
+            <h1 className="type-display mt-6 text-4xl text-white sm:text-5xl">Your financial picture, in one place.</h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-300/80">
-              A quiet summary of portfolio context, watchlist movement, saved research, goal scenarios, and risk review.
+              Connect what you earn, spend, own, and want next—then test the assumptions that shape the path.
             </p>
           </div>
           <div className="workspace-sync rounded-[1rem] p-4">
@@ -189,32 +232,25 @@ export default async function AppOverviewPage() {
 
       <OverviewCharts
         allocation={portfolio?.allocation ?? []}
-        watchlist={(watchlistItems ?? []).map((item) => ({
-          id: item.id,
-          ticker: item.asset.ticker,
-          name: item.asset.name,
-          displayPrice: item.asset.displayPrice,
-          dailyChangeBps: item.asset.dailyChangeBps,
-        }))}
-        provider={portfolio?.dataFreshness.provider ?? watchlist?.dataFreshness.provider}
-        capturedAt={portfolio?.dataFreshness.capturedAt ?? watchlist?.dataFreshness.capturedAt}
+        watchlist={movementItems}
+        portfolioProvider={portfolio?.dataFreshness.provider}
+        portfolioCapturedAt={portfolio?.dataFreshness.capturedAt}
+        movementProvider={watchlist?.dataFreshness.provider ?? market?.meta.providerLabel}
+        movementCapturedAt={watchlist?.dataFreshness.capturedAt ?? market?.meta.capturedAt}
         portfolioEmpty={portfolioEmpty}
-        watchlistEmpty={watchlistEmpty}
+        watchlistEmpty={watchlistEmpty && marketItems.length === 0}
+        movementSource={watchlistItems?.length ? "watchlist" : "market"}
       />
 
       <section>
         <div className="mb-4 flex items-end justify-between gap-4">
           <div>
-            <p className="type-label text-xs uppercase text-cyan-100/75">Research rhythm</p>
-            <h2 className="type-card-title mt-3 text-2xl text-white">Continue your review</h2>
-          </div>
-          <div className="hidden items-center gap-2 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-zinc-600 sm:flex">
-            <Clock3 className="size-3.5 text-amber-100/60" />
-            Calm context, not alerts
+            <p className="type-label text-xs uppercase text-cyan-100/75">Core workspace</p>
+            <h2 className="type-card-title mt-3 text-2xl text-white">Choose the job in front of you</h2>
           </div>
         </div>
-        <div className="grid gap-4 lg:grid-cols-3">
-          {researchAreas.map(({ href, eyebrow, title, body, icon: Icon, meta }) => (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {coreAreas.map(({ href, eyebrow, title, body, icon: Icon, meta }) => (
             <Link key={href} className="overview-area glass-surface group rounded-[1.1rem] p-5" href={href}>
               <div className="flex items-start justify-between gap-4">
                 <div className="grid size-9 place-items-center rounded-[0.75rem] bg-cyan-200/[0.055] text-cyan-100">
@@ -231,17 +267,10 @@ export default async function AppOverviewPage() {
         </div>
       </section>
 
-      <section className="section-shell flex flex-col gap-4 rounded-[1.1rem] p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <ShieldCheck className="mt-0.5 size-4 shrink-0 text-cyan-100/75" />
-          <p className="max-w-3xl text-xs leading-5 text-zinc-500">
-            Aperture supports research, risk explanation, and scenario review. It does not execute trades, provide personalized investment advice, or promise outcomes.
-          </p>
-        </div>
-        <Link className="overview-link shrink-0" href="/app/settings">
-          Review controls
-          <ArrowRight className="size-3.5" />
-        </Link>
+      <section className="section-shell rounded-[1.1rem] p-5">
+        <p className="max-w-3xl text-xs leading-5 text-zinc-500">
+          Aperture supports market research, financial organization, and scenario planning. It does not execute trades, provide personalized investment advice, or promise outcomes.
+        </p>
       </section>
     </div>
   );
