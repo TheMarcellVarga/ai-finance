@@ -11,7 +11,7 @@ endpoint `GET /v1/market-monitors/:class`.
 | --- | --- | --- |
 | Equities, funds, fixed income, commodities, real estate, derivatives, private markets, cash/rates, protection/contracts | Yahoo Finance public chart response | Listed instruments, indexes, futures, or clearly-labelled listed proxies |
 | Currencies | Frankfurter API backed by central-bank reference data | Daily reference rates, quoted as `1 USD = quoted currency units` |
-| Digital assets | Existing OKX and supported public exchange adapters | Public spot markets with the existing VargaTrend research record |
+| Digital assets | Existing OKX and supported public exchange adapters | Public spot markets with the existing Adaptive Supertrend research record |
 
 No provider key is required for the new monitor family. Public quote feeds may
 be delayed, end-of-day, rate-limited, or unavailable for a symbol. The API

@@ -8,10 +8,10 @@ const footerGroups = [
   {
     title: "Platform",
     links: [
-      { href: "/product", label: "Product" },
-      { href: "/pricing", label: "Pricing" },
-      { href: "/security", label: "Security" },
-      { href: "/blog", label: "Briefs" },
+      { href: "/#product", label: "Product" },
+      { href: "/#how-it-works", label: "How it works" },
+      { href: "/#pricing", label: "Pricing" },
+      { href: "/#security", label: "Security" },
     ],
   },
   {

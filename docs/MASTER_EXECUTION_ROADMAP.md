@@ -611,7 +611,7 @@ Completed artifacts:
 - `/app/learn/labs` with position sizing, expectancy, drawdown recovery, Supertrend anatomy, backtest integrity, and benchmark laboratories.
 - `/app/playbook`, `/app/journal`, and `/app/review` with account-scoped browser records for risk declarations, versioned strategy specifications, risk policies, research-practice constitutions, timestamped market observations, behavioral plans, evidence-status audit checklists, scorecards, and execution checklists.
 - Market Monitor contextual `Study this state` links that carry the selected market, timeframe, state, flip level, and provider capture timestamp into the market-map lesson.
-- VargaTrend Market Monitor defaults to the lifetime auto mode from the supplied script: ATR periods 10–20, fixed multiplier 3, five completed bullish sections minimum, and 40% minimum win rate; the UI discloses provider-bounded history, in-sample research, next-candle-open simulation, and fallback warm-up.
+- Adaptive Supertrend Market Monitor defaults to the lifetime auto mode from the supplied script: ATR periods 10–20, fixed multiplier 3, five completed bullish sections minimum, and 40% minimum win rate; the UI discloses provider-bounded history, in-sample research, next-candle-open simulation, and fallback warm-up.
 - Pure, independently tested education calculations in `apps/web/src/lib/education.ts` with bounded, account-scoped browser persistence and legacy-state normalization in `apps/web/src/lib/education-state.ts`.
 - A cash-only position-sizing boundary caps modeled exposure at account capital; the backtest-integrity lab exposes every quantitative drag instead of inventing hidden penalties.
 - Source presentation distinguishes direct support for a specific factual section from broader further reading, with source scope and a current content-review date.
@@ -665,7 +665,7 @@ The primary experience is now five destinations: **Overview, Markets, Portfolio,
 - A user can enter income, expenses, assets, and a goal once and reuse them across Portfolio and Plan.
 - The projection chart can be changed by time horizon and assumptions, and every output displays its assumptions.
 - Market Monitor presents configured references from every supported class in one table, supports class filters, and reports partial provider failures and freshness.
-- The master table and each asset-class route share one monitor component and the same generalizable VargaTrend tools; provider-specific controls appear only where meaningful.
+- The master table and each asset-class route share one monitor component and the same generalizable Adaptive Supertrend tools; provider-specific controls appear only where meaningful.
 - Education remains available and gains contextual links from the core workflows.
 - Supporting research and safety infrastructure remains functional without dominating the information architecture.
 

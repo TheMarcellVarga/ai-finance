@@ -4,11 +4,11 @@ import test from "node:test";
 import type { CryptoCandle } from "./crypto-supertrend";
 import {
   calculateSimpleMovingAverage,
-  calculateVargaTrendAuto,
-  calculateVargaTrendBacktest,
-  selectVargaTrendCase,
-  type VargaTrendBacktest,
-} from "./varga-trend";
+  calculateAdaptiveSupertrendAuto,
+  calculateAdaptiveSupertrendBacktest,
+  selectAdaptiveSupertrendCase,
+  type AdaptiveSupertrendBacktest,
+} from "./adaptive-supertrend";
 
 function alternatingCandles(length = 24): CryptoCandle[] {
   return Array.from({ length }, (_, index) => {
@@ -25,7 +25,15 @@ function alternatingCandles(length = 24): CryptoCandle[] {
   });
 }
 
-function withStats(backtest: VargaTrendBacktest, side: "long" | "short", trades: number, wins: number, averageWinPercent: number) {
+function withStats(
+  backtest: AdaptiveSupertrendBacktest,
+  side: "long" | "short",
+  trades: number,
+  wins: number,
+  averageWinPercent: number,
+  averageTradePercent?: number,
+  geometricAverageTradePercent?: number,
+) {
   return {
     ...backtest,
     [side]: {
@@ -33,6 +41,8 @@ function withStats(backtest: VargaTrendBacktest, side: "long" | "short", trades:
       wins,
       winRate: (wins / trades) * 100,
       averageWinPercent,
+      averageTradePercent,
+      geometricAverageTradePercent,
       returnsPercent: [],
     },
   };
@@ -40,7 +50,7 @@ function withStats(backtest: VargaTrendBacktest, side: "long" | "short", trades:
 
 test("executes confirmed flips at the next candle open and counts completed trades only", () => {
   const candles = alternatingCandles();
-  const backtest = calculateVargaTrendBacktest(candles, 2, 0.1);
+  const backtest = calculateAdaptiveSupertrendBacktest(candles, 2, 0.1);
   const firstBuyIndex = backtest.result.points.findIndex((point) => point.buySignal);
   const laterSellIndex = backtest.result.points.findIndex((point, index) => index > firstBuyIndex && point.sellSignal);
 
@@ -55,8 +65,8 @@ test("executes confirmed flips at the next candle open and counts completed trad
 });
 
 test("uses weekly for a qualified side even when a lower timeframe has a higher win rate", () => {
-  const base = calculateVargaTrendBacktest(alternatingCandles(), 2, 0.1);
-  const selected = selectVargaTrendCase({
+  const base = calculateAdaptiveSupertrendBacktest(alternatingCandles(), 2, 0.1);
+  const selected = selectAdaptiveSupertrendCase({
     "1w": withStats(base, "long", 10, 5, 12),
     "1d": withStats(base, "long", 20, 18, 8),
   }, "long");
@@ -65,17 +75,32 @@ test("uses weekly for a qualified side even when a lower timeframe has a higher 
   assert.equal(selected?.selection, "weekly");
 });
 
-test("falls back to the best qualified daily-or-lower timeframe and excludes monthly", () => {
-  const base = calculateVargaTrendBacktest(alternatingCandles(), 2, 0.1);
-  const selected = selectVargaTrendCase({
+test("falls back to the most profitable qualified timeframe and excludes monthly", () => {
+  const base = calculateAdaptiveSupertrendBacktest(alternatingCandles(), 2, 0.1);
+  const selected = selectAdaptiveSupertrendCase({
     "1w": withStats(base, "short", 4, 4, 20),
     "1M": withStats(base, "short", 50, 50, 40),
     "1d": withStats(base, "short", 8, 4, 9),
     "4h": withStats(base, "short", 8, 6, 6),
   }, "short");
 
-  assert.equal(selected?.timeframe, "4h");
+  assert.equal(selected?.timeframe, "1d");
   assert.equal(selected?.selection, "fallback");
+});
+
+test("ranks long cases by geometric average trade and short cases by arithmetic average trade", () => {
+  const base = calculateAdaptiveSupertrendBacktest(alternatingCandles(), 2, 0.1);
+  const longSelected = selectAdaptiveSupertrendCase({
+    "1h": withStats(base, "long", 8, 5, 9, 4, 4),
+    "4h": withStats(base, "long", 8, 5, 8, 3, 6),
+  }, "long");
+  const shortSelected = selectAdaptiveSupertrendCase({
+    "1h": withStats(base, "short", 8, 5, 9, 4),
+    "4h": withStats(base, "short", 8, 5, 8, 6),
+  }, "short");
+
+  assert.equal(longSelected?.timeframe, "4h");
+  assert.equal(shortSelected?.timeframe, "4h");
 });
 
 test("calculates SMA 50, 100 and 200 from closed prices", () => {
@@ -94,7 +119,7 @@ test("calculates SMA 50, 100 and 200 from closed prices", () => {
 });
 
 test("auto mode selects only an eligible ATR period and exposes warm-up state", () => {
-  const analysis = calculateVargaTrendAuto(alternatingCandles(240));
+  const analysis = calculateAdaptiveSupertrendAuto(alternatingCandles(240));
 
   assert.equal(analysis.parameterMode, "auto");
   assert.equal(analysis.auto.selectedMultiplier, 3);

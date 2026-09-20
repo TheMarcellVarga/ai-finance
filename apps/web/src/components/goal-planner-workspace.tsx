@@ -96,7 +96,7 @@ export function GoalPlannerWorkspace({ portfolio, initialError }: GoalPlannerWor
           <Calculator className="size-5 text-cyan-200" />
           <h2 className="type-card-title text-xl text-white">Scenario inputs</h2>
         </div>
-        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-5 grid gap-4 md:grid-cols-2 2xl:grid-cols-5">
           <label className="text-sm text-zinc-300">Goal name<input value={goalName} onChange={(event) => setGoalName(event.target.value)} maxLength={80} className="mt-2 h-11 w-full rounded-[0.75rem] border border-white/10 bg-zinc-950/70 px-3 text-base text-white outline-none focus:border-cyan-200/40" required /></label>
           <label className="text-sm text-zinc-300">Target amount<input type="number" min="1" step="0.01" inputMode="decimal" value={targetAmount} onChange={(event) => setTargetAmount(event.target.value)} className="mt-2 h-11 w-full rounded-[0.75rem] border border-white/10 bg-zinc-950/70 px-3 font-mono text-base text-white outline-none focus:border-cyan-200/40" required /></label>
           <label className="text-sm text-zinc-300">Horizon (years)<input type="number" min="0.1" max="50" step="0.1" inputMode="decimal" value={horizonYears} onChange={(event) => setHorizonYears(event.target.value)} className="mt-2 h-11 w-full rounded-[0.75rem] border border-white/10 bg-zinc-950/70 px-3 font-mono text-base text-white outline-none focus:border-cyan-200/40" required /></label>
@@ -116,7 +116,7 @@ export function GoalPlannerWorkspace({ portfolio, initialError }: GoalPlannerWor
 
       {plan ? (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
             {[["Current", plan.currentAmount], ["Target", plan.targetAmount], ["Funding gap", plan.fundingGap], ["Funded", `${(plan.progressBps / 100).toFixed(1)}%`]].map(([label, value]) => <article key={label} className="glass-surface rounded-[1rem] p-5"><p className="text-xs uppercase tracking-[0.14em] text-zinc-500">{label}</p><p className="mt-3 font-mono text-2xl text-white">{value}</p></article>)}
           </div>
           <div className="grid gap-4 lg:grid-cols-3">

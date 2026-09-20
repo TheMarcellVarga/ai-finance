@@ -1,13 +1,21 @@
 import type { CryptoCandle } from "@/lib/crypto-supertrend";
 import type { CryptoMonitorInterval } from "@/lib/crypto-monitor-intervals";
-import type { VargaTrendAnalysisTimeframe } from "@/lib/varga-trend";
+import type { AdaptiveSupertrendAnalysisTimeframe } from "@/lib/adaptive-supertrend";
+
+export type CryptoRateDecision = {
+  date: string;
+  timestamp: number;
+  rate: number;
+  direction: "cut" | "hike";
+};
 
 export type CryptoChartPayload = {
   data: {
     candles: CryptoCandle[];
-    analysisCandles: Record<VargaTrendAnalysisTimeframe, CryptoCandle[]>;
+    analysisCandles: Record<AdaptiveSupertrendAnalysisTimeframe, CryptoCandle[]>;
     dailyCandles: CryptoCandle[];
     weeklyCandles: CryptoCandle[];
+    rateDecisions: CryptoRateDecision[];
   };
   meta: {
     provider: string;

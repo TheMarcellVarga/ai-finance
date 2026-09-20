@@ -46,7 +46,7 @@ export default async function BillingPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         {tierOrder.map((tier) => {
           const entitlements = PLAN_ENTITLEMENTS[tier];
           const active = usage.plan === tier;
@@ -81,7 +81,7 @@ export default async function BillingPage() {
           </div>
           <span className="rounded-full bg-white/[0.04] px-3 py-1 text-xs text-zinc-400">{usage.period}</span>
         </div>
-        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-6 grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
           {usage.features.map((feature) => {
             const width = feature.limit > 0 ? Math.min(100, Math.round((feature.used / feature.limit) * 100)) : 0;
             return (

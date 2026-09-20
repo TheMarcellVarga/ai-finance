@@ -13,19 +13,19 @@ import {
   type ReactNode,
 } from "react";
 
-import { VargaTrendChart } from "@/components/varga-trend-chart";
+import { AdaptiveSupertrendChart } from "@/components/adaptive-supertrend-chart";
 import type { CryptoChartPayload } from "@/lib/crypto-chart";
 import type { CryptoMonitorInterval, CryptoMonitorProvider, CryptoMonitorRow, CryptoMonitorScope } from "@/lib/crypto-monitor";
 import { getTradingViewChartUrl } from "@/lib/tradingview-url";
 import {
-  calculateVargaTrendAuto,
-  calculateVargaTrend,
-  calculateVargaTrendBacktest,
-  selectVargaTrendCase,
-  type VargaTrendBacktest,
-  type VargaTrendCase,
-  type VargaTrendResult,
-} from "@/lib/varga-trend";
+  calculateAdaptiveSupertrendAuto,
+  calculateAdaptiveSupertrend,
+  calculateAdaptiveSupertrendBacktest,
+  selectAdaptiveSupertrendCase,
+  type AdaptiveSupertrendBacktest,
+  type AdaptiveSupertrendCase,
+  type AdaptiveSupertrendResult,
+} from "@/lib/adaptive-supertrend";
 
 const HOVER_DELAY_MS = 1_000;
 const CLOSE_GRACE_MS = 180;
@@ -90,13 +90,22 @@ function formatPercent(value: number | null) {
   return value == null ? "—" : `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
 }
 
-function formatCase(selected: VargaTrendCase | null, side: "long" | "short") {
+function formatCase(selected: AdaptiveSupertrendCase | null, side: "long" | "short") {
   if (!selected) return "Not enough completed trades";
   const active = side === "long" ? selected.direction === 1 : selected.direction === -1;
   const direction = selected.direction === 1 ? "BULL" : "BEAR";
   const winRate = selected.stats.winRate == null ? "—" : `${selected.stats.winRate.toFixed(1)}%`;
-  const averageWin = selected.stats.averageWinPercent == null ? "—" : `+${selected.stats.averageWinPercent.toFixed(1)}%`;
-  return `${selected.timeframe.toUpperCase()} ${direction} ${active ? "ACTIVE" : "WAIT"} · WR ${winRate} · Avg win ${averageWin} (${selected.stats.trades})`;
+  const averageWin = side === "long"
+    ? selected.stats.geometricAverageWinPercent ?? selected.stats.averageWinPercent
+    : selected.stats.averageWinPercent;
+  const averageTrade = side === "long"
+    ? selected.stats.geometricAverageTradePercent ?? selected.stats.averageTradePercent
+    : selected.stats.averageTradePercent ?? selected.stats.averageWinPercent;
+  const averageWinText = averageWin == null ? "—" : `+${averageWin.toFixed(1)}%`;
+  const averageTradeText = averageTrade == null ? "—" : `${averageTrade >= 0 ? "+" : ""}${averageTrade.toFixed(1)}%`;
+  const tradeLabel = side === "long" ? "Geo avg trade" : "Avg trade";
+  const winLabel = side === "long" ? "Geo avg win" : "Avg win";
+  return `${selected.timeframe.toUpperCase()} ${direction} ${active ? "ACTIVE" : "WAIT"} · ${tradeLabel} ${averageTradeText} · WR ${winRate} · ${winLabel} ${averageWinText} (${selected.stats.trades})`;
 }
 
 function ResearchRow({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "bull" | "bear" | "neutral" }) {
@@ -171,47 +180,47 @@ function TradingViewChartPopover({
       return null;
     }
     try {
-      return calculateVargaTrendAuto(chartHistory);
+      return calculateAdaptiveSupertrendAuto(chartHistory);
     } catch {
       return null;
     }
   }, [chartHistory]);
   const trendResult = trendAnalysis?.result ?? null;
-  const dailyResult = useMemo<VargaTrendResult | null>(() => {
+  const dailyResult = useMemo<AdaptiveSupertrendResult | null>(() => {
     if (!chartPayload || chartPayload.data.dailyCandles.length < 12) {
       return null;
     }
     try {
-      return calculateVargaTrend(chartPayload.data.dailyCandles);
+      return calculateAdaptiveSupertrend(chartPayload.data.dailyCandles);
     } catch {
       return null;
     }
   }, [chartPayload]);
-  const weeklyResult = useMemo<VargaTrendResult | null>(() => {
+  const weeklyResult = useMemo<AdaptiveSupertrendResult | null>(() => {
     if (!chartPayload || chartPayload.data.weeklyCandles.length < 12) {
       return null;
     }
     try {
-      return calculateVargaTrend(chartPayload.data.weeklyCandles);
+      return calculateAdaptiveSupertrend(chartPayload.data.weeklyCandles);
     } catch {
       return null;
     }
   }, [chartPayload]);
-  const backtests = useMemo<Partial<Record<"1h" | "4h" | "1d" | "1w" | "1M", VargaTrendBacktest>>>(() => {
+  const backtests = useMemo<Partial<Record<"1h" | "4h" | "1d" | "1w" | "1M", AdaptiveSupertrendBacktest>>>(() => {
     if (!chartPayload) return {};
-    const calculated: Partial<Record<"1h" | "4h" | "1d" | "1w" | "1M", VargaTrendBacktest>> = {};
+    const calculated: Partial<Record<"1h" | "4h" | "1d" | "1w" | "1M", AdaptiveSupertrendBacktest>> = {};
     for (const [timeframe, candles] of Object.entries(chartPayload.data.analysisCandles)) {
       if (candles.length < 12) continue;
       try {
-        calculated[timeframe as keyof typeof calculated] = calculateVargaTrendBacktest(candles);
+        calculated[timeframe as keyof typeof calculated] = calculateAdaptiveSupertrendBacktest(candles);
       } catch {
         // An individual timeframe can be unavailable for newly listed assets.
       }
     }
     return calculated;
   }, [chartPayload]);
-  const bestLong = useMemo(() => selectVargaTrendCase(backtests, "long"), [backtests]);
-  const bestShort = useMemo(() => selectVargaTrendCase(backtests, "short"), [backtests]);
+  const bestLong = useMemo(() => selectAdaptiveSupertrendCase(backtests, "long"), [backtests]);
+  const bestShort = useMemo(() => selectAdaptiveSupertrendCase(backtests, "short"), [backtests]);
   const weeklyLong = backtests["1w"];
   const weeklyHistoryStart = chartPayload?.data.analysisCandles["1w"][0]?.openTime ?? null;
   const stance = trendResult && dailyResult && weeklyResult
@@ -236,7 +245,7 @@ function TradingViewChartPopover({
       <div className="flex items-center justify-between gap-4 border-b border-white/[0.07] px-4 py-3">
         <div className="min-w-0">
           <p className="font-mono text-sm text-white">{row.baseAsset}<span className="text-zinc-600">/{row.quoteAsset}</span></p>
-          <p className="mt-1 text-[0.62rem] uppercase tracking-[0.14em] text-zinc-500">VargaTrend research inspector · {interval}</p>
+          <p className="mt-1 text-[0.62rem] uppercase tracking-[0.14em] text-zinc-500">Adaptive Supertrend research inspector · {interval}</p>
         </div>
         <a
           href={tradingViewChartUrl}
@@ -250,7 +259,7 @@ function TradingViewChartPopover({
       </div>
 
       {!chartPayload && !error ? (
-        <div className="relative h-[20rem] w-full overflow-hidden bg-[#0a1011]" aria-label="Loading VargaTrend chart" aria-busy="true">
+        <div className="relative h-[20rem] w-full overflow-hidden bg-[#0a1011]" aria-label="Loading Adaptive Supertrend chart" aria-busy="true">
           <div className="absolute inset-x-6 bottom-8 flex h-32 items-end gap-1 opacity-70" aria-hidden="true">
             {Array.from({ length: 28 }, (_, index) => (
               <span key={index} className="flex-1 animate-pulse rounded-t-sm bg-cyan-200/10" style={{ height: `${20 + ((index * 17) % 68)}%` }} />
@@ -262,16 +271,17 @@ function TradingViewChartPopover({
         <div className="grid h-[20rem] place-items-center bg-[#0a1011] px-8 text-center">
           <div>
             <AlertTriangle className="mx-auto size-5 text-amber-200/75" aria-hidden="true" />
-            <p className="mt-3 text-xs text-zinc-300">VargaTrend data unavailable</p>
+            <p className="mt-3 text-xs text-zinc-300">Adaptive Supertrend data unavailable</p>
             <p className="mt-1 text-[0.68rem] text-zinc-600">{error}</p>
           </div>
         </div>
       ) : chartPayload && trendResult ? (
         <div className="grid md:grid-cols-[minmax(0,1fr)_19rem]">
-          <VargaTrendChart
+          <AdaptiveSupertrendChart
             baseAsset={row.baseAsset}
             candles={chartHistory}
             result={trendResult}
+            rateDecisions={chartPayload.data.rateDecisions}
           />
           <div className="border-t border-white/[0.07] bg-white/[0.018] md:border-l md:border-t-0">
             <ResearchRow label="Trend" value={trendResult.trend === 1 ? "BULLISH" : "BEARISH"} tone={trendResult.trend === 1 ? "bull" : "bear"} />
@@ -291,11 +301,28 @@ function TradingViewChartPopover({
             <ResearchRow label="Stance" value={stance} tone={stance === "ALIGNED BULL" ? "bull" : stance === "ALIGNED BEAR" ? "bear" : "neutral"} />
             <ResearchRow
               label="Weekly bull"
-              value={weeklyLong ? `${weeklyLong.result.trend === 1 ? "ACTIVE" : "WAIT"} · WR ${weeklyLong.long.winRate == null ? "—" : `${weeklyLong.long.winRate.toFixed(1)}%`} · Avg win ${weeklyLong.long.averageWinPercent == null ? "—" : `+${weeklyLong.long.averageWinPercent.toFixed(1)}%`} (${weeklyLong.long.trades})` : "Not enough history"}
+              value={weeklyLong ? `${weeklyLong.result.trend === 1 ? "ACTIVE" : "WAIT"} · WR ${weeklyLong.long.winRate == null ? "—" : `${weeklyLong.long.winRate.toFixed(1)}%`} · Geo avg trade ${weeklyLong.long.geometricAverageTradePercent == null ? "—" : `${weeklyLong.long.geometricAverageTradePercent >= 0 ? "+" : ""}${weeklyLong.long.geometricAverageTradePercent.toFixed(1)}%`} · Geo avg win ${weeklyLong.long.geometricAverageWinPercent == null ? "—" : `+${weeklyLong.long.geometricAverageWinPercent.toFixed(1)}%`} (${weeklyLong.long.trades})` : "Not enough history"}
               tone={weeklyLong?.result.trend === 1 ? "bull" : "neutral"}
             />
             <ResearchRow label="Best long TF" value={formatCase(bestLong, "long")} tone={bestLong?.direction === 1 ? "bull" : "neutral"} />
             <ResearchRow label="Best short TF" value={formatCase(bestShort, "short")} tone={bestShort?.direction === -1 ? "bear" : "neutral"} />
+            <ResearchRow
+              label="Lifetime best bull"
+              value={trendAnalysis?.auto.selectionReady
+                ? `ATR ${trendAnalysis.atrPeriod} × ${trendAnalysis.atrMultiplier} · Geo avg ${trendAnalysis.auto.geometricAverageTradePercent == null ? "—" : `${trendAnalysis.auto.geometricAverageTradePercent >= 0 ? "+" : ""}${trendAnalysis.auto.geometricAverageTradePercent.toFixed(1)}%`} · WR ${trendAnalysis.auto.winRatePercent == null ? "—" : `${trendAnalysis.auto.winRatePercent.toFixed(1)}%`} · ${trendAnalysis.auto.winningBullishSections}/${trendAnalysis.auto.completedBullishSections}`
+                : "No positive setup meets the warm-up thresholds"}
+            />
+            <ResearchRow
+              label="Current opt dir"
+              value={trendAnalysis?.auto.selectionReady ? trendResult.trend === 1 ? "BULLISH" : "BEARISH" : "—"}
+              tone={trendResult?.trend === 1 ? "bull" : trendResult ? "bear" : "neutral"}
+            />
+            <ResearchRow
+              label="Bull history"
+              value={trendAnalysis?.auto.geometricAverageTradePercent == null
+                ? "—"
+                : `Geo avg ${trendAnalysis.auto.geometricAverageTradePercent >= 0 ? "+" : ""}${trendAnalysis.auto.geometricAverageTradePercent.toFixed(1)}% · Arithmetic avg ${trendAnalysis.auto.arithmeticAverageTradePercent == null ? "—" : `${trendAnalysis.auto.arithmeticAverageTradePercent >= 0 ? "+" : ""}${trendAnalysis.auto.arithmeticAverageTradePercent.toFixed(1)}%`} · Geo winner ${trendAnalysis.auto.geometricAverageWinPercent == null ? "—" : `+${trendAnalysis.auto.geometricAverageWinPercent.toFixed(1)}%`}`}
+            />
           </div>
         </div>
       ) : null}

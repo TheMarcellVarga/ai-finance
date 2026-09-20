@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { FileCheck2, LockKeyhole, Scale, TriangleAlert } from "lucide-react";
 
 import { PublicInfoPage } from "@/components/public-info-page";
+
+export const metadata: Metadata = {
+  title: "Terms",
+  description: "Research-support terms for Aperture's portfolio intelligence workspace.",
+};
 
 export default function TermsPage() {
   return (

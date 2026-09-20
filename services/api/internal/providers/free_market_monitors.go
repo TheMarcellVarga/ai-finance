@@ -724,7 +724,7 @@ func monitorClassSummaries() []MarketMonitorClassSummary {
 	classes = append(classes, MarketMonitorClassSummary{
 		ID:          "crypto",
 		Label:       "Digital assets",
-		Description: "Dedicated public crypto monitor with exchange scope and VargaTrend history.",
+		Description: "Dedicated public crypto monitor with exchange scope and Adaptive Supertrend history.",
 		Coverage:    "OKX and supported public exchange spot markets",
 	})
 	return classes

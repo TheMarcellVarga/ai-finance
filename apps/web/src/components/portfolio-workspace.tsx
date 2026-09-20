@@ -405,7 +405,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
             <p className="mt-1 text-sm text-zinc-500">Enter your own position; Aperture supplies only the provider quote and freshness metadata.</p>
           </div>
         </div>
-        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-5 grid gap-4 md:grid-cols-2 2xl:grid-cols-5">
           {!portfolio ? (
             <label className="text-sm text-zinc-300">
               Portfolio name
@@ -445,7 +445,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
         </section>
       ) : (
         <>
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
             {[
               ["Total value", portfolio.summary.displayTotalValue, `Market data: ${providerLabel}`],
               ["Selected", selectedHolding ? `${selectedHolding.asset.ticker} ${selectedHolding.asset.displayPrice ?? ""}` : "None", selectedHolding ? `${percentFromBps(selectedHolding.weightBps)} portfolio weight` : "Choose a holding"],

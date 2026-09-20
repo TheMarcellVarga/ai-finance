@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BookmarkPlus,
   Check,
+  ChevronDown,
   ChevronRight,
   Database,
   ExternalLink,
@@ -25,6 +26,31 @@ type AssetMonitorWorkspaceProps = {
 
 type RouteError = { error?: { message?: string } };
 type SortMode = "move" | "month" | "symbol";
+type UnifiedSortMode = "move" | "class" | "symbol";
+
+type UnifiedMarketRow = MarketMonitorRow & {
+  assetClass: string;
+  assetClassLabel: string;
+  detailHref: string;
+};
+
+type CryptoMonitorRoutePayload = {
+  data: Array<{
+    symbol: string;
+    assetName: string;
+    quoteAsset: string;
+    price: number;
+    dailyChangePercent: number;
+    quoteVolume: number;
+    researchUrl: string;
+    candleClosedAt: string;
+  }>;
+  meta: {
+    provider: string;
+    providerLabel: string;
+    capturedAt: string;
+  };
+};
 
 function formatPercent(value: number) {
   const prefix = value > 0 ? "+" : "";
@@ -49,6 +75,10 @@ function formatVolume(value?: number) {
 
 function changeClass(value: number) {
   return value > 0 ? "text-emerald-100" : value < 0 ? "text-rose-100" : "text-zinc-400";
+}
+
+function formatOptionalPercent(value: number | null) {
+  return value == null ? "—" : formatPercent(value);
 }
 
 function MiniSparkline({ row }: { row: MarketMonitorRow }) {
@@ -258,16 +288,160 @@ export function AssetMonitorWorkspace({ assetClass, initialPayload, initialError
   );
 }
 
-export function AssetMonitorIndex() {
-  const [filter, setFilter] = useState("");
-  const filtered = assetMonitorDefinitions.filter((definition) => `${definition.label} ${definition.shortLabel}`.toLowerCase().includes(filter.toLowerCase()));
+export function UnifiedMarketTable() {
+  const [rows, setRows] = useState<UnifiedMarketRow[]>([]);
+  const [query, setQuery] = useState("");
+  const [assetClass, setAssetClass] = useState("all");
+  const [sort, setSort] = useState<UnifiedSortMode>("move");
+  const [loading, setLoading] = useState(true);
+  const [failedClasses, setFailedClasses] = useState<string[]>([]);
+  const [savedKeys, setSavedKeys] = useState<string[]>([]);
+  const [savingKeys, setSavingKeys] = useState<string[]>([]);
+  const [status, setStatus] = useState<string | null>(null);
+
+  const loadEverything = useCallback(async () => {
+    setLoading(true);
+    setStatus(null);
+    const standardDefinitions = assetMonitorDefinitions.filter((definition) => definition.id !== "crypto");
+    const standardRequests = standardDefinitions.map(async (definition) => {
+      const response = await fetch(`/api/finance/asset-monitor?class=${encodeURIComponent(definition.id)}`, { cache: "no-store" });
+      const payload = (await response.json()) as MarketMonitorResponse | RouteError;
+      if (!response.ok || !("data" in payload)) {
+        throw new Error(definition.id);
+      }
+      return payload.data.map((row): UnifiedMarketRow => ({
+        ...row,
+        assetClass: definition.id,
+        assetClassLabel: definition.label,
+        detailHref: definition.href,
+      }));
+    });
+
+    const cryptoRequest = (async () => {
+      const response = await fetch("/api/finance/crypto-monitor?interval=1d&limit=10", { cache: "no-store" });
+      const payload = (await response.json()) as CryptoMonitorRoutePayload | RouteError;
+      if (!response.ok || !("data" in payload)) {
+        throw new Error("crypto");
+      }
+      return payload.data.map((row): UnifiedMarketRow => ({
+        symbol: row.symbol,
+        name: row.assetName,
+        currency: row.quoteAsset,
+        price: row.price,
+        displayValue: new Intl.NumberFormat("en-US", { maximumFractionDigits: row.price >= 1 ? 2 : 6 }).format(row.price),
+        dailyChangePercent: row.dailyChangePercent,
+        monthlyChangePercent: 0,
+        volume: row.quoteVolume,
+        sparkline: [],
+        provider: payload.meta.providerLabel,
+        sourceUrl: row.researchUrl,
+        capturedAt: row.candleClosedAt || payload.meta.capturedAt,
+        assetClass: "crypto",
+        assetClassLabel: "Digital assets",
+        detailHref: `/app/crypto-monitor?market=${encodeURIComponent(row.symbol)}`,
+      }));
+    })();
+
+    const settled = await Promise.allSettled([...standardRequests, cryptoRequest]);
+    const nextRows = settled.flatMap((result) => result.status === "fulfilled" ? result.value : []);
+    const failures = settled.flatMap((result, index) => {
+      if (result.status === "fulfilled") return [];
+      return [index < standardDefinitions.length ? standardDefinitions[index].label : "Digital assets"];
+    });
+    setRows(nextRows);
+    setFailedClasses(failures);
+    setStatus(nextRows.length > 0 ? `${nextRows.length} market references refreshed.` : null);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const initialLoad = window.setTimeout(() => void loadEverything(), 0);
+    return () => window.clearTimeout(initialLoad);
+  }, [loadEverything]);
+
+  const visibleRows = useMemo(() => {
+    const normalizedQuery = query.trim().toUpperCase();
+    return rows
+      .filter((row) => assetClass === "all" || row.assetClass === assetClass)
+      .filter((row) => !normalizedQuery || `${row.symbol} ${row.name} ${row.assetClassLabel}`.toUpperCase().includes(normalizedQuery))
+      .sort((left, right) => {
+        if (sort === "class") return left.assetClassLabel.localeCompare(right.assetClassLabel) || left.symbol.localeCompare(right.symbol);
+        if (sort === "symbol") return left.symbol.localeCompare(right.symbol);
+        return Math.abs(right.dailyChangePercent) - Math.abs(left.dailyChangePercent);
+      });
+  }, [assetClass, query, rows, sort]);
+
+  const loadedClasses = new Set(rows.map((row) => row.assetClass)).size;
+  const latestCapture = [...rows].sort((left, right) => right.capturedAt.localeCompare(left.capturedAt))[0]?.capturedAt;
+
+  async function watchRow(row: UnifiedMarketRow) {
+    const key = `${row.assetClass}:${row.symbol}`;
+    if (savedKeys.includes(key) || savingKeys.includes(key)) return;
+    setSavingKeys((current) => [...current, key]);
+    setStatus(null);
+    try {
+      const response = await fetch("/api/finance/watchlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticker: row.symbol, notes: `${row.assetClassLabel} mega table · ${row.proxyNote || "public market reference"}` }),
+      });
+      const payload = (await response.json()) as RouteError;
+      if (!response.ok) throw new Error(payload.error?.message ?? "The market reference could not be watched.");
+      setSavedKeys((current) => [...current, key]);
+      setStatus(`${row.symbol} added to the watchlist.`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "The market reference could not be watched.");
+    } finally {
+      setSavingKeys((current) => current.filter((item) => item !== key));
+    }
+  }
+
   return (
     <div className="space-y-5">
-      <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8 lg:p-10"><div className="workspace-hero-glow" aria-hidden="true" /><div className="relative grid gap-8 xl:grid-cols-[1fr_21rem] xl:items-end"><div className="max-w-3xl"><p className="type-label inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100">Asset monitors</p><h1 className="type-display mt-6 text-4xl text-white sm:text-6xl">One monitor for every market.</h1><p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-300/80">A composed view of the global asset universe: listed ownership, rates, currencies, real assets, derivatives, private-market proxies, protection contracts, and digital assets.</p></div><div className="glass-surface rounded-[1rem] p-5"><p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Public data stack</p><div className="mt-4 space-y-3 text-sm text-zinc-300"><p><span className="mr-2 text-cyan-100">01</span>Yahoo Finance chart data</p><p><span className="mr-2 text-cyan-100">02</span>Frankfurter / ECB reference rates</p><p><span className="mr-2 text-cyan-100">03</span>OKX and public crypto venues</p></div><p className="mt-4 text-xs leading-5 text-zinc-500">No broker connection. No order path. Each monitor exposes its coverage and freshness.</p></div></div></section>
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="type-label text-xs uppercase text-cyan-100/75">Choose a lens</p><h2 className="type-card-title mt-3 text-2xl text-white">Global asset-class monitors</h2></div><label className="relative block w-full sm:max-w-xs"><span className="sr-only">Filter asset monitors</span><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-600" aria-hidden="true" /><input value={filter} onChange={(event) => setFilter(event.target.value)} placeholder="Filter monitors..." className="h-10 w-full rounded-[0.7rem] border border-white/10 bg-white/[0.025] pl-9 pr-3 text-sm text-white outline-none placeholder:text-zinc-700 focus:border-cyan-200/30 focus:ring-2 focus:ring-cyan-200/10" /></label></section>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{filtered.map((definition, index) => <Link key={definition.id} href={definition.href} className={`group glass-surface rounded-[1rem] p-5 transition-[background-color,transform,border-color] duration-300 hover:-translate-y-0.5 hover:border-cyan-200/20 hover:bg-[#0c1415] ${index === 0 ? "md:col-span-2 xl:col-span-2" : ""}`}><div className="flex items-start justify-between gap-5"><span className="grid size-10 place-items-center rounded-[0.75rem] border border-cyan-200/15 bg-cyan-200/[0.045] font-mono text-lg text-cyan-100">{definition.icon}</span><ChevronRight className="size-4 text-zinc-700 transition-transform group-hover:translate-x-1 group-hover:text-cyan-100" aria-hidden="true" /></div><p className="mt-7 text-xs uppercase tracking-[0.14em] text-zinc-600">{definition.shortLabel}</p><h3 className="type-card-title mt-2 text-2xl text-white">{definition.label}</h3><p className="mt-3 max-w-xl text-sm leading-6 text-zinc-500">{definition.description}</p><div className="mt-6 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-4 text-[0.68rem] text-zinc-600"><span>{definition.coverage}</span><span className="font-mono text-cyan-100/60">Open monitor</span></div></Link>)}</div>
-      {filtered.length === 0 ? <div className="section-shell rounded-[1rem] p-8 text-center"><p className="text-sm text-zinc-400">No monitor matches that filter.</p></div> : null}
-      <footer className="flex flex-col gap-2 border-t border-white/[0.06] pt-4 text-xs leading-5 text-zinc-600 sm:flex-row sm:items-center sm:justify-between"><span>Free public data only · direct instruments and proxies are labelled.</span><span>Research and decision support, not financial advice.</span></footer>
+      <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
+        <div className="workspace-hero-glow" aria-hidden="true" />
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <h1 className="type-display text-4xl text-white sm:text-6xl">The whole market, one table.</h1>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-300/80">Search, filter, sort, and watch configured references across every supported asset class. Open a class only when you need its deeper monitor.</p>
+          </div>
+          <div className="max-w-sm text-xs leading-5 text-zinc-500 lg:text-right">
+            Public and delayed provider data. Proxies are labelled. Coverage reflects configured references, not every instrument in existence.
+          </div>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-3 overflow-hidden border-y border-white/[0.06] bg-black/10">
+        <div className="px-3 py-4 sm:px-5"><p className="text-xs text-zinc-500">References</p><p className="mt-2 font-mono text-xl text-white sm:text-2xl">{rows.length || "—"}</p></div>
+        <div className="border-x border-white/[0.06] px-3 py-4 sm:px-5"><p className="text-xs text-zinc-500">Classes</p><p className="mt-2 font-mono text-xl text-cyan-100 sm:text-2xl">{loadedClasses || "—"}</p></div>
+        <div className="px-3 py-4 sm:px-5"><p className="text-xs text-zinc-500">Freshness</p><p className="mt-2 text-xs text-white sm:text-sm">{latestCapture ? formatCapturedAt(latestCapture) : "Loading"}</p></div>
+      </section>
+
+      <section className="overflow-hidden rounded-[1rem] border border-white/[0.06] bg-[#080d0e]/96">
+        <div className="grid gap-3 border-b border-white/[0.06] p-4 lg:grid-cols-[minmax(15rem,1fr)_14rem_12rem_auto] lg:items-center">
+          <label className="relative block"><span className="sr-only">Search all market references</span><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-600" aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search symbol, name, or class" className="h-10 w-full rounded-[0.7rem] border border-white/10 bg-white/[0.025] pl-9 pr-3 text-sm text-white outline-none placeholder:text-zinc-700 focus:border-cyan-200/30 focus:ring-2 focus:ring-cyan-200/10" /></label>
+          <label className="relative block"><span className="sr-only">Filter by asset class</span><select value={assetClass} onChange={(event) => setAssetClass(event.target.value)} className="h-10 w-full appearance-none rounded-[0.7rem] border border-white/10 bg-[#0c1213] px-3 pr-8 text-sm text-zinc-200 outline-none focus:border-cyan-200/40"><option value="all">All asset classes</option>{assetMonitorDefinitions.map((definition) => <option key={definition.id} value={definition.id}>{definition.label}</option>)}</select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-zinc-600" aria-hidden="true" /></label>
+          <label className="relative block"><span className="sr-only">Sort market table</span><select value={sort} onChange={(event) => setSort(event.target.value as UnifiedSortMode)} className="h-10 w-full appearance-none rounded-[0.7rem] border border-white/10 bg-[#0c1213] px-3 pr-8 text-sm text-zinc-200 outline-none focus:border-cyan-200/40"><option value="move">Largest daily move</option><option value="class">Asset class</option><option value="symbol">Symbol</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-zinc-600" aria-hidden="true" /></label>
+          <Button type="button" variant="outline" size="sm" className="w-full border-cyan-200/20 bg-cyan-200/[0.04] text-cyan-100 hover:bg-cyan-200/15 lg:w-fit" disabled={loading} onClick={() => void loadEverything()}><RefreshCw className={loading ? "size-3.5 animate-spin" : "size-3.5"} aria-hidden="true" />{loading ? "Loading all" : "Refresh all"}</Button>
+        </div>
+
+        {status ? <p aria-live="polite" className="border-b border-white/[0.06] px-4 py-3 text-xs text-zinc-400">{status}</p> : null}
+        {failedClasses.length > 0 ? <p className="border-b border-amber-200/10 bg-amber-200/[0.025] px-4 py-3 text-xs text-amber-100/75">Unavailable now: {failedClasses.join(", ")}. The rest of the table remains usable.</p> : null}
+        {loading && rows.length === 0 ? <div className="p-10 text-center"><RefreshCw className="mx-auto size-5 animate-spin text-cyan-200" aria-hidden="true" /><p className="mt-4 text-sm text-zinc-400">Loading every configured market class…</p></div> : null}
+        {!loading && visibleRows.length === 0 ? <div className="p-10 text-center"><Search className="mx-auto size-5 text-cyan-200" aria-hidden="true" /><p className="mt-4 text-sm text-zinc-400">No market reference matches this filter.</p></div> : null}
+
+        {visibleRows.length > 0 ? <>
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[1060px] border-collapse text-left">
+              <thead className="sticky top-0 bg-[#0b1112] text-[0.68rem] uppercase tracking-[0.12em] text-zinc-500"><tr><th className="px-5 py-3 font-medium">Instrument</th><th className="px-4 py-3 font-medium">Class</th><th className="px-4 py-3 font-medium">Value</th><th className="px-4 py-3 font-medium">1d</th><th className="px-4 py-3 font-medium">3m</th><th className="px-4 py-3 font-medium">Path</th><th className="px-4 py-3 font-medium">Source</th><th className="px-5 py-3 text-right font-medium">Actions</th></tr></thead>
+              <tbody>{visibleRows.map((row) => { const key = `${row.assetClass}:${row.symbol}`; const monthlyChange = row.assetClass === "crypto" ? null : row.monthlyChangePercent; return <tr key={key} className="border-t border-white/[0.05] hover:bg-white/[0.022]"><td className="px-5 py-4"><Link href={row.detailHref} className="font-mono text-sm text-white hover:text-cyan-100">{row.symbol}</Link><p className="mt-1 max-w-[16rem] truncate text-xs text-zinc-500">{row.name}</p></td><td className="px-4 py-4"><span className="text-xs text-cyan-100/80">{row.assetClassLabel}</span>{row.isProxy ? <p className="mt-1 text-[0.65rem] text-amber-100/60">Proxy</p> : null}</td><td className="px-4 py-4"><ValuePair row={row} /></td><td className={`px-4 py-4 font-mono text-xs ${changeClass(row.dailyChangePercent)}`}>{formatPercent(row.dailyChangePercent)}</td><td className={`px-4 py-4 font-mono text-xs ${monthlyChange == null ? "text-zinc-600" : changeClass(monthlyChange)}`}>{formatOptionalPercent(monthlyChange)}</td><td className="px-4 py-4"><MiniSparkline row={row} /></td><td className="px-4 py-4"><p className="max-w-[11rem] truncate text-xs text-zinc-400">{row.provider}</p><p className="mt-1 text-[0.68rem] text-zinc-600">{row.currency || row.unit || "Public reference"}</p></td><td className="px-5 py-4"><MonitorRowActions row={row} onWatch={() => void watchRow(row)} saved={savedKeys.includes(key)} saving={savingKeys.includes(key)} /></td></tr>; })}</tbody>
+            </table>
+          </div>
+          <div className="divide-y divide-white/[0.06] md:hidden">{visibleRows.map((row) => { const key = `${row.assetClass}:${row.symbol}`; const monthlyChange = row.assetClass === "crypto" ? null : row.monthlyChangePercent; return <article key={key} className="p-4"><div className="flex items-start justify-between gap-4"><div className="min-w-0"><Link href={row.detailHref} className="font-mono text-sm text-white">{row.symbol}</Link><p className="mt-1 truncate text-xs text-zinc-500">{row.name}</p></div><span className="shrink-0 text-[0.68rem] text-cyan-100/70">{row.assetClassLabel}</span></div><div className="mt-4 grid grid-cols-3 gap-3"><div><p className="text-[0.65rem] text-zinc-600">Value</p><p className="mt-1 truncate font-mono text-xs text-zinc-200">{row.displayValue}</p></div><div><p className="text-[0.65rem] text-zinc-600">1d</p><p className={`mt-1 font-mono text-xs ${changeClass(row.dailyChangePercent)}`}>{formatPercent(row.dailyChangePercent)}</p></div><div><p className="text-[0.65rem] text-zinc-600">3m</p><p className={`mt-1 font-mono text-xs ${monthlyChange == null ? "text-zinc-600" : changeClass(monthlyChange)}`}>{formatOptionalPercent(monthlyChange)}</p></div></div><div className="mt-4 flex items-center justify-between gap-4"><MiniSparkline row={row} /><MonitorRowActions row={row} onWatch={() => void watchRow(row)} saved={savedKeys.includes(key)} saving={savingKeys.includes(key)} /></div></article>; })}</div>
+        </> : null}
+
+        <footer className="flex flex-col gap-2 border-t border-white/[0.06] px-4 py-3 text-[0.68rem] text-zinc-600 sm:flex-row sm:items-center sm:justify-between"><span>{visibleRows.length} visible of {rows.length} loaded references.</span><span>Public and delayed data · research support · not financial advice.</span></footer>
+      </section>
     </div>
   );
 }

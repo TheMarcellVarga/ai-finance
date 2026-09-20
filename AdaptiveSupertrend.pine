@@ -1,0 +1,1780 @@
+//@version=6
+indicator(
+     "Adaptive Supertrend",
+     overlay=true,
+     format=format.price,
+     precision=2,
+     max_labels_count=200)
+
+// ─────────────────────────────────────────────
+// Settings
+// ─────────────────────────────────────────────
+
+int periods = input.int(
+     10,
+     "ATR Period",
+     minval=1)
+
+float source = input.source(
+     hl2,
+     "Source")
+
+float multiplier = input.float(
+     3.0,
+     "ATR Multiplier",
+     minval=0.1,
+     step=0.1)
+
+bool changeATR = input.bool(
+     true,
+     "Change ATR Calculation Method?")
+
+bool showSignals = input.bool(
+     true,
+     "Show Long/Short Signals?")
+
+bool highlighting = input.bool(
+     true,
+     "Highlighter On/Off?")
+
+bool showDashboard = input.bool(
+     true,
+     "Show Bottom-Left Dashboard?")
+
+bool showFlipLabel = input.bool(
+     true,
+     "Show Current Flip-Level Label?")
+
+bool showUSRateCuts = input.bool(
+     true,
+     "Show U.S. Interest-Rate Cuts?")
+
+bool showMovingAverages = input.bool(
+     true,
+     "Show 50/100/200 Moving Averages?")
+
+string reliabilityGroup = "Reliable Flip Scanner"
+
+int reliabilityMinTrades = input.int(
+     5,
+     "Minimum Fallback Trades",
+     minval=1,
+     group=reliabilityGroup)
+
+int weeklyMinTrades = input.int(
+     10,
+     "Minimum Weekly Trades",
+     minval=1,
+     group=reliabilityGroup)
+
+string optimizerGroup = "Lifetime ATR Optimizer"
+
+string parameterMode = input.string(
+     "Auto lifetime optimizer",
+     "Parameter Mode",
+     options=["Auto lifetime optimizer", "Custom inputs"],
+     group=optimizerGroup,
+     tooltip="Auto selects the best ATR period from 10-20 using a fixed 3.0 multiplier. Results are in-sample research, not a guarantee. Custom uses the ATR Period and ATR Multiplier inputs above.")
+
+bool useAutoOptimizer =
+     parameterMode == "Auto lifetime optimizer"
+
+string riskGroup = "Long-Only Risk Guard"
+
+bool useDefensiveExit = input.bool(
+     true,
+     "Exit when Custom ATR turns bearish?",
+     group=riskGroup,
+     tooltip="Recommended for long-only use. Auto may enter only when both Auto and Custom ATR are bullish, and exits when either turns bearish. This reduces late exits but can create more whipsaws.")
+
+bool showFlatReentryBand = input.bool(
+     false,
+     "Show Flat-State Re-entry Band?",
+     group=riskGroup,
+     tooltip="Off by default. When flat, the red level is a possible re-entry threshold, not a protective stop and not a short signal.")
+
+float estimatedRoundTripCostPercent = input.float(
+     0.05,
+     "Estimated Round-Trip Cost (%)",
+     minval=0.0,
+     step=0.01,
+     group=riskGroup,
+     tooltip="Deducted from each completed long-only trade shown in Long-Only History. Set this to your estimated spread, fees and slippage.")
+
+// Internal optimizer rules are deliberately fixed so the Inputs panel stays
+// simple and results remain comparable between runs.
+const int optimizerMinTrades = 5
+const float optimizerMinBullWinRate = 40.0
+const float optimizerSwitchImprovement = 10.0
+
+bool optimizerEnabled = useAutoOptimizer
+
+// Fixed comparison set: 1H, 4H, 1D, 1W, and 1M.
+string scanTimeframe1 = "60"
+string scanTimeframe2 = "240"
+string scanTimeframe3 = "1D"
+string scanTimeframe4 = "1W"
+string scanTimeframe5 = "1M"
+
+// ─────────────────────────────────────────────
+// Main Supertrend calculation
+// ─────────────────────────────────────────────
+
+float alternativeATR = ta.sma(
+     ta.tr(true),
+     periods)
+
+float atrValue = changeATR ?
+     ta.atr(periods) :
+     alternativeATR
+
+float up = source - multiplier * atrValue
+float previousUp = nz(up[1], up)
+
+up := close[1] > previousUp ?
+     math.max(up, previousUp) :
+     up
+
+float down = source + multiplier * atrValue
+float previousDown = nz(down[1], down)
+
+down := close[1] < previousDown ?
+     math.min(down, previousDown) :
+     down
+
+int trend = 1
+trend := nz(trend[1], trend)
+
+trend := trend == -1 and close > previousDown ? 1 :
+         trend == 1 and close < previousUp ? -1 :
+         trend
+
+bool buySignal =
+     trend == 1 and trend[1] == -1
+
+bool sellSignal =
+     trend == -1 and trend[1] == 1
+
+// ─────────────────────────────────────────────
+// 50 / 100 / 200 simple moving-average package
+// ─────────────────────────────────────────────
+
+float movingAverage50 = ta.sma(close, 50)
+float movingAverage100 = ta.sma(close, 100)
+float movingAverage200 = ta.sma(close, 200)
+
+plot(
+     showMovingAverages ? movingAverage50 : na,
+     title="SMA 50",
+     color=color.new(color.aqua, 0),
+     linewidth=2)
+
+plot(
+     showMovingAverages ? movingAverage100 : na,
+     title="SMA 100",
+     color=color.new(color.orange, 0),
+     linewidth=2)
+
+plot(
+     showMovingAverages ? movingAverage200 : na,
+     title="SMA 200",
+     color=color.new(color.fuchsia, 0),
+     linewidth=2)
+
+// ─────────────────────────────────────────────
+// Supertrend plots
+// ─────────────────────────────────────────────
+
+upPlot = plot(
+     not useAutoOptimizer and trend == 1 ? up : na,
+     title="Up Trend",
+     style=plot.style_linebr,
+     linewidth=2,
+     color=color.green)
+
+plotshape(
+     not useAutoOptimizer and buySignal ? up : na,
+     title="UpTrend Begins",
+     location=location.absolute,
+     style=shape.circle,
+     size=size.tiny,
+     color=color.green)
+
+plotshape(
+     not useAutoOptimizer and buySignal and showSignals ? up : na,
+     title="Long 5",
+     text="Long 5",
+     location=location.absolute,
+     style=shape.labelup,
+     size=size.tiny,
+     color=color.green,
+     textcolor=color.white)
+
+downPlot = plot(
+     not useAutoOptimizer and trend == -1 ? down : na,
+     title="Down Trend",
+     style=plot.style_linebr,
+     linewidth=2,
+     color=color.red)
+
+plotshape(
+     not useAutoOptimizer and sellSignal ? down : na,
+     title="DownTrend Begins",
+     location=location.absolute,
+     style=shape.circle,
+     size=size.tiny,
+     color=color.red)
+
+plotshape(
+     not useAutoOptimizer and sellSignal and showSignals ? down : na,
+     title="Short 3",
+     text="Short 3",
+     location=location.absolute,
+     style=shape.labeldown,
+     size=size.tiny,
+     color=color.red,
+     textcolor=color.white)
+
+// Invisible center plot used for trend highlighting.
+middlePlot = plot(
+     ohlc4,
+     title="Fill Anchor",
+     color=color.new(color.white, 100))
+
+color longFillColor =
+     not useAutoOptimizer and highlighting and trend == 1 ?
+     color.new(color.green, 85) :
+     na
+
+color shortFillColor =
+     not useAutoOptimizer and highlighting and trend == -1 ?
+     color.new(color.red, 85) :
+     na
+
+fill(
+     middlePlot,
+     upPlot,
+     title="UpTrend Highlighter",
+     color=longFillColor)
+
+fill(
+     middlePlot,
+     downPlot,
+     title="DownTrend Highlighter",
+     color=shortFillColor)
+
+// ─────────────────────────────────────────────
+// Alerts
+// ─────────────────────────────────────────────
+
+alertcondition(
+     not useAutoOptimizer and buySignal,
+     title="SuperTrend Long 5",
+     message="SuperTrend Long 5 signal!")
+
+alertcondition(
+     not useAutoOptimizer and sellSignal,
+     title="SuperTrend Short 3",
+     message="SuperTrend Short 3 signal!")
+
+bool directionChanged =
+     trend != trend[1]
+
+alertcondition(
+     not useAutoOptimizer and directionChanged,
+     title="SuperTrend Direction Change",
+     message="SuperTrend has changed direction!")
+
+// ─────────────────────────────────────────────
+// Reusable Supertrend function
+// Used for daily and weekly calculations
+// ─────────────────────────────────────────────
+
+supertrendDirection(
+     float requestedSource,
+     int requestedPeriods,
+     float requestedMultiplier,
+     bool useStandardATR) =>
+
+    float alternateATR = ta.sma(
+         ta.tr(true),
+         requestedPeriods)
+
+    float selectedATR = useStandardATR ?
+         ta.atr(requestedPeriods) :
+         alternateATR
+
+    float upperLevel =
+         requestedSource -
+         requestedMultiplier * selectedATR
+
+    float previousUpperLevel =
+         nz(upperLevel[1], upperLevel)
+
+    upperLevel := close[1] > previousUpperLevel ?
+         math.max(upperLevel, previousUpperLevel) :
+         upperLevel
+
+    float lowerLevel =
+         requestedSource +
+         requestedMultiplier * selectedATR
+
+    float previousLowerLevel =
+         nz(lowerLevel[1], lowerLevel)
+
+    lowerLevel := close[1] < previousLowerLevel ?
+         math.min(lowerLevel, previousLowerLevel) :
+         lowerLevel
+
+    int direction = 1
+    direction := nz(direction[1], direction)
+
+    direction := direction == -1 and
+         close > previousLowerLevel ? 1 :
+         direction == 1 and
+         close < previousUpperLevel ? -1 :
+         direction
+
+    direction
+
+// Separate long and short historical flip tests. Orders execute at the open
+// of the requested-timeframe bar after the flip has been confirmed.
+supertrendFlipBacktest(
+     float requestedSource,
+     int requestedPeriods,
+     float requestedMultiplier,
+     bool useStandardATR) =>
+
+    float alternateATR = ta.sma(
+         ta.tr(true),
+         requestedPeriods)
+
+    float selectedATR = useStandardATR ?
+         ta.atr(requestedPeriods) :
+         alternateATR
+
+    float upperLevel =
+         requestedSource -
+         requestedMultiplier * selectedATR
+
+    float previousUpperLevel =
+         nz(upperLevel[1], upperLevel)
+
+    upperLevel := close[1] > previousUpperLevel ?
+         math.max(upperLevel, previousUpperLevel) :
+         upperLevel
+
+    float lowerLevel =
+         requestedSource +
+         requestedMultiplier * selectedATR
+
+    float previousLowerLevel =
+         nz(lowerLevel[1], lowerLevel)
+
+    lowerLevel := close[1] < previousLowerLevel ?
+         math.min(lowerLevel, previousLowerLevel) :
+         lowerLevel
+
+    int direction = 1
+    direction := nz(direction[1], direction)
+
+    direction := direction == -1 and
+         close > previousLowerLevel ? 1 :
+         direction == 1 and
+         close < previousUpperLevel ? -1 :
+         direction
+
+    bool backtestReady =
+         not na(selectedATR)
+
+    float longTotalWinningReturn = 0.0
+    float shortTotalWinningReturn = 0.0
+    float longTotalReturn = 0.0
+    float shortTotalReturn = 0.0
+    float longTotalWinningLogReturn = 0.0
+    float longTotalLogReturn = 0.0
+    float longEntryPrice = close
+    float shortEntryPrice = close
+    bool inLongTrade = false
+    bool inShortTrade = false
+    int pendingOrder = 0
+    int longClosedTrades = 0
+    int longWinningTrades = 0
+    int shortClosedTrades = 0
+    int shortWinningTrades = 0
+
+    if not backtestReady
+        longTotalWinningReturn := 0.0
+        shortTotalWinningReturn := 0.0
+        longTotalReturn := 0.0
+        shortTotalReturn := 0.0
+        longTotalWinningLogReturn := 0.0
+        longTotalLogReturn := 0.0
+        longEntryPrice := close
+        shortEntryPrice := close
+        inLongTrade := false
+        inShortTrade := false
+        pendingOrder := 0
+        longClosedTrades := 0
+        longWinningTrades := 0
+        shortClosedTrades := 0
+        shortWinningTrades := 0
+    else
+        if not backtestReady[1]
+            longTotalWinningReturn := 0.0
+            shortTotalWinningReturn := 0.0
+            longTotalReturn := 0.0
+            shortTotalReturn := 0.0
+            longTotalWinningLogReturn := 0.0
+            longTotalLogReturn := 0.0
+            longEntryPrice := close
+            shortEntryPrice := close
+            inLongTrade := false
+            inShortTrade := false
+            pendingOrder := 0
+            longClosedTrades := 0
+            longWinningTrades := 0
+            shortClosedTrades := 0
+            shortWinningTrades := 0
+        else
+            longTotalWinningReturn := nz(longTotalWinningReturn[1], 0.0)
+            shortTotalWinningReturn := nz(shortTotalWinningReturn[1], 0.0)
+            longTotalReturn := nz(longTotalReturn[1], 0.0)
+            shortTotalReturn := nz(shortTotalReturn[1], 0.0)
+            longTotalWinningLogReturn :=
+                 nz(longTotalWinningLogReturn[1], 0.0)
+            longTotalLogReturn := nz(longTotalLogReturn[1], 0.0)
+            longEntryPrice := nz(longEntryPrice[1], close)
+            shortEntryPrice := nz(shortEntryPrice[1], close)
+            inLongTrade := inLongTrade[1]
+            inShortTrade := inShortTrade[1]
+            pendingOrder := 0
+            longClosedTrades := nz(longClosedTrades[1], 0)
+            longWinningTrades := nz(longWinningTrades[1], 0)
+            shortClosedTrades := nz(shortClosedTrades[1], 0)
+            shortWinningTrades := nz(shortWinningTrades[1], 0)
+
+            int orderToExecute =
+                 nz(pendingOrder[1], 0)
+
+            if orderToExecute == 1
+                if inShortTrade
+                    float shortTradeReturn =
+                         1.0 - open / shortEntryPrice
+
+                    shortClosedTrades += 1
+                    shortTotalReturn += shortTradeReturn
+
+                    if shortTradeReturn > 0
+                        shortTotalWinningReturn += shortTradeReturn
+                        shortWinningTrades += 1
+
+                    inShortTrade := false
+
+                if not inLongTrade
+                    longEntryPrice := open
+                    inLongTrade := true
+
+            else if orderToExecute == -1
+                if inLongTrade
+                    float longTradeReturn =
+                         open / longEntryPrice - 1.0
+                    float longTradeLogReturn =
+                         math.log(open / longEntryPrice)
+
+                    longClosedTrades += 1
+                    longTotalReturn += longTradeReturn
+                    longTotalLogReturn += longTradeLogReturn
+
+                    if longTradeReturn > 0
+                        longTotalWinningReturn += longTradeReturn
+                        longTotalWinningLogReturn += longTradeLogReturn
+                        longWinningTrades += 1
+
+                    inLongTrade := false
+
+                if not inShortTrade
+                    shortEntryPrice := open
+                    inShortTrade := true
+
+        if direction == 1 and direction[1] == -1
+            pendingOrder := 1
+        else if direction == -1 and direction[1] == 1
+            pendingOrder := -1
+
+    float longAverageWinPercent =
+         longWinningTrades > 0 ?
+         (math.exp(
+              longTotalWinningLogReturn / longWinningTrades) - 1.0) *
+              100.0 :
+         na
+
+    float shortAverageWinPercent =
+         shortWinningTrades > 0 ?
+         shortTotalWinningReturn * 100.0 / shortWinningTrades :
+         na
+
+    float longAverageTradePercent =
+         longClosedTrades > 0 ?
+         (math.exp(longTotalLogReturn / longClosedTrades) - 1.0) * 100.0 :
+         na
+
+    float shortAverageTradePercent =
+         shortClosedTrades > 0 ?
+         shortTotalReturn * 100.0 / shortClosedTrades :
+         na
+
+    [direction[1], longAverageWinPercent[1], longClosedTrades[1], longWinningTrades[1], shortAverageWinPercent[1], shortClosedTrades[1], shortWinningTrades[1], longAverageTradePercent[1], shortAverageTradePercent[1]]
+
+// ─────────────────────────────────────────────
+// Daily and weekly Supertrend directions
+// ─────────────────────────────────────────────
+
+int dailyTrend = request.security(
+     syminfo.tickerid,
+     "1D",
+     supertrendDirection(
+          source,
+          periods,
+          multiplier,
+          changeATR),
+     gaps=barmerge.gaps_off,
+     lookahead=barmerge.lookahead_off)
+
+int weeklyTrend = request.security(
+     syminfo.tickerid,
+     "1W",
+     supertrendDirection(
+          source,
+          periods,
+          multiplier,
+          changeATR),
+     gaps=barmerge.gaps_off,
+     lookahead=barmerge.lookahead_off)
+
+// ─────────────────────────────────────────────
+// Fixed-timeframe flip backtests
+// ─────────────────────────────────────────────
+
+float chartTimeframeSeconds =
+     timeframe.in_seconds()
+
+bool tf1IsLower =
+     timeframe.in_seconds(scanTimeframe1) < chartTimeframeSeconds
+
+bool tf2IsLower =
+     timeframe.in_seconds(scanTimeframe2) < chartTimeframeSeconds
+
+bool tf3IsLower =
+     timeframe.in_seconds(scanTimeframe3) < chartTimeframeSeconds
+
+bool tf4IsLower =
+     timeframe.in_seconds(scanTimeframe4) < chartTimeframeSeconds
+
+bool tf5IsLower =
+     timeframe.in_seconds(scanTimeframe5) < chartTimeframeSeconds
+
+[tf1Direction, tf1LongAverageWin, tf1LongTrades, tf1LongWins, tf1ShortAverageWin, tf1ShortTrades, tf1ShortWins, tf1LongAverageTrade, tf1ShortAverageTrade] = request.security(
+     syminfo.tickerid,
+     scanTimeframe1,
+     supertrendFlipBacktest(source, periods, multiplier, changeATR),
+     gaps=barmerge.gaps_off,
+     lookahead=tf1IsLower ? barmerge.lookahead_off : barmerge.lookahead_on,
+     calc_bars_count=100000)
+
+[tf2Direction, tf2LongAverageWin, tf2LongTrades, tf2LongWins, tf2ShortAverageWin, tf2ShortTrades, tf2ShortWins, tf2LongAverageTrade, tf2ShortAverageTrade] = request.security(
+     syminfo.tickerid,
+     scanTimeframe2,
+     supertrendFlipBacktest(source, periods, multiplier, changeATR),
+     gaps=barmerge.gaps_off,
+     lookahead=tf2IsLower ? barmerge.lookahead_off : barmerge.lookahead_on,
+     calc_bars_count=100000)
+
+[tf3Direction, tf3LongAverageWin, tf3LongTrades, tf3LongWins, tf3ShortAverageWin, tf3ShortTrades, tf3ShortWins, tf3LongAverageTrade, tf3ShortAverageTrade] = request.security(
+     syminfo.tickerid,
+     scanTimeframe3,
+     supertrendFlipBacktest(source, periods, multiplier, changeATR),
+     gaps=barmerge.gaps_off,
+     lookahead=tf3IsLower ? barmerge.lookahead_off : barmerge.lookahead_on,
+     calc_bars_count=100000)
+
+[tf4Direction, tf4LongAverageWin, tf4LongTrades, tf4LongWins, tf4ShortAverageWin, tf4ShortTrades, tf4ShortWins, tf4LongAverageTrade, tf4ShortAverageTrade] = request.security(
+     syminfo.tickerid,
+     scanTimeframe4,
+     supertrendFlipBacktest(source, periods, multiplier, changeATR),
+     gaps=barmerge.gaps_off,
+     lookahead=tf4IsLower ? barmerge.lookahead_off : barmerge.lookahead_on,
+     calc_bars_count=100000)
+
+[tf5Direction, tf5LongAverageWin, tf5LongTrades, tf5LongWins, tf5ShortAverageWin, tf5ShortTrades, tf5ShortWins, tf5LongAverageTrade, tf5ShortAverageTrade] = request.security(
+     syminfo.tickerid,
+     scanTimeframe5,
+     supertrendFlipBacktest(source, periods, multiplier, changeATR),
+     gaps=barmerge.gaps_off,
+     lookahead=tf5IsLower ? barmerge.lookahead_off : barmerge.lookahead_on,
+     calc_bars_count=100000)
+
+array<string> scanLabels =
+     array.from("1H", "4H", "1D", "1W", "1M")
+
+array<int> scanDirections =
+     array.from(tf1Direction, tf2Direction, tf3Direction, tf4Direction, tf5Direction)
+
+array<float> longAverageWins =
+     array.from(tf1LongAverageWin, tf2LongAverageWin, tf3LongAverageWin, tf4LongAverageWin, tf5LongAverageWin)
+
+array<int> longTradeCounts =
+     array.from(tf1LongTrades, tf2LongTrades, tf3LongTrades, tf4LongTrades, tf5LongTrades)
+
+array<int> longWinCounts =
+     array.from(tf1LongWins, tf2LongWins, tf3LongWins, tf4LongWins, tf5LongWins)
+
+array<float> shortAverageWins =
+     array.from(tf1ShortAverageWin, tf2ShortAverageWin, tf3ShortAverageWin, tf4ShortAverageWin, tf5ShortAverageWin)
+
+array<int> shortTradeCounts =
+     array.from(tf1ShortTrades, tf2ShortTrades, tf3ShortTrades, tf4ShortTrades, tf5ShortTrades)
+
+array<int> shortWinCounts =
+     array.from(tf1ShortWins, tf2ShortWins, tf3ShortWins, tf4ShortWins, tf5ShortWins)
+
+array<float> longAverageTrades =
+     array.from(tf1LongAverageTrade, tf2LongAverageTrade, tf3LongAverageTrade, tf4LongAverageTrade, tf5LongAverageTrade)
+
+array<float> shortAverageTrades =
+     array.from(tf1ShortAverageTrade, tf2ShortAverageTrade, tf3ShortAverageTrade, tf4ShortAverageTrade, tf5ShortAverageTrade)
+
+float bestLongWinRate = na
+float bestLongAverageWin = na
+float bestLongAverageTrade = na
+string bestLongTimeframe = "-"
+int bestLongTrades = 0
+int bestLongDirection = 0
+
+float bestShortWinRate = na
+float bestShortAverageWin = na
+float bestShortAverageTrade = na
+string bestShortTimeframe = "-"
+int bestShortTrades = 0
+int bestShortDirection = 0
+
+// Compare 1H, 4H, 1D, and 1W by positive average return per completed
+// trade. Weekly uses its stricter sample requirement. Monthly is excluded.
+for scanIndex = 0 to 3
+    int scanDirection = array.get(scanDirections, scanIndex)
+    int requiredTrades =
+         scanIndex == 3 ? weeklyMinTrades : reliabilityMinTrades
+    int longTrades = array.get(longTradeCounts, scanIndex)
+    int longWins = array.get(longWinCounts, scanIndex)
+    float longWinRate = longTrades > 0 ?
+         longWins * 100.0 / longTrades :
+         na
+    float longAverageWin = array.get(longAverageWins, scanIndex)
+    float longAverageTrade = array.get(longAverageTrades, scanIndex)
+
+    if longTrades >= requiredTrades and
+         longWins > 0 and
+         longAverageTrade > 0 and
+         (na(bestLongAverageTrade) or
+         longAverageTrade > bestLongAverageTrade or
+         (longAverageTrade == bestLongAverageTrade and
+         longWinRate > bestLongWinRate) or
+         (longAverageTrade == bestLongAverageTrade and
+         longWinRate == bestLongWinRate and
+         longTrades > bestLongTrades))
+        bestLongWinRate := longWinRate
+        bestLongAverageWin := longAverageWin
+        bestLongAverageTrade := longAverageTrade
+        bestLongTimeframe := array.get(scanLabels, scanIndex)
+        bestLongTrades := longTrades
+        bestLongDirection := scanDirection
+
+    int shortTrades = array.get(shortTradeCounts, scanIndex)
+    int shortWins = array.get(shortWinCounts, scanIndex)
+    float shortWinRate = shortTrades > 0 ?
+         shortWins * 100.0 / shortTrades :
+         na
+    float shortAverageWin = array.get(shortAverageWins, scanIndex)
+    float shortAverageTrade = array.get(shortAverageTrades, scanIndex)
+
+    if shortTrades >= requiredTrades and
+         shortWins > 0 and
+         shortAverageTrade > 0 and
+         (na(bestShortAverageTrade) or
+         shortAverageTrade > bestShortAverageTrade or
+         (shortAverageTrade == bestShortAverageTrade and
+         shortWinRate > bestShortWinRate) or
+         (shortAverageTrade == bestShortAverageTrade and
+         shortWinRate == bestShortWinRate and
+         shortTrades > bestShortTrades))
+        bestShortWinRate := shortWinRate
+        bestShortAverageWin := shortAverageWin
+        bestShortAverageTrade := shortAverageTrade
+        bestShortTimeframe := array.get(scanLabels, scanIndex)
+        bestShortTrades := shortTrades
+        bestShortDirection := scanDirection
+
+float weeklyLongWinRate =
+     tf4LongTrades > 0 ?
+     tf4LongWins * 100.0 / tf4LongTrades :
+     na
+
+float weeklyShortWinRate =
+     tf4ShortTrades > 0 ?
+     tf4ShortWins * 100.0 / tf4ShortTrades :
+     na
+
+bool weeklyLongReliable =
+     tf4LongTrades >= weeklyMinTrades and tf4LongWins > 0
+
+string weeklyBullText =
+     tf4LongTrades == 0 ?
+     "No completed weekly long trades" :
+     (not weeklyLongReliable ?
+          "LOW SAMPLE " + str.tostring(tf4LongTrades) +
+          "/" + str.tostring(weeklyMinTrades) + " required" :
+     (tf4Direction == 1 ? "ACTIVE" : "WAIT") +
+          " | " + str.tostring(tf4LongWins) +
+          "/" + str.tostring(tf4LongTrades)) +
+     " | WR " + str.tostring(weeklyLongWinRate, "#.#") + "%" +
+     " | Geo Avg Trade " +
+     (tf4LongAverageTrade >= 0 ? "+" : "") +
+     str.tostring(tf4LongAverageTrade, "#.##") + "%"
+
+color weeklyBullColor =
+     not weeklyLongReliable ? color.silver :
+     tf4Direction == 1 ? color.lime : color.orange
+
+string bestLongText =
+     na(bestLongWinRate) ?
+     "Not enough long history" :
+     bestLongTimeframe +
+     (bestLongDirection == 1 ? " BULL ACTIVE" : " BEAR WAIT") +
+     " | Geo Avg Trade " + str.tostring(bestLongAverageTrade, "#.##") + "%" +
+     " | WR " + str.tostring(bestLongWinRate, "#.#") + "%" +
+     " | Geo Avg Win +" + str.tostring(bestLongAverageWin, "#.##") + "%" +
+     " (" + str.tostring(bestLongTrades) + ")"
+
+string bestShortText =
+     na(bestShortWinRate) ?
+     "Not enough short history" :
+     bestShortTimeframe +
+     (bestShortDirection == -1 ? " BEAR ACTIVE" : " BULL WAIT") +
+     " | Avg Trade " + str.tostring(bestShortAverageTrade, "#.##") + "%" +
+     " | WR " + str.tostring(bestShortWinRate, "#.#") + "%" +
+     " | Avg Win +" + str.tostring(bestShortAverageWin, "#.##") + "%" +
+     " (" + str.tostring(bestShortTrades) + ")"
+
+color bestLongColor =
+     na(bestLongWinRate) ? color.silver :
+     bestLongDirection == 1 ? color.lime : color.orange
+
+color bestShortColor =
+     na(bestShortWinRate) ? color.silver :
+     bestShortDirection == -1 ? color.red : color.orange
+
+// ─────────────────────────────────────────────
+// Lifetime ATR optimizer
+// Tests ATR periods 10-20 with the multiplier fixed permanently at 3.0.
+// Only eleven candidates are evaluated; there is no multiplier search.
+// Results are descriptive/in-sample and must not be read as forward evidence.
+// ─────────────────────────────────────────────
+
+const int optimizerPeriodMin = 10
+const int optimizerPeriodMax = 20
+const int optimizerPeriodCount =
+     optimizerPeriodMax - optimizerPeriodMin + 1
+const int optimizerCandidateCount = optimizerPeriodCount
+
+var array<float> optimizerAtrValues =
+     array.new_float(optimizerPeriodCount, na)
+var array<float> optimizerTrSums =
+     array.new_float(optimizerPeriodCount, 0.0)
+
+var array<float> optimizerUpperLevels =
+     array.new_float(optimizerCandidateCount, na)
+var array<float> optimizerLowerLevels =
+     array.new_float(optimizerCandidateCount, na)
+var array<int> optimizerDirections =
+     array.new_int(optimizerCandidateCount, 1)
+
+var array<int> optimizerPositions =
+     array.new_int(optimizerCandidateCount, 0)
+var array<float> optimizerEntryPrices =
+     array.new_float(optimizerCandidateCount, na)
+var array<int> optimizerPendingOrders =
+     array.new_int(optimizerCandidateCount, 0)
+var array<int> optimizerClosedTrades =
+     array.new_int(optimizerCandidateCount, 0)
+var array<int> optimizerWinningTrades =
+     array.new_int(optimizerCandidateCount, 0)
+var array<float> optimizerWinningReturnTotals =
+     array.new_float(optimizerCandidateCount, 0.0)
+var array<float> optimizerAllReturnTotals =
+     array.new_float(optimizerCandidateCount, 0.0)
+var array<float> optimizerWinningLogReturnTotals =
+     array.new_float(optimizerCandidateCount, 0.0)
+var array<float> optimizerAllLogReturnTotals =
+     array.new_float(optimizerCandidateCount, 0.0)
+
+float optimizerTrueRange = ta.tr(true)
+
+// Build Wilder ATR values without calling ta.atr() with a dynamic length.
+// Each candidate ATR period is calculated once per chart bar with the
+// multiplier fixed at 3.0.
+for optimizerPeriod = optimizerPeriodMin to optimizerPeriodMax
+    if not optimizerEnabled
+        continue
+
+    int periodIndex = optimizerPeriod - optimizerPeriodMin
+    float previousAtr = array.get(optimizerAtrValues, periodIndex)
+    float trSum =
+         array.get(optimizerTrSums, periodIndex) + optimizerTrueRange
+    float nextAtr = previousAtr
+
+    if na(previousAtr)
+        array.set(optimizerTrSums, periodIndex, trSum)
+
+        if bar_index + 1 >= optimizerPeriod
+            nextAtr := trSum / optimizerPeriod
+    else
+        nextAtr :=
+             (previousAtr * (optimizerPeriod - 1) +
+             optimizerTrueRange) / optimizerPeriod
+
+    array.set(optimizerAtrValues, periodIndex, nextAtr)
+
+bool optimizerSectionClosedThisBar = false
+
+for optimizerPeriod = optimizerPeriodMin to optimizerPeriodMax
+    int periodIndex = optimizerPeriod - optimizerPeriodMin
+    float optimizerAtr =
+         array.get(optimizerAtrValues, periodIndex)
+
+    if not optimizerEnabled
+        continue
+
+    int combinationIndex = periodIndex
+
+    float rawUpper =
+         source - 3.0 * optimizerAtr
+    float rawLower =
+         source + 3.0 * optimizerAtr
+    float storedUpper =
+         array.get(optimizerUpperLevels, combinationIndex)
+    float storedLower =
+         array.get(optimizerLowerLevels, combinationIndex)
+    float previousUpper = nz(storedUpper, rawUpper)
+    float previousLower = nz(storedLower, rawLower)
+
+    float nextUpper =
+         close[1] > previousUpper ?
+         math.max(rawUpper, previousUpper) :
+         rawUpper
+    float nextLower =
+         close[1] < previousLower ?
+         math.min(rawLower, previousLower) :
+         rawLower
+
+    int previousDirection =
+         array.get(optimizerDirections, combinationIndex)
+    int nextDirection =
+         previousDirection == -1 and close > previousLower ? 1 :
+         previousDirection == 1 and close < previousUpper ? -1 :
+         previousDirection
+
+    array.set(
+         optimizerUpperLevels,
+         combinationIndex,
+         nextUpper)
+    array.set(
+         optimizerLowerLevels,
+         combinationIndex,
+         nextLower)
+    array.set(
+         optimizerDirections,
+         combinationIndex,
+         nextDirection)
+
+    // Only complete bullish flip-to-flip sections are included.
+    if not na(optimizerAtr)
+        int orderToExecute =
+             array.get(optimizerPendingOrders, combinationIndex)
+        int position =
+             array.get(optimizerPositions, combinationIndex)
+        float entryPrice =
+             array.get(optimizerEntryPrices, combinationIndex)
+        int closedTrades =
+             array.get(optimizerClosedTrades, combinationIndex)
+        int winningTrades =
+             array.get(optimizerWinningTrades, combinationIndex)
+        float winningReturnTotal =
+             array.get(
+                  optimizerWinningReturnTotals,
+                  combinationIndex)
+        float allReturnTotal =
+             array.get(
+                  optimizerAllReturnTotals,
+                  combinationIndex)
+        float winningLogReturnTotal =
+             array.get(
+                  optimizerWinningLogReturnTotals,
+                  combinationIndex)
+        float allLogReturnTotal =
+             array.get(
+                  optimizerAllLogReturnTotals,
+                  combinationIndex)
+
+        // A bullish section opens on a confirmed bullish flip and closes
+        // on the next confirmed bearish flip. Bearish sections are not
+        // included in WR, average return, or optimizer ranking.
+        if orderToExecute == 1
+            position := 1
+            entryPrice := open
+
+        else if orderToExecute == -1
+            if position == 1 and not na(entryPrice)
+                float tradeReturn =
+                     open / entryPrice - 1.0
+                float tradeLogReturn =
+                     math.log(open / entryPrice)
+
+                closedTrades += 1
+                allReturnTotal += tradeReturn
+                allLogReturnTotal += tradeLogReturn
+                optimizerSectionClosedThisBar := true
+
+                if tradeReturn > 0
+                    winningTrades += 1
+                    winningReturnTotal += tradeReturn
+                    winningLogReturnTotal += tradeLogReturn
+
+            position := 0
+            entryPrice := na
+
+        int nextPendingOrder =
+             nextDirection == 1 and previousDirection == -1 ? 1 :
+             nextDirection == -1 and previousDirection == 1 ? -1 :
+             0
+
+        array.set(
+             optimizerPositions,
+             combinationIndex,
+             position)
+        array.set(
+             optimizerEntryPrices,
+             combinationIndex,
+             entryPrice)
+        array.set(
+             optimizerPendingOrders,
+             combinationIndex,
+             nextPendingOrder)
+        array.set(
+             optimizerClosedTrades,
+             combinationIndex,
+             closedTrades)
+        array.set(
+             optimizerWinningTrades,
+             combinationIndex,
+             winningTrades)
+        array.set(
+             optimizerWinningReturnTotals,
+             combinationIndex,
+             winningReturnTotal)
+        array.set(
+             optimizerAllReturnTotals,
+             combinationIndex,
+             allReturnTotal)
+        array.set(
+             optimizerWinningLogReturnTotals,
+             combinationIndex,
+             winningLogReturnTotal)
+        array.set(
+             optimizerAllLogReturnTotals,
+             combinationIndex,
+             allLogReturnTotal)
+
+var int optimizerBestPeriod = na
+var int optimizerBestIndex = na
+var int optimizerBestTrades = 0
+var int optimizerBestWins = 0
+var float optimizerBestWinRate = na
+var float optimizerBestAverageWin = na
+var float optimizerBestNetReturn = na
+var float optimizerBestAverageTrade = na
+var int optimizerBestDirection = 0
+
+// Re-rank only after at least one bullish section closes, plus once on the
+// dataset's last bar for initial display. Resizing and scrolling do not affect
+// the sample because no viewport variables are referenced.
+if optimizerEnabled and
+     ((useAutoOptimizer and optimizerSectionClosedThisBar) or barstate.islast)
+    int incumbentIndex = optimizerBestIndex
+    int incumbentTrades =
+         not na(incumbentIndex) ?
+         array.get(optimizerClosedTrades, incumbentIndex) : 0
+    int incumbentWins =
+         not na(incumbentIndex) ?
+         array.get(optimizerWinningTrades, incumbentIndex) : 0
+    float incumbentWinRate =
+         incumbentTrades > 0 ?
+         incumbentWins * 100.0 / incumbentTrades : na
+    float incumbentGeoAverage =
+         incumbentTrades > 0 ?
+         (math.exp(
+              array.get(
+                   optimizerAllLogReturnTotals,
+                   incumbentIndex) / incumbentTrades) - 1.0) * 100.0 :
+         na
+    bool incumbentEligible =
+         incumbentTrades >= optimizerMinTrades and
+         incumbentWinRate >= optimizerMinBullWinRate and
+         incumbentGeoAverage > 0
+
+    optimizerBestPeriod := na
+    optimizerBestIndex := na
+    optimizerBestTrades := 0
+    optimizerBestWins := 0
+    optimizerBestWinRate := na
+    optimizerBestAverageWin := na
+    optimizerBestNetReturn := na
+    optimizerBestAverageTrade := na
+    optimizerBestDirection := 0
+
+    for combinationIndex = 0 to optimizerCandidateCount - 1
+        int closedTrades =
+             array.get(optimizerClosedTrades, combinationIndex)
+        int winningTrades =
+             array.get(optimizerWinningTrades, combinationIndex)
+        float winRate =
+             closedTrades > 0 ?
+             winningTrades * 100.0 / closedTrades :
+             na
+        float averageWin =
+             winningTrades > 0 ?
+             (math.exp(
+                  array.get(
+                       optimizerWinningLogReturnTotals,
+                       combinationIndex) / winningTrades) - 1.0) * 100.0 :
+             na
+
+        float totalReturn =
+             array.get(
+                  optimizerAllReturnTotals,
+                  combinationIndex) * 100.0
+        float arithmeticAverage =
+             closedTrades > 0 ? totalReturn / closedTrades : na
+        float geometricAverage =
+             closedTrades > 0 ?
+             (math.exp(
+                  array.get(
+                       optimizerAllLogReturnTotals,
+                       combinationIndex) / closedTrades) - 1.0) * 100.0 :
+             na
+
+        // Geometric profitability across completed bullish sections is the
+        // primary objective. This reduces domination by early BTC outliers.
+        bool isBetter =
+             closedTrades >= optimizerMinTrades and
+             winRate >= optimizerMinBullWinRate and
+             geometricAverage > 0 and
+             (na(optimizerBestAverageTrade) or
+             geometricAverage > optimizerBestAverageTrade or
+             (geometricAverage == optimizerBestAverageTrade and
+             winRate > optimizerBestWinRate) or
+             (geometricAverage == optimizerBestAverageTrade and
+             winRate == optimizerBestWinRate and
+             closedTrades > optimizerBestTrades))
+
+        if isBetter
+            optimizerBestPeriod :=
+                 optimizerPeriodMin + combinationIndex
+            optimizerBestIndex := combinationIndex
+            optimizerBestTrades := closedTrades
+            optimizerBestWins := winningTrades
+            optimizerBestWinRate := winRate
+            optimizerBestAverageWin := averageWin
+            optimizerBestNetReturn := arithmeticAverage
+            optimizerBestAverageTrade := geometricAverage
+            optimizerBestDirection :=
+                 array.get(optimizerDirections, combinationIndex)
+
+    bool keepIncumbent =
+         incumbentEligible and
+         (na(optimizerBestIndex) or
+         (optimizerBestIndex != incumbentIndex and
+         optimizerBestAverageTrade <
+              incumbentGeoAverage *
+              (1.0 + optimizerSwitchImprovement / 100.0)))
+
+    if keepIncumbent
+        float incumbentArithmeticAverage =
+             array.get(
+                  optimizerAllReturnTotals,
+                  incumbentIndex) * 100.0 / incumbentTrades
+        float incumbentAverageWin =
+             incumbentWins > 0 ?
+             (math.exp(
+                  array.get(
+                       optimizerWinningLogReturnTotals,
+                       incumbentIndex) / incumbentWins) - 1.0) * 100.0 :
+             na
+
+        optimizerBestPeriod :=
+             optimizerPeriodMin + incumbentIndex
+        optimizerBestIndex := incumbentIndex
+        optimizerBestTrades := incumbentTrades
+        optimizerBestWins := incumbentWins
+        optimizerBestWinRate := incumbentWinRate
+        optimizerBestAverageWin := incumbentAverageWin
+        optimizerBestNetReturn := incumbentArithmeticAverage
+        optimizerBestAverageTrade := incumbentGeoAverage
+        optimizerBestDirection :=
+             array.get(optimizerDirections, incumbentIndex)
+
+// The winning ATR period remains fixed between completed sections, but
+// its current direction and bands continue updating on every market bar.
+if not na(optimizerBestIndex)
+    optimizerBestDirection :=
+         array.get(optimizerDirections, optimizerBestIndex)
+
+string optimizerBestText =
+     not useAutoOptimizer ? "Disabled" :
+     na(optimizerBestWinRate) ?
+     "No positive setup with " + str.tostring(optimizerMinTrades) +
+          "+ sections and " +
+     str.tostring(optimizerMinBullWinRate, "#") + "%+ WR" :
+     "ATR " + str.tostring(optimizerBestPeriod) +
+     " x 3" +
+     " | Geo Avg Bull " +
+     (optimizerBestAverageTrade >= 0 ? "+" : "") +
+     str.tostring(optimizerBestAverageTrade, "#.##") + "%" +
+     " | Bull WR " + str.tostring(optimizerBestWinRate, "#.#") + "%" +
+     " | " + str.tostring(optimizerBestWins) +
+     "/" + str.tostring(optimizerBestTrades)
+
+string optimizerStateText =
+     na(optimizerBestWinRate) ? "-" :
+     (optimizerBestDirection == 1 ? "BULLISH" : "BEARISH")
+
+color optimizerStateColor =
+     na(optimizerBestWinRate) ? color.silver :
+     optimizerBestDirection == 1 ? color.lime : color.red
+
+string optimizerReturnText =
+     na(optimizerBestAverageTrade) ? "-" :
+     "Geo avg " +
+     (optimizerBestAverageTrade >= 0 ? "+" : "") +
+     str.tostring(optimizerBestAverageTrade, "#.##") + "%" +
+     " | Arithmetic avg " +
+     (optimizerBestNetReturn >= 0 ? "+" : "") +
+     str.tostring(optimizerBestNetReturn, "#.##") + "%" +
+     " | Geo avg winner +" +
+     str.tostring(optimizerBestAverageWin, "#.##") + "%"
+
+color optimizerReturnColor =
+     na(optimizerBestAverageTrade) ? color.silver :
+     optimizerBestAverageTrade >= 0 ? color.lime : color.red
+
+// ─────────────────────────────────────────────
+// Effective long-only chart signal
+// Auto selects the trend candidate. The optional Custom ATR guard is defensive:
+// enter only when both agree bullish and exit as soon as either turns bearish.
+// This prevents a slower optimized ATR from holding beyond the Custom ATR exit.
+// Until enough bullish sections close, Auto falls back to Custom ATR settings.
+// ─────────────────────────────────────────────
+
+bool autoSelectionReady =
+     useAutoOptimizer and not na(optimizerBestIndex)
+
+float optimizerSelectedUpper =
+     autoSelectionReady ?
+     array.get(optimizerUpperLevels, optimizerBestIndex) : na
+
+float optimizerSelectedLower =
+     autoSelectionReady ?
+     array.get(optimizerLowerLevels, optimizerBestIndex) : na
+
+int optimizerTrend =
+     autoSelectionReady ? optimizerBestDirection : trend
+
+float optimizerEffectiveUp =
+     autoSelectionReady ? optimizerSelectedUpper : up
+
+float optimizerEffectiveDown =
+     autoSelectionReady ? optimizerSelectedLower : down
+
+bool defensiveGuardEnabled =
+     useAutoOptimizer and useDefensiveExit and autoSelectionReady
+
+int effectiveTrend =
+     defensiveGuardEnabled ?
+          (optimizerTrend == 1 and trend == 1 ? 1 : -1) :
+     optimizerTrend
+
+// When both systems must agree, the higher bullish stop exits first and the
+// higher bearish threshold ensures both systems are bullish before re-entry.
+float effectiveUp =
+     defensiveGuardEnabled ?
+          math.max(optimizerEffectiveUp, up) :
+     optimizerEffectiveUp
+
+float effectiveDown =
+     not defensiveGuardEnabled ? optimizerEffectiveDown :
+     optimizerTrend == -1 and trend == -1 ?
+          math.max(optimizerEffectiveDown, down) :
+     optimizerTrend == -1 ? optimizerEffectiveDown :
+     optimizerEffectiveDown
+
+// The last branch above is reached when Auto is bullish and the Custom guard
+// alone is bearish, so Custom ATR is the only level required for re-entry.
+effectiveDown :=
+     defensiveGuardEnabled and optimizerTrend == 1 and trend == -1 ?
+          down : effectiveDown
+
+bool effectiveBuySignal =
+     effectiveTrend == 1 and effectiveTrend[1] == -1
+
+bool effectiveSellSignal =
+     effectiveTrend == -1 and effectiveTrend[1] == 1
+
+// Track the signal that could force the long-only system flat. This text makes
+// it explicit that a bearish flip is an exit, not an instruction to go short.
+string exitReason =
+     not defensiveGuardEnabled ? "AUTO" :
+     optimizerTrend == -1 and trend == -1 ? "AUTO + CUSTOM" :
+     optimizerTrend == -1 ? "AUTO" :
+     "CUSTOM GUARD"
+
+// Realized history of the actual effective long-only signal. Signals are
+// confirmed at the bar close and simulated at the following bar's open.
+var int longOnlyPendingOrder = 0
+var bool longOnlyInTrade = false
+var float longOnlyEntryPrice = na
+var int longOnlyClosedTrades = 0
+var int longOnlyWinningTrades = 0
+var float longOnlyAllLogReturn = 0.0
+var float longOnlyEquity = 1.0
+var float longOnlyPeakEquity = 1.0
+var float longOnlyMaximumDrawdown = 0.0
+
+int longOnlyOrderToExecute = longOnlyPendingOrder
+longOnlyPendingOrder := 0
+
+if longOnlyOrderToExecute == 1 and not longOnlyInTrade
+    longOnlyEntryPrice := open
+    longOnlyInTrade := true
+
+else if longOnlyOrderToExecute == -1 and longOnlyInTrade and
+     not na(longOnlyEntryPrice)
+    float longOnlyGrossReturn =
+         open / longOnlyEntryPrice - 1.0
+    float longOnlyNetReturn =
+         longOnlyGrossReturn -
+         estimatedRoundTripCostPercent / 100.0
+    float longOnlyGrowthFactor =
+         math.max(0.000001, 1.0 + longOnlyNetReturn)
+
+    longOnlyClosedTrades += 1
+    longOnlyAllLogReturn += math.log(longOnlyGrowthFactor)
+    longOnlyEquity *= longOnlyGrowthFactor
+    longOnlyPeakEquity :=
+         math.max(longOnlyPeakEquity, longOnlyEquity)
+    longOnlyMaximumDrawdown :=
+         math.max(
+              longOnlyMaximumDrawdown,
+              (1.0 - longOnlyEquity / longOnlyPeakEquity) * 100.0)
+
+    if longOnlyNetReturn > 0
+        longOnlyWinningTrades += 1
+
+    longOnlyEntryPrice := na
+    longOnlyInTrade := false
+
+if barstate.isconfirmed
+    if effectiveBuySignal
+        longOnlyPendingOrder := 1
+    else if effectiveSellSignal
+        longOnlyPendingOrder := -1
+
+float longOnlyWinRate =
+     longOnlyClosedTrades > 0 ?
+     longOnlyWinningTrades * 100.0 / longOnlyClosedTrades : na
+
+float longOnlyGeometricAverage =
+     longOnlyClosedTrades > 0 ?
+     (math.exp(longOnlyAllLogReturn / longOnlyClosedTrades) - 1.0) *
+          100.0 :
+     na
+
+float longOnlyNetGrowth =
+     (longOnlyEquity - 1.0) * 100.0
+
+string longOnlyHistoryText =
+     longOnlyClosedTrades == 0 ?
+     "No completed long trades" :
+     "Geo avg " +
+     (longOnlyGeometricAverage >= 0 ? "+" : "") +
+     str.tostring(longOnlyGeometricAverage, "#.##") + "%" +
+     " | Net " +
+     (longOnlyNetGrowth >= 0 ? "+" : "") +
+     str.tostring(longOnlyNetGrowth, "#.##") + "%" +
+     " | WR " + str.tostring(longOnlyWinRate, "#.#") + "%" +
+     " | Max DD " +
+     str.tostring(longOnlyMaximumDrawdown, "#.##") + "%" +
+     " | " + str.tostring(longOnlyWinningTrades) +
+     "/" + str.tostring(longOnlyClosedTrades)
+
+color longOnlyHistoryColor =
+     na(longOnlyGeometricAverage) ? color.silver :
+     longOnlyGeometricAverage >= 0 ? color.lime : color.red
+
+bool showAutoOnBar = useAutoOptimizer
+
+bool optimizerSelectionChanged =
+     autoSelectionReady and not na(optimizerBestIndex[1]) and
+     optimizerBestIndex != optimizerBestIndex[1]
+
+autoUpPlot = plot(
+     showAutoOnBar and effectiveTrend == 1 and
+          not optimizerSelectionChanged ? effectiveUp : na,
+     title="Auto Up Trend",
+     style=plot.style_linebr,
+     linewidth=2,
+     color=color.green)
+
+autoDownPlot = plot(
+     showAutoOnBar and showFlatReentryBand and effectiveTrend == -1 and
+          not optimizerSelectionChanged ? effectiveDown : na,
+     title="Flat Re-entry Band",
+     style=plot.style_linebr,
+     linewidth=2,
+     color=color.red)
+
+plotshape(
+     showAutoOnBar and effectiveBuySignal ? effectiveUp : na,
+     title="Auto UpTrend Begins",
+     location=location.absolute,
+     style=shape.circle,
+     size=size.tiny,
+     color=color.green)
+
+plotshape(
+     showAutoOnBar and effectiveBuySignal and showSignals ? effectiveUp : na,
+     title="Auto Long",
+     text="AUTO LONG",
+     location=location.absolute,
+     style=shape.labelup,
+     size=size.tiny,
+     color=color.green,
+     textcolor=color.white)
+
+plotshape(
+     showAutoOnBar and effectiveSellSignal ? effectiveDown : na,
+     title="Auto DownTrend Begins",
+     location=location.absolute,
+     style=shape.circle,
+     size=size.tiny,
+     color=color.red)
+
+plotshape(
+     showAutoOnBar and effectiveSellSignal and showSignals ? effectiveDown : na,
+     title="Exit Long",
+     text="EXIT LONG",
+     location=location.absolute,
+     style=shape.labeldown,
+     size=size.tiny,
+     color=color.red,
+     textcolor=color.white)
+
+fill(
+     middlePlot,
+     autoUpPlot,
+     title="Auto UpTrend Highlighter",
+     color=showAutoOnBar and highlighting and effectiveTrend == 1 ?
+          color.new(color.green, 85) : na)
+
+fill(
+     middlePlot,
+     autoDownPlot,
+     title="Auto DownTrend Highlighter",
+     color=showAutoOnBar and highlighting and effectiveTrend == -1 ?
+          color.new(color.red, 85) : na)
+
+alertcondition(
+     useAutoOptimizer and effectiveBuySignal and barstate.isconfirmed,
+     title="Adaptive Supertrend Auto Long",
+     message="Adaptive Supertrend long-only signal changed bullish. Consider long-entry research.")
+
+alertcondition(
+     useAutoOptimizer and effectiveSellSignal and barstate.isconfirmed,
+     title="Adaptive Supertrend Exit Long",
+     message="Adaptive Supertrend long-only signal changed risk-off. Exit-long research signal; not a short-entry instruction.")
+
+// ─────────────────────────────────────────────
+// Store the most recent Supertrend flip
+// ─────────────────────────────────────────────
+
+var float lastFlipLevel = na
+var float lastFlipClose = na
+var int lastFlipTime = na
+
+if effectiveBuySignal or effectiveSellSignal
+    lastFlipLevel := effectiveBuySignal ?
+         effectiveDown[1] :
+         effectiveUp[1]
+
+    lastFlipClose := close
+    lastFlipTime := time
+
+float nextFlipLevel =
+     effectiveTrend == 1 ? effectiveUp : effectiveDown
+
+float sinceFlipPercent =
+     na(lastFlipClose) ?
+     na :
+     (close / lastFlipClose - 1.0) * 100.0
+
+// ─────────────────────────────────────────────
+// Current flip-level label
+// ─────────────────────────────────────────────
+
+var label flipLevelLabel = na
+
+if barstate.islast
+    if not na(flipLevelLabel)
+        label.delete(flipLevelLabel)
+
+    if showFlipLabel and not na(nextFlipLevel)
+        string flipDirection =
+             effectiveTrend == 1 ? "BULLISH / LONG" :
+             useAutoOptimizer ? "RISK-OFF / FLAT" : "BEARISH"
+
+        string flipLevelTitle =
+             effectiveTrend == 1 ? "Exit Level: " :
+             useAutoOptimizer ? "Re-entry Level: " : "Flip Level: "
+
+        color flipColor =
+             effectiveTrend == 1 ? color.lime : color.red
+
+        flipLevelLabel := label.new(
+             x=bar_index + 1,
+             y=nextFlipLevel,
+             text=flipLevelTitle +
+                  str.tostring(
+                       nextFlipLevel,
+                       format.mintick) +
+                  "\n" +
+                  flipDirection,
+             xloc=xloc.bar_index,
+             yloc=yloc.price,
+             style=label.style_label_left,
+             color=color.new(color.black, 20),
+             textcolor=flipColor,
+             size=size.tiny)
+
+// ─────────────────────────────────────────────
+// All U.S. interest-rate decisions
+// CUT, HIKE, or HOLD
+// ─────────────────────────────────────────────
+
+float usRateDecision = request.economic(
+     "US",
+     "INTR",
+     gaps=barmerge.gaps_on,
+     ignore_invalid_symbol=true)
+
+bool newRateDecision =
+     not na(usRateDecision)
+
+float previousDecisionRate = ta.valuewhen(
+     newRateDecision,
+     usRateDecision,
+     1)
+
+if showUSRateCuts and newRateDecision and not na(previousDecisionRate)
+    bool isRateCut =
+         usRateDecision < previousDecisionRate
+
+    bool isRateHike =
+         usRateDecision > previousDecisionRate
+
+    string decisionText =
+         isRateCut ? "↓ CUT " :
+         isRateHike ? "↑ HIKE " :
+         "— HOLD "
+
+    color decisionColor =
+         isRateCut ? color.lime :
+         isRateHike ? color.red :
+         color.orange
+
+    label.new(
+         x=bar_index,
+         y=high,
+         text=decisionText +
+              str.tostring(usRateDecision, "#.##") +
+              "%",
+         xloc=xloc.bar_index,
+         yloc=yloc.abovebar,
+         style=label.style_none,
+         textcolor=decisionColor,
+         size=size.tiny)
+
+// ─────────────────────────────────────────────
+// Dashboard values
+// ─────────────────────────────────────────────
+
+string trendText =
+     (effectiveTrend == 1 ? "BULLISH / LONG" :
+     useAutoOptimizer ? "RISK-OFF / FLAT" : "BEARISH") +
+     (not useAutoOptimizer ? " (CUSTOM)" :
+     autoSelectionReady ?
+          (defensiveGuardEnabled ? " (AUTO + GUARD)" : " (AUTO)") :
+          " (AUTO WARMUP)")
+
+string dailyText =
+     (dailyTrend == 1 ? "BULLISH" : "BEARISH") +
+     (useAutoOptimizer ? " (CUSTOM ATR)" : "")
+
+string weeklyText =
+     (weeklyTrend == 1 ? "BULLISH" : "BEARISH") +
+     (useAutoOptimizer ? " (CUSTOM ATR)" : "")
+
+color trendColor =
+     effectiveTrend == 1 ? color.lime : color.red
+
+color dailyColor =
+     dailyTrend == 1 ? color.lime : color.red
+
+color weeklyColor =
+     weeklyTrend == 1 ? color.lime : color.red
+
+bool allBullish =
+     effectiveTrend == 1 and
+     dailyTrend == 1 and
+     weeklyTrend == 1
+
+bool allBearish =
+     effectiveTrend == -1 and
+     dailyTrend == -1 and
+     weeklyTrend == -1
+
+string stanceText =
+     (allBullish ? "ALIGNED BULL" :
+     allBearish ?
+          (useAutoOptimizer ? "RISK OFF" : "ALIGNED BEAR") :
+     "MIXED") +
+     (useAutoOptimizer ? " (MIXED PARAMS)" : "")
+
+color stanceColor =
+     allBullish ? color.lime :
+     allBearish ? color.red :
+     color.orange
+
+string confirmationText =
+     barstate.isconfirmed ? "YES" : "WAIT"
+
+string lastFlipDate =
+     na(lastFlipTime) ?
+     "-" :
+     str.format_time(
+          lastFlipTime,
+          "yyyy-MM-dd")
+
+string sinceFlipText =
+     na(sinceFlipPercent) ?
+     "-" :
+     (sinceFlipPercent > 0 ? "+" : "") +
+     str.tostring(
+          sinceFlipPercent,
+          "#.##") +
+     "%"
+
+color sinceFlipColor =
+     na(sinceFlipPercent) ? color.silver :
+     effectiveTrend == 1 ?
+          (sinceFlipPercent >= 0 ? color.lime : color.red) :
+     color.silver
+
+string defensiveGuardText =
+     not useAutoOptimizer ? "Disabled in Custom mode" :
+     not useDefensiveExit ? "Disabled" :
+     not autoSelectionReady ? "Waiting for Auto warmup" :
+     trend == 1 ? "CUSTOM ATR BULLISH" :
+     "CUSTOM ATR EXIT | " + exitReason
+
+color defensiveGuardColor =
+     not useAutoOptimizer or not useDefensiveExit or
+     not autoSelectionReady ? color.silver :
+     trend == 1 ? color.lime : color.orange
+
+// ─────────────────────────────────────────────
+// Compact bottom-left dashboard
+// ─────────────────────────────────────────────
+
+color panelBackground =
+     color.new(color.black, 15)
+
+color labelBackground =
+     color.new(color.gray, 75)
+
+color borderColor =
+     color.new(color.gray, 45)
+
+dashboardRow(
+     table dashboardTable,
+     int row,
+     string rowLabel,
+     string rowValue,
+     color valueColor) =>
+
+    table.cell(
+         dashboardTable,
+         0,
+         row,
+         rowLabel,
+         text_color=color.silver,
+         text_size=size.tiny,
+         bgcolor=labelBackground)
+
+    table.cell(
+         dashboardTable,
+         1,
+         row,
+         rowValue,
+         text_color=valueColor,
+         text_size=size.tiny,
+         bgcolor=panelBackground)
+
+var table dashboard = table.new(
+     position.bottom_right,
+     2,
+     15,
+     bgcolor=panelBackground,
+     frame_color=borderColor,
+     frame_width=1,
+     border_color=borderColor,
+     border_width=1)
+
+if barstate.islast
+    if showDashboard
+        dashboardRow(
+             dashboard,
+             0,
+             "Trend",
+             trendText,
+             trendColor)
+
+        dashboardRow(
+             dashboard,
+             1,
+             "Confirm",
+             confirmationText,
+             color.white)
+
+        dashboardRow(
+             dashboard,
+             2,
+             effectiveTrend == 1 ? "Exit Level" :
+                  useAutoOptimizer ? "Re-entry Level" : "Next Flip",
+             str.tostring(
+                  nextFlipLevel,
+                  format.mintick),
+             color.white)
+
+        dashboardRow(
+             dashboard,
+             3,
+             "Last Flip",
+             na(lastFlipLevel) ?
+                  "-" :
+                  str.tostring(
+                       lastFlipLevel,
+                       format.mintick),
+             color.white)
+
+        dashboardRow(
+             dashboard,
+             4,
+             "Last Flip Date",
+             lastFlipDate,
+             color.white)
+
+        dashboardRow(
+             dashboard,
+             5,
+             "Since Flip",
+             sinceFlipText,
+             sinceFlipColor)
+
+        dashboardRow(
+             dashboard,
+             6,
+             "Weekly",
+             weeklyText,
+             weeklyColor)
+
+        dashboardRow(
+             dashboard,
+             7,
+             "Daily",
+             dailyText,
+             dailyColor)
+
+        dashboardRow(
+             dashboard,
+             8,
+             "Stance",
+             stanceText,
+             stanceColor)
+
+        dashboardRow(
+             dashboard,
+             9,
+             "Weekly Bull",
+             weeklyBullText,
+             weeklyBullColor)
+
+        dashboardRow(
+             dashboard,
+             10,
+             "Best Long TF",
+             bestLongText,
+             bestLongColor)
+
+        dashboardRow(
+             dashboard,
+             11,
+             "Defensive Exit",
+             defensiveGuardText,
+             defensiveGuardColor)
+
+        dashboardRow(
+             dashboard,
+             12,
+             "Optimizer Candidate",
+             optimizerBestText,
+             color.white)
+
+        dashboardRow(
+             dashboard,
+             13,
+             "Current Opt Dir",
+             optimizerStateText,
+             optimizerStateColor)
+
+        dashboardRow(
+             dashboard,
+             14,
+             "Long-Only History",
+             longOnlyHistoryText,
+             longOnlyHistoryColor)
+
+    else
+        table.clear(
+             dashboard,
+             0,
+             0,
+             1,
+             14)

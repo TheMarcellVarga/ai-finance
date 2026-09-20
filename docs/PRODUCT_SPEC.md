@@ -35,7 +35,7 @@ The product has five primary destinations:
 
 Research, risk explanations, watchlists, journals, playbooks, evaluations, billing, and settings remain supporting capabilities. They should be reached from the workflow that needs them or from account controls, not displayed as equal-weight primary destinations.
 
-The Crypto Monitor defines the canonical market-monitor interaction. The combined Markets table and every asset-class view reuse its generalizable controls and VargaTrend fields: timeframe, state filters, latest/nearest flip sorting, confirmed state, last flip, flip level, distance, since-flip movement, study/lab links, and explicit provider limitations.
+The Crypto Monitor defines the canonical market-monitor interaction. The combined Markets table and every asset-class view reuse its generalizable controls and Adaptive Supertrend fields: timeframe, state filters, latest/nearest flip sorting, confirmed state, last flip, flip level, distance, since-flip movement, study/lab links, and explicit provider limitations.
 
 ## Target Users
 

@@ -1,7 +1,7 @@
 import type { MarketMonitorPoint, MarketMonitorResponse, MarketMonitorRow } from "@/lib/finance-api";
 import type { CryptoCandle } from "@/lib/crypto-supertrend";
 import type { CryptoMonitorInterval } from "@/lib/crypto-monitor-intervals";
-import { calculateVargaTrendAuto } from "@/lib/varga-trend";
+import { calculateAdaptiveSupertrendAuto } from "@/lib/adaptive-supertrend";
 
 type DirectInstrument = {
   symbol: string;
@@ -309,10 +309,10 @@ function aggregateCandles(candles: CryptoCandle[], size: number, interval: Crypt
   return aggregated.map((candle) => ({ ...candle, closeTime: candle.openTime + intervalMilliseconds[interval] - 1 }));
 }
 
-function withVargaTrend(row: MarketMonitorRow, candles: CryptoCandle[], interval: CryptoMonitorInterval, signalBasis: "ohlc" | "close-derived") {
+function withAdaptiveSupertrend(row: MarketMonitorRow, candles: CryptoCandle[], interval: CryptoMonitorInterval, signalBasis: "ohlc" | "close-derived") {
   try {
     const closedCandles = candles.length > 12 ? candles.slice(0, -1) : candles;
-    const analysis = calculateVargaTrendAuto(closedCandles);
+    const analysis = calculateAdaptiveSupertrendAuto(closedCandles);
     const result = analysis.result;
     return {
       ...row,
@@ -333,7 +333,7 @@ function withVargaTrend(row: MarketMonitorRow, candles: CryptoCandle[], interval
       ...row,
       signalInterval: interval,
       signalBasis,
-      signalUnavailableReason: error instanceof Error ? error.message : "VargaTrend history is unavailable.",
+      signalUnavailableReason: error instanceof Error ? error.message : "Adaptive Supertrend history is unavailable.",
     } satisfies MarketMonitorRow;
   }
 }
@@ -427,7 +427,7 @@ async function fetchYahooInstrument(instrument: DirectInstrument, interval: Cryp
         isProxy: instrument.isProxy,
         proxyNote: instrument.proxyNote,
       };
-      return withVargaTrend(row, aggregateCandles(candles, config.aggregate, interval), interval, "ohlc");
+      return withAdaptiveSupertrend(row, aggregateCandles(candles, config.aggregate, interval), interval, "ohlc");
     } catch (error) {
       lastError = error;
     }
@@ -508,7 +508,7 @@ async function loadFrankfurter(definition: DirectMonitorDefinition, interval: Cr
     };
     if (interval === "1d" || interval === "3d" || interval === "1w") {
       const size = interval === "3d" ? 3 : interval === "1w" ? 7 : 1;
-      rows.push(withVargaTrend(row, aggregateCandles(pointsForSignal, size, interval), interval, "close-derived"));
+      rows.push(withAdaptiveSupertrend(row, aggregateCandles(pointsForSignal, size, interval), interval, "close-derived"));
     } else {
       rows.push({ ...row, signalInterval: interval, signalBasis: "close-derived", signalUnavailableReason: "Intraday FX OHLC is unavailable from the configured reference-rate provider." });
     }
@@ -527,7 +527,7 @@ function availableClasses() {
     {
       id: "crypto",
       label: "Digital assets",
-      description: "Dedicated public crypto monitor with exchange scope and VargaTrend history.",
+      description: "Dedicated public crypto monitor with exchange scope and Adaptive Supertrend history.",
       coverage: "OKX and supported public exchange spot markets",
     },
   ];

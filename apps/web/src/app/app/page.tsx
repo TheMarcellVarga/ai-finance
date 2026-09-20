@@ -249,9 +249,9 @@ export default async function AppOverviewPage() {
             <h2 className="type-card-title mt-3 text-2xl text-white">Choose the job in front of you</h2>
           </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
           {coreAreas.map(({ href, eyebrow, title, body, icon: Icon, meta }) => (
-            <Link key={href} className="overview-area glass-surface group rounded-[1.1rem] p-5" href={href}>
+            <Link key={href} className="overview-area glass-surface group flex h-full flex-col rounded-[1.1rem] p-5" href={href}>
               <div className="flex items-start justify-between gap-4">
                 <div className="grid size-9 place-items-center rounded-[0.75rem] bg-cyan-200/[0.055] text-cyan-100">
                   <Icon className="size-4" />
@@ -261,7 +261,7 @@ export default async function AppOverviewPage() {
               <p className="type-label mt-6 text-[0.62rem] uppercase text-cyan-100/65">{eyebrow}</p>
               <h3 className="type-card-title mt-2 text-xl text-white">{title}</h3>
               <p className="mt-3 text-sm leading-6 text-zinc-500">{body}</p>
-              <p className="mt-5 font-mono text-[0.62rem] uppercase tracking-[0.15em] text-amber-100/65">{meta}</p>
+              <p className="mt-auto pt-5 font-mono text-[0.62rem] uppercase tracking-[0.15em] text-amber-100/65">{meta}</p>
             </Link>
           ))}
         </div>

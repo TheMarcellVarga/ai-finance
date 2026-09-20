@@ -16,15 +16,17 @@ import {
 import { useEffect, useMemo, useRef } from "react";
 
 import type { CryptoCandle } from "@/lib/crypto-supertrend";
-import { calculateSimpleMovingAverage, type VargaTrendResult } from "@/lib/varga-trend";
+import type { CryptoRateDecision } from "@/lib/crypto-chart";
+import { calculateSimpleMovingAverage, type AdaptiveSupertrendResult } from "@/lib/adaptive-supertrend";
 
 const DEFAULT_VISIBLE_CANDLES = 60;
 const CHART_HEIGHT = 320;
 
-type VargaTrendChartProps = {
+type AdaptiveSupertrendChartProps = {
   baseAsset: string;
   candles: CryptoCandle[];
-  result: VargaTrendResult;
+  result: AdaptiveSupertrendResult;
+  rateDecisions?: CryptoRateDecision[];
 };
 
 function toChartTime(milliseconds: number) {
@@ -32,7 +34,7 @@ function toChartTime(milliseconds: number) {
 }
 
 function buildTrendLine(
-  result: VargaTrendResult,
+  result: AdaptiveSupertrendResult,
   trend: 1 | -1,
 ): Array<LineData<UTCTimestamp> | WhitespaceData<UTCTimestamp>> {
   return result.points.map((point) => (
@@ -48,7 +50,7 @@ function formatPrice(value: number | null) {
   return value.toFixed(digits);
 }
 
-export function VargaTrendChart({ baseAsset, candles, result }: VargaTrendChartProps) {
+export function AdaptiveSupertrendChart({ baseAsset, candles, result, rateDecisions = [] }: AdaptiveSupertrendChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const fillSvgRef = useRef<SVGSVGElement>(null);
   const bullishFillRef = useRef<SVGPathElement>(null);
@@ -165,6 +167,20 @@ export function VargaTrendChart({ baseAsset, candles, result }: VargaTrendChartP
         markers.push({ time, position: "aboveBar", shape: "arrowDown", color: "#f23645", text: "Short 3", size: 1 });
       }
     }
+    for (const decision of rateDecisions) {
+      if (decision.timestamp < candles[0].openTime) continue;
+      const candle = candles.find((candidate) => candidate.openTime >= decision.timestamp);
+      if (!candle) continue;
+      markers.push({
+        time: toChartTime(candle.openTime),
+        position: "aboveBar",
+        shape: "circle",
+        color: decision.direction === "cut" ? "#a3e635" : "#fb7185",
+        text: `${decision.direction === "cut" ? "CUT" : "HIKE"} ${decision.rate.toFixed(2)}%`,
+        size: 1,
+      });
+    }
+    markers.sort((left, right) => Number(left.time) - Number(right.time));
     createSeriesMarkers(candleSeries, markers, { autoScale: true });
 
     candleSeries.createPriceLine({
@@ -244,10 +260,10 @@ export function VargaTrendChart({ baseAsset, candles, result }: VargaTrendChartP
       chart.timeScale().unsubscribeSizeChange(updateOverlays);
       chart.remove();
     };
-  }, [baseAsset, candleData, candles, result]);
+  }, [baseAsset, candleData, candles, rateDecisions, result]);
 
   return (
-    <div ref={containerRef} className="relative h-[20rem] w-full overflow-hidden" role="img" aria-label={`${baseAsset} VargaTrend candlestick chart`}>
+    <div ref={containerRef} className="relative h-[20rem] w-full overflow-hidden" role="img" aria-label={`${baseAsset} Adaptive Supertrend candlestick chart`}>
       <div className="pointer-events-none absolute left-3 top-2 z-10 flex gap-2 font-mono text-[0.52rem] uppercase tracking-[0.08em]" aria-hidden="true">
         <span className="text-cyan-300">SMA 50</span>
         <span className="text-amber-300">SMA 100</span>

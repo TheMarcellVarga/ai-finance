@@ -10,7 +10,7 @@ import {
   getAllLessons,
   learningModules,
 } from "./education";
-import { calculateVargaTrend } from "./varga-trend";
+import { calculateAdaptiveSupertrend } from "./adaptive-supertrend";
 
 test("position size uses invalidation distance and all-in costs", () => {
   const result = calculatePositionSize({
@@ -81,10 +81,10 @@ test("Supertrend anatomy produces ATR steps and an explicit event trail", () => 
   assert.ok(steps.some((step) => step.event.includes("flip")));
 });
 
-test("Supertrend anatomy matches the deployed VargaTrend trace", () => {
+test("Supertrend anatomy matches the deployed Adaptive Supertrend trace", () => {
   const steps = buildSupertrendAnatomy();
   const candles = steps.map((step, index) => ({ ...step.candle, openTime: index, closeTime: index + 1 }));
-  const live = calculateVargaTrend(candles, 3, 1.8, true);
+  const live = calculateAdaptiveSupertrend(candles, 3, 1.8, true);
   assert.equal(live.points.length, steps.length - 2);
   live.points.forEach((point, pointIndex) => {
     const step = steps[pointIndex + 2];

@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { DatabaseZap, Fingerprint, KeyRound, ShieldCheck } from "lucide-react";
 
 import { PublicInfoPage } from "@/components/public-info-page";
+
+export const metadata: Metadata = {
+  title: "Privacy",
+  description: "Aperture's privacy posture for sensitive portfolio and AI research data.",
+};
 
 export default function PrivacyPage() {
   return (

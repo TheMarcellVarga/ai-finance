@@ -44,35 +44,25 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
       </aside>
       <div className="relative z-10 xl:pl-80">
-        <header className="sticky top-0 z-20 px-3 py-3 xl:hidden">
-          <div className="glass-surface rounded-[1.1rem] p-3 sm:p-4">
-            <div className="flex items-center justify-between gap-3">
+        <header className="sticky top-0 z-20 px-3 py-2.5 sm:px-4 sm:py-3 xl:hidden">
+          <div className="glass-surface rounded-[1.1rem] p-2.5 sm:p-3">
+            <div className="flex flex-wrap items-center gap-2.5 md:flex-nowrap md:gap-4">
               <BrandMark />
-              <UserButton userProfileMode="navigation" userProfileUrl="/app/settings/account" />
-            </div>
-            <nav aria-label="Compact workspace navigation" className="mt-4 hidden gap-2 overflow-x-auto pb-1 text-sm text-zinc-400 sm:flex">
-              {nav.map((item) => (
-                <Link key={item.href} href={item.href} className="shrink-0 rounded-[0.85rem] bg-white/[0.025] px-3 py-1.5 transition-[background-color,color] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-black/25 hover:text-cyan-50">
+              <div className="order-2 ml-auto shrink-0 md:order-3 md:ml-0">
+                <UserButton userProfileMode="navigation" userProfileUrl="/app/settings/account" />
+              </div>
+              <nav aria-label="Compact workspace navigation" className="order-3 -mx-1 flex min-w-0 basis-full gap-1 overflow-x-auto px-1 pb-0.5 text-xs text-zinc-400 md:order-none md:mx-0 md:basis-auto md:flex-1 md:gap-2 md:px-0 sm:text-sm">
+                {nav.map((item) => (
+                  <Link key={item.href} href={item.href} className="flex min-h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-[0.85rem] bg-white/[0.025] px-2.5 py-2 transition-[background-color,color] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-black/25 hover:text-cyan-50 md:min-h-9 md:justify-start md:px-3 md:py-1.5">
                   {item.label}
-                </Link>
-              ))}
-            </nav>
+                  </Link>
+                ))}
+              </nav>
+            </div>
           </div>
         </header>
-        <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-7xl px-3 pb-24 pt-4 sm:px-6 sm:pb-8 sm:pt-6 lg:px-8 xl:py-8">{children}</main>
+        <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8 xl:py-8">{children}</main>
       </div>
-      <nav className="glass-surface fixed inset-x-3 bottom-3 z-30 flex gap-1 overflow-x-auto rounded-[1.05rem] p-1.5 sm:hidden" aria-label="Workspace navigation">
-        {nav.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="flex min-w-[4.25rem] flex-1 flex-col items-center gap-1 rounded-[0.8rem] px-1 py-2 text-[0.62rem] text-zinc-400 transition hover:bg-black/25 hover:text-cyan-50"
-          >
-            <item.icon className="size-4 text-cyan-200/70" />
-            <span className="truncate">{item.label}</span>
-          </Link>
-        ))}
-      </nav>
     </div>
   );
 }

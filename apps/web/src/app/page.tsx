@@ -1,224 +1,219 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  FileCheck2,
-  FileSearch,
-  LockKeyhole,
-  Radar,
-  ScanSearch,
+  BookOpenCheck,
+  FileText,
+  Fingerprint,
+  KeyRound,
   ShieldCheck,
+  Target,
 } from "lucide-react";
 
+import { HomeMotion } from "@/components/home-motion";
 import { MarketingPage } from "@/components/marketing-page";
 import { Button } from "@/components/ui/button";
 
-const rhythm = [
+const storyPanels = [
   {
-    number: "01",
-    label: "Load the portfolio",
-    body: "Start from provider-backed holdings, allocation, and freshness metadata.",
+    title: "Portfolio context first",
+    body: "Holdings, allocation, watchlists, and provider freshness become one readable starting point.",
+    icon: Target,
   },
   {
-    number: "02",
-    label: "Inspect the evidence",
-    body: "Review material changes with visible sources, assumptions, and risk context.",
+    title: "Evidence stays attached",
+    body: "Filing passages, citations, assumptions, and interpretation remain close to every material claim.",
+    icon: FileText,
   },
   {
-    number: "03",
-    label: "Save the cited brief",
-    body: "Keep the research record for follow-up questions and advisor conversations.",
+    title: "Questions become a record",
+    body: "Save the brief, challenge the assumptions, and return to the conversation when the picture changes.",
+    icon: BookOpenCheck,
   },
 ];
 
-const assurances = [
-  "No brokerage or trade execution.",
-  "No personalized investment advice.",
-  "No promised returns or suitability claims.",
+const boundaries = [
+  { title: "Server-owned", body: "Secrets stay out of the browser.", icon: KeyRound },
+  { title: "Owner-scoped", body: "Finance data stays behind identity checks.", icon: Fingerprint },
+  { title: "Research support", body: "Sources and assumptions stay visible.", icon: ShieldCheck },
 ];
 
-const ambientSignals = [
-  {
-    title: "Portfolio context",
-    body: "Allocation context first",
-    icon: Radar,
-  },
-  {
-    title: "Source review",
-    body: "Citations stay visible",
-    icon: FileSearch,
-  },
-  {
-    title: "Scenario questions",
-    body: "Questions, not instructions",
-    icon: ScanSearch,
-  },
+const tiers = [
+  { name: "Free", price: "$0", detail: "1 portfolio" },
+  { name: "Pro", price: "$19", detail: "5 portfolios" },
+  { name: "Research Pro", price: "$49", detail: "20 portfolios" },
+  { name: "Team / Advisor", price: "Custom", detail: "Shared rooms" },
 ];
 
 export default function Home() {
   return (
     <MarketingPage>
-      <section className="cinema-hero relative isolate overflow-hidden px-4 sm:px-6 lg:px-8">
-        <div className="cinema-hero-media" aria-hidden="true" />
-        <div className="cinema-ambient" />
-        <div className="cinema-vignette" />
+      <HomeMotion>
+        <div className="home-index">
+          <section id="top" className="home-hero relative isolate overflow-hidden px-4 sm:px-6 lg:px-8">
+            <div className="home-hero-art" aria-hidden="true" />
+            <div className="home-hero-glow" aria-hidden="true" />
+            <div className="home-hero-scrim" aria-hidden="true" />
 
-        <div className="relative z-10 mx-auto w-full max-w-7xl">
-          <div className="cinema-reveal max-w-3xl">
-            <p className="inline-flex rounded-full bg-amber-100/[0.045] px-4 py-2 text-xs font-light uppercase tracking-[0.24em] text-amber-100/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
-              Private wealth intelligence
-            </p>
-            <h1 className="mt-7 max-w-4xl text-5xl font-extralight leading-[0.96] tracking-normal text-zinc-50 sm:text-6xl xl:text-7xl">
-              Complexity, made quiet.
-            </h1>
-            <p className="mt-7 max-w-2xl text-base leading-8 text-zinc-200/88 sm:text-lg">
-              Aperture turns portfolios, filings, goals, and market noise into
-              calm private briefings for people who want clarity without living
-              inside a finance terminal.
-            </p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" className="rounded-[0.95rem] px-5">
-                <Link href="/app" prefetch={false}>
-                  Open workspace
-                  <ArrowRight data-icon="inline-end" />
-                </Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="rounded-[0.95rem] px-5"
-              >
-                <Link href="/demo">Try the guided demo</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="review-rhythm" className="cinema-review-section scroll-mt-4 relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-100/24 to-transparent" />
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-12 lg:grid-cols-[0.86fr_1.14fr] lg:gap-20">
-            <div>
-              <p className="text-xs font-light uppercase tracking-[0.24em] text-amber-100/58">
-                Product feeling
-              </p>
-              <h2 className="mt-6 max-w-xl text-4xl font-extralight leading-tight tracking-normal text-white sm:text-5xl">
-                A private review rhythm, not another dashboard.
-              </h2>
-              <p className="mt-7 max-w-lg text-base leading-8 text-zinc-400">
-                Aperture keeps the daily research loop deliberately small:
-                understand the portfolio, inspect the evidence, and keep a
-                useful record for the next conversation.
-              </p>
-            </div>
-
-            <div className="cinema-rhythm">
-              {rhythm.map(({ number, label, body }) => (
-                <article key={label} className="cinema-rhythm-row">
-                  <p className="font-mono text-[0.62rem] tracking-[0.18em] text-amber-100/54">
-                    {number}
-                  </p>
-                  <div>
-                    <h3 className="text-xl font-extralight tracking-normal text-white sm:text-2xl">
-                      {label}
-                    </h3>
-                    <p className="mt-3 max-w-xl text-sm leading-7 text-zinc-400 sm:text-base">
-                      {body}
-                    </p>
-                  </div>
-                </article>
-              ))}
-              <p className="pt-6 text-sm leading-7 text-zinc-500">
-                Sources, assumptions, and freshness stay visible throughout.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section
-        id="ambient-intelligence"
-        className="cinema-ambient-section relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8"
-        aria-label="Ambient intelligence briefing"
-      >
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-100/18 to-transparent" />
-        <div className="mx-auto flex w-full max-w-7xl flex-col items-center">
-          <div className="flex max-w-2xl flex-col items-center text-center">
-            <p className="font-mono text-[0.62rem] uppercase tracking-[0.24em] text-amber-100/66">
-              Ambient intelligence
-            </p>
-            <p className="mt-4 text-sm font-light text-zinc-100 sm:text-base">
-              A quiet read before the day gets loud.
-            </p>
-            <p className="mt-5 inline-flex items-center justify-center gap-2 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-zinc-400">
-              <span className="size-[0.42rem] shrink-0 rounded-full bg-cyan-300/90 shadow-[0_0_0_0.28rem_rgb(103_232_249/0.08)]" />
-              Source-aware research flow
-            </p>
-          </div>
-
-          <div className="cinema-intelligence-dock mt-10 w-full max-w-3xl overflow-hidden">
-            <div className="grid grid-cols-1 divide-y divide-white/8 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-              {ambientSignals.map(({ title, body, icon: Icon }) => (
-                <div className="flex gap-3 px-4 py-5 sm:flex-col sm:px-5 sm:py-6" key={title}>
-                  <div className="cinema-signal-icon shrink-0">
-                    <Icon className="size-3.5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-light text-zinc-100 sm:text-sm">{title}</p>
-                    <p className="mt-1 text-xs font-light text-zinc-500">{body}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="cinema-context-section relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="cinema-panel rounded-[1.5rem] p-7 sm:p-10">
-            <div className="flex items-start justify-between gap-5">
-              <div>
-                <p className="text-xs font-light uppercase tracking-[0.24em] text-cyan-100/58">
-                  Why it exists
+            <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-7xl items-center pt-20 pb-12 sm:pt-24">
+              <div className="home-hero-copy max-w-3xl">
+                <p className="home-eyebrow">Private wealth intelligence</p>
+                <h1 className="mt-7 max-w-4xl text-5xl font-extralight leading-[0.96] tracking-[-0.035em] text-zinc-50 sm:text-6xl xl:text-7xl">
+                  Complexity, made quiet.
+                </h1>
+                <p className="mt-7 max-w-xl text-base leading-8 text-zinc-200/88 sm:text-lg">
+                  Portfolios, filings, goals, and market noise become cited briefings for calm, deliberate decisions.
                 </p>
-                <h2 className="mt-6 max-w-2xl text-4xl font-extralight leading-tight tracking-normal text-white sm:text-5xl">
-                  Wealth tools should reduce the room temperature.
-                </h2>
-              </div>
-              <LockKeyhole className="hidden size-5 text-amber-100/58 sm:block" />
-            </div>
-            <p className="mt-8 max-w-2xl text-base leading-8 text-zinc-400">
-              Aperture is for the investor who wants to stay informed without
-              getting pulled into tickers, jargon, or reaction loops. It frames
-              context, shows where information came from, and keeps the final
-              judgment with the person.
-            </p>
-          </div>
-
-          <aside className="cinema-panel rounded-[1.5rem] p-7 sm:p-10">
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-xs font-light uppercase tracking-[0.24em] text-amber-100/58">
-                Boundaries
-              </p>
-              <ShieldCheck className="size-5 text-amber-100/60" />
-            </div>
-            <div className="mt-8 grid gap-3">
-              {assurances.map((item) => (
-                <div key={item} className="flex items-start gap-3 rounded-[1rem] bg-black/[0.16] px-4 py-3 text-sm leading-6 text-zinc-300">
-                  <FileCheck2 className="mt-0.5 size-4 shrink-0 text-cyan-100/68" />
-                  {item}
+                <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                  <Button asChild size="lg" className="rounded-[0.95rem] px-5">
+                    <Link href="/app" prefetch={false}>
+                      Open workspace
+                      <ArrowRight data-icon="inline-end" />
+                    </Link>
+                  </Button>
+                  <Button asChild size="lg" variant="outline" className="rounded-[0.95rem] px-5">
+                    <a href="#product">See the product</a>
+                  </Button>
                 </div>
-              ))}
+              </div>
             </div>
-            <p className="mt-7 text-sm leading-7 text-zinc-500">
-              Research support only. Sources, freshness, and assumptions stay
-              visible so the product feels polished without becoming vague.
-            </p>
-          </aside>
+          </section>
+
+          <section id="product" data-home-reveal className="home-section home-product scroll-mt-24 px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
+            <div className="mx-auto max-w-7xl">
+              <div className="home-section-heading max-w-3xl">
+                <h2>One picture before many tools.</h2>
+                <p>Aperture gives the portfolio, the evidence, and the next question a shared place to meet.</p>
+              </div>
+
+              <div className="home-product-grid mt-14">
+                <figure className="home-photo-frame">
+                  <Image
+                    src="/media/aperture-private-study-detail-v1.png"
+                    alt="A quiet desk with a notebook, pen, tablet, and city lights beyond a window"
+                    width={1672}
+                    height={941}
+                    className="h-full w-full object-cover"
+                  />
+                  <figcaption>A research surface for people who want context without a finance terminal.</figcaption>
+                </figure>
+
+                <div className="home-surface-list">
+                  <div className="home-surface-row">
+                    <span>Portfolio</span>
+                    <p>See allocation, holdings, watchlists, and freshness before asking for an interpretation.</p>
+                  </div>
+                  <div className="home-surface-row">
+                    <span>Evidence</span>
+                    <p>Turn filings and market context into a cited brief with assumptions close at hand.</p>
+                  </div>
+                  <div className="home-surface-row">
+                    <span>Plan</span>
+                    <p>Compare user-controlled scenarios without turning a range into a promise.</p>
+                  </div>
+                  <Link href="/app" prefetch={false} className="home-inline-link">
+                    Enter the workspace <ArrowRight className="size-4" aria-hidden="true" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="how-it-works" data-story className="home-section home-story scroll-mt-24 px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
+            <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[0.82fr_1.18fr] lg:gap-24">
+              <div data-story-visual className="home-story-visual self-start">
+                <Image
+                  src="/media/aperture-private-study-hero-v1.png"
+                  alt="A warmly lit workspace facing a city at dusk"
+                  width={1717}
+                  height={916}
+                  className="h-full w-full object-cover"
+                />
+                <div className="home-story-progress" aria-hidden="true">
+                  <span data-story-progress />
+                </div>
+              </div>
+
+              <div className="home-story-panels">
+                <div className="max-w-xl pb-10">
+                  <h2>Follow the question, not the noise.</h2>
+                  <p className="mt-6 text-base leading-8 text-zinc-400">
+                    The daily loop stays deliberately small. Understand the position, inspect the source, keep a record for later.
+                  </p>
+                </div>
+                <div className="home-story-list">
+                  {storyPanels.map(({ title, body, icon: Icon }) => (
+                    <article key={title} data-story-panel className="home-story-panel">
+                      <div className="home-story-icon"><Icon className="size-5" aria-hidden="true" /></div>
+                      <div>
+                        <h3>{title}</h3>
+                        <p>{body}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="security" data-home-reveal className="home-section home-boundary scroll-mt-24 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+            <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end lg:gap-20">
+              <div>
+                <h2>Quiet by design.</h2>
+                <p className="mt-5 max-w-xl text-base leading-8 text-zinc-400">
+                  No brokerage. No trade execution. Research support with sources, freshness, and assumptions in view.
+                </p>
+              </div>
+              <div className="home-boundary-list">
+                {boundaries.map(({ title, body, icon: Icon }) => (
+                  <div key={title} className="home-boundary-row">
+                    <Icon className="size-5 text-cyan-100/78" aria-hidden="true" />
+                    <div>
+                      <h3>{title}</h3>
+                      <p>{body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section id="pricing" data-home-reveal className="home-section home-pricing scroll-mt-24 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+            <div className="mx-auto max-w-7xl">
+              <div className="home-section-heading max-w-3xl">
+                <h2>Choose the depth of your review rhythm.</h2>
+                <p>More context when you need it. No incentives to trade more.</p>
+              </div>
+              <div className="home-pricing-grid mt-12">
+                {tiers.map((tier) => (
+                  <article key={tier.name} className="home-pricing-item">
+                    <div className="flex items-start justify-between gap-4">
+                      <h3>{tier.name}</h3>
+                      <span className="home-pricing-mark" aria-hidden="true" />
+                    </div>
+                    <p className="home-price">{tier.price}</p>
+                    <p className="mt-4 text-sm text-zinc-400">{tier.detail}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section data-home-reveal className="home-close px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
+            <div className="mx-auto flex max-w-7xl flex-col gap-8 border-t border-white/10 pt-10 sm:flex-row sm:items-end sm:justify-between">
+              <div className="max-w-2xl">
+                <h2>Keep the final judgment with the person.</h2>
+                <p className="mt-5 text-base leading-8 text-zinc-400">
+                  A calmer way to prepare for the next financial conversation.
+                </p>
+              </div>
+              <Link href="/app" prefetch={false} className="home-inline-link shrink-0">
+                Open the workspace <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            </div>
+          </section>
         </div>
-      </section>
+      </HomeMotion>
     </MarketingPage>
   );
 }

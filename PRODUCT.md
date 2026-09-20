@@ -34,7 +34,7 @@ Research, risk explanations, watchlists, journals, playbooks, evaluations, billi
 
 ## Capabilities and Constraints
 
-- Market coverage is provider-backed and filterable by supported asset class and available metadata. The `/crypto-monitor` interaction and VargaTrend data contract are the canonical monitor standard for the combined Markets view and every supported asset-class monitor.
+- Market coverage is provider-backed and filterable by supported asset class and available metadata. The `/crypto-monitor` interaction and Adaptive Supertrend data contract are the canonical monitor standard for the combined Markets view and every supported asset-class monitor.
 - Users enter their own income, recurring expenses, assets, contributions, goal amount, and time horizon.
 - Projections are scenarios, not forecasts. They must show assumptions, ranges where appropriate, data freshness, and a not-financial-advice notice.
 - The investment calculator compares user-controlled contribution and return assumptions. It must never recommend a security, promise a result, or label an option suitable for the user.

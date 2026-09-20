@@ -2,7 +2,7 @@
 
 ## Phase 8 Status
 
-The local Phase 8 brand package is complete enough for a recruiter case-study pass. It uses a production-safe vector/CSS aperture mark, dark-first interface styling, and documented media direction. The homepage also uses an original AI-generated hero image created for this project; no unlicensed stock photo or video is bundled in the repo.
+The local Phase 8 brand package is complete enough for a recruiter case-study pass. It uses a production-safe vector/CSS aperture mark, dark-first interface styling, and documented media direction. The homepage uses an original AI-generated hero image; no unlicensed stock photo or video is bundled in the repo.
 
 Live marketing media remains a follow-on task because final source selection depends on license approval. Until then, the app relies on product UI imagery, deterministic dashboard previews, and local screenshots.
 
@@ -17,6 +17,7 @@ Live marketing media remains a follow-on task because final source selection dep
   - `apps/web/public/brand/aperture-mark.svg`
   - `apps/web/public/brand/aperture-social-card.svg`
   - `apps/web/public/media/aperture-private-study-hero-v1.png`
+  - `apps/web/public/media/aperture-private-study-hero-v2.png`
   - `apps/web/public/media/aperture-private-study-detail-v1.png`
   - `apps/web/src/app/icon.png`
   - `apps/web/src/app/opengraph-image.png`
@@ -26,6 +27,10 @@ Live marketing media remains a follow-on task because final source selection dep
 - `apps/web/public/media/aperture-private-study-hero-v1.png`
   - Source: original AI-generated raster asset created for the Aperture homepage.
   - Direction: blue-hour private study, restrained warm lamp light, quiet left-side copy space, and no visible financial UI, logos, text, people, or trading imagery.
+  - Intended use: homepage first-viewport hero background.
+- `apps/web/public/media/aperture-private-study-hero-v2.png`
+  - Source: original AI-generated raster asset inspired by the established Aperture private-study visual world.
+  - Direction: a new rain-lit blue-hour research study with layered window, skyline, desk, and lamp depth plus generous left-side copy space.
   - Intended use: homepage first-viewport hero background.
 - `apps/web/public/media/aperture-private-study-detail-v1.png`
   - Source: original AI-generated raster asset created for the Aperture homepage.

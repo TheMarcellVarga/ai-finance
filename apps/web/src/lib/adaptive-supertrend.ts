@@ -1,6 +1,6 @@
 import type { CryptoCandle } from "@/lib/crypto-supertrend";
 
-export type VargaTrendPoint = {
+export type AdaptiveSupertrendPoint = {
   openTime: number;
   closeTime: number;
   close: number;
@@ -11,8 +11,8 @@ export type VargaTrendPoint = {
   sellSignal: boolean;
 };
 
-export type VargaTrendResult = {
-  points: VargaTrendPoint[];
+export type AdaptiveSupertrendResult = {
+  points: AdaptiveSupertrendPoint[];
   trend: 1 | -1;
   close: number;
   closeTime: number;
@@ -23,38 +23,44 @@ export type VargaTrendResult = {
   sinceFlipPercent: number | null;
 };
 
-export const vargaTrendAnalysisTimeframes = ["1h", "4h", "1d", "1w", "1M"] as const;
-export type VargaTrendAnalysisTimeframe = (typeof vargaTrendAnalysisTimeframes)[number];
+export const adaptiveSupertrendAnalysisTimeframes = ["1h", "4h", "1d", "1w", "1M"] as const;
+export type AdaptiveSupertrendAnalysisTimeframe = (typeof adaptiveSupertrendAnalysisTimeframes)[number];
 
-export type VargaTrendTradeStats = {
+export type AdaptiveSupertrendTradeStats = {
   trades: number;
   wins: number;
   winRate: number | null;
   averageWinPercent: number | null;
+  /** Arithmetic average across every completed trade. */
+  averageTradePercent?: number | null;
+  /** Geometric average across every completed trade, used by Adaptive Supertrend long ranking. */
+  geometricAverageTradePercent?: number | null;
+  /** Geometric average across winning trades, used by Adaptive Supertrend long dashboard text. */
+  geometricAverageWinPercent?: number | null;
   returnsPercent: number[];
 };
 
-export type VargaTrendBacktest = {
-  result: VargaTrendResult;
-  long: VargaTrendTradeStats;
-  short: VargaTrendTradeStats;
+export type AdaptiveSupertrendBacktest = {
+  result: AdaptiveSupertrendResult;
+  long: AdaptiveSupertrendTradeStats;
+  short: AdaptiveSupertrendTradeStats;
 };
 
-export type VargaTrendCase = {
-  timeframe: VargaTrendAnalysisTimeframe;
+export type AdaptiveSupertrendCase = {
+  timeframe: AdaptiveSupertrendAnalysisTimeframe;
   direction: 1 | -1;
-  stats: VargaTrendTradeStats;
+  stats: AdaptiveSupertrendTradeStats;
   selection: "weekly" | "fallback";
 };
 
-export const VARGA_TREND_AUTO_PERIOD_MIN = 10;
-export const VARGA_TREND_AUTO_PERIOD_MAX = 20;
-export const VARGA_TREND_AUTO_MULTIPLIER = 3;
-export const VARGA_TREND_AUTO_MIN_TRADES = 5;
-export const VARGA_TREND_AUTO_MIN_WIN_RATE = 40;
-export const VARGA_TREND_AUTO_SWITCH_MARGIN = 10;
+export const ADAPTIVE_SUPERTREND_AUTO_PERIOD_MIN = 10;
+export const ADAPTIVE_SUPERTREND_AUTO_PERIOD_MAX = 20;
+export const ADAPTIVE_SUPERTREND_AUTO_MULTIPLIER = 3;
+export const ADAPTIVE_SUPERTREND_AUTO_MIN_TRADES = 5;
+export const ADAPTIVE_SUPERTREND_AUTO_MIN_WIN_RATE = 40;
+export const ADAPTIVE_SUPERTREND_AUTO_SWITCH_MARGIN = 10;
 
-export type VargaTrendAutoSummary = {
+export type AdaptiveSupertrendAutoSummary = {
   selectedPeriod: number | null;
   selectedMultiplier: number;
   selectionReady: boolean;
@@ -69,12 +75,12 @@ export type VargaTrendAutoSummary = {
   geometricAverageWinPercent: number | null;
 };
 
-export type VargaTrendAutoAnalysis = {
-  result: VargaTrendResult;
+export type AdaptiveSupertrendAutoAnalysis = {
+  result: AdaptiveSupertrendResult;
   parameterMode: "auto";
   atrPeriod: number;
   atrMultiplier: number;
-  auto: VargaTrendAutoSummary;
+  auto: AdaptiveSupertrendAutoSummary;
 };
 
 function calculateRma(values: number[], period: number) {
@@ -130,9 +136,9 @@ export function calculateSimpleMovingAverage(candles: CryptoCandle[], period: nu
   }));
 }
 
-function buildVargaTrendResult(points: VargaTrendPoint[]): VargaTrendResult {
+function buildAdaptiveSupertrendResult(points: AdaptiveSupertrendPoint[]): AdaptiveSupertrendResult {
   if (points.length < 2) {
-    throw new Error("VargaTrend could not be calculated for this market.");
+    throw new Error("Adaptive Supertrend could not be calculated for this market.");
   }
 
   const latest = points.at(-1)!;
@@ -165,14 +171,14 @@ function buildVargaTrendResult(points: VargaTrendPoint[]): VargaTrendResult {
   };
 }
 
-export function calculateVargaTrend(
+export function calculateAdaptiveSupertrend(
   candles: CryptoCandle[],
   period = 10,
   multiplier = 3,
   useStandardAtr = true,
-): VargaTrendResult {
+): AdaptiveSupertrendResult {
   if (candles.length < period + 2) {
-    throw new Error("Not enough closed candles to calculate VargaTrend.");
+    throw new Error("Not enough closed candles to calculate Adaptive Supertrend.");
   }
 
   const trueRanges = candles.map((candle, index) => {
@@ -188,7 +194,7 @@ export function calculateVargaTrend(
     );
   });
   const atr = useStandardAtr ? calculateRma(trueRanges, period) : calculateSma(trueRanges, period);
-  const points: VargaTrendPoint[] = [];
+  const points: AdaptiveSupertrendPoint[] = [];
   let previousUp: number | null = null;
   let previousDown: number | null = null;
   let previousTrend: 1 | -1 = 1;
@@ -237,11 +243,14 @@ export function calculateVargaTrend(
     previousTrend = trend;
   });
 
-  return buildVargaTrendResult(points);
+  return buildAdaptiveSupertrendResult(points);
 }
 
-function summarizeTrades(returnsPercent: number[]): VargaTrendTradeStats {
+function summarizeTrades(returnsPercent: number[]): AdaptiveSupertrendTradeStats {
   const winningReturns = returnsPercent.filter((tradeReturn) => tradeReturn > 0);
+  const averageTradePercent = returnsPercent.length === 0
+    ? null
+    : returnsPercent.reduce((total, tradeReturn) => total + tradeReturn, 0) / returnsPercent.length;
   return {
     trades: returnsPercent.length,
     wins: winningReturns.length,
@@ -249,6 +258,9 @@ function summarizeTrades(returnsPercent: number[]): VargaTrendTradeStats {
     averageWinPercent: winningReturns.length === 0
       ? null
       : winningReturns.reduce((total, tradeReturn) => total + tradeReturn, 0) / winningReturns.length,
+    averageTradePercent,
+    geometricAverageTradePercent: geometricAveragePercent(returnsPercent),
+    geometricAverageWinPercent: geometricAveragePercent(winningReturns),
     returnsPercent,
   };
 }
@@ -275,7 +287,7 @@ type AutoTradeClose = {
 
 type AutoCandidate = {
   period: number;
-  result: VargaTrendResult;
+  result: AdaptiveSupertrendResult;
   closeEvents: AutoTradeClose[];
 };
 
@@ -285,7 +297,7 @@ type AutoCandidateScore = {
   winningReturnsPercent: number[];
 };
 
-function getLongTradeCloseEvents(candles: CryptoCandle[], result: VargaTrendResult) {
+function getLongTradeCloseEvents(candles: CryptoCandle[], result: AdaptiveSupertrendResult) {
   const candleByOpenTime = new Map(candles.map((candle) => [candle.openTime, candle]));
   const closeEvents: AutoTradeClose[] = [];
   let entryPrice: number | null = null;
@@ -343,8 +355,8 @@ function autoCandidateSummary(score: AutoCandidateScore) {
 
 function isEligibleAutoCandidate(score: AutoCandidateScore) {
   const summary = autoCandidateSummary(score);
-  return summary.completedBullishSections >= VARGA_TREND_AUTO_MIN_TRADES &&
-    (summary.winRatePercent ?? 0) >= VARGA_TREND_AUTO_MIN_WIN_RATE &&
+  return summary.completedBullishSections >= ADAPTIVE_SUPERTREND_AUTO_MIN_TRADES &&
+    (summary.winRatePercent ?? 0) >= ADAPTIVE_SUPERTREND_AUTO_MIN_WIN_RATE &&
     (summary.geometricAverageTradePercent ?? 0) > 0;
 }
 
@@ -378,28 +390,28 @@ function rankAutoCandidates(scores: AutoCandidateScore[], incumbentPeriod: numbe
   const incumbentAverage = incumbent ? autoCandidateSummary(incumbent).geometricAverageTradePercent ?? -Infinity : -Infinity;
   const bestAverage = best ? autoCandidateSummary(best).geometricAverageTradePercent ?? -Infinity : -Infinity;
   const keepIncumbent = incumbent != null &&
-    (best == null || (best.candidate.period !== incumbentPeriod && bestAverage < incumbentAverage * (1 + VARGA_TREND_AUTO_SWITCH_MARGIN / 100)));
+    (best == null || (best.candidate.period !== incumbentPeriod && bestAverage < incumbentAverage * (1 + ADAPTIVE_SUPERTREND_AUTO_SWITCH_MARGIN / 100)));
 
   return keepIncumbent ? incumbent : best;
 }
 
-export function calculateVargaTrendAuto(
+export function calculateAdaptiveSupertrendAuto(
   candles: CryptoCandle[],
-  fallbackPeriod = VARGA_TREND_AUTO_PERIOD_MIN,
-  fallbackMultiplier = VARGA_TREND_AUTO_MULTIPLIER,
-): VargaTrendAutoAnalysis {
+  fallbackPeriod = ADAPTIVE_SUPERTREND_AUTO_PERIOD_MIN,
+  fallbackMultiplier = ADAPTIVE_SUPERTREND_AUTO_MULTIPLIER,
+): AdaptiveSupertrendAutoAnalysis {
   if (candles.length < fallbackPeriod + 2) {
-    throw new Error("Not enough closed candles to calculate VargaTrend.");
+    throw new Error("Not enough closed candles to calculate Adaptive Supertrend.");
   }
 
-  const fallbackResult = calculateVargaTrend(candles, fallbackPeriod, fallbackMultiplier, true);
+  const fallbackResult = calculateAdaptiveSupertrend(candles, fallbackPeriod, fallbackMultiplier, true);
   const candidates: AutoCandidate[] = [];
-  for (let period = VARGA_TREND_AUTO_PERIOD_MIN; period <= VARGA_TREND_AUTO_PERIOD_MAX; period += 1) {
+  for (let period = ADAPTIVE_SUPERTREND_AUTO_PERIOD_MIN; period <= ADAPTIVE_SUPERTREND_AUTO_PERIOD_MAX; period += 1) {
     if (candles.length < period + 2) {
       continue;
     }
 
-    const result = calculateVargaTrend(candles, period, VARGA_TREND_AUTO_MULTIPLIER, true);
+    const result = calculateAdaptiveSupertrend(candles, period, ADAPTIVE_SUPERTREND_AUTO_MULTIPLIER, true);
     candidates.push({ period, result, closeEvents: getLongTradeCloseEvents(candles, result) });
   }
 
@@ -443,7 +455,7 @@ export function calculateVargaTrendAuto(
       new Map(candidate.result.points.map((point) => [point.openTime, point])),
     ]),
   );
-  const effectivePoints: VargaTrendPoint[] = [];
+  const effectivePoints: AdaptiveSupertrendPoint[] = [];
   for (const fallbackPoint of fallbackResult.points) {
     const selectedPeriod = selectedPeriodByOpenTime.get(fallbackPoint.openTime) ?? null;
     const selectedPoint = selectedPeriod == null
@@ -458,21 +470,21 @@ export function calculateVargaTrendAuto(
     });
   }
 
-  const result = buildVargaTrendResult(effectivePoints);
+  const result = buildAdaptiveSupertrendResult(effectivePoints);
   const selectedSummary = selected ? autoCandidateSummary(selected) : null;
 
   return {
     result,
     parameterMode: "auto",
     atrPeriod: selected?.candidate.period ?? fallbackPeriod,
-    atrMultiplier: selected?.candidate.period == null ? fallbackMultiplier : VARGA_TREND_AUTO_MULTIPLIER,
+    atrMultiplier: selected?.candidate.period == null ? fallbackMultiplier : ADAPTIVE_SUPERTREND_AUTO_MULTIPLIER,
     auto: {
       selectedPeriod: selected?.candidate.period ?? null,
-      selectedMultiplier: VARGA_TREND_AUTO_MULTIPLIER,
+      selectedMultiplier: ADAPTIVE_SUPERTREND_AUTO_MULTIPLIER,
       selectionReady: selected != null,
-      minimumTrades: VARGA_TREND_AUTO_MIN_TRADES,
-      minimumWinRate: VARGA_TREND_AUTO_MIN_WIN_RATE,
-      switchMarginPercent: VARGA_TREND_AUTO_SWITCH_MARGIN,
+      minimumTrades: ADAPTIVE_SUPERTREND_AUTO_MIN_TRADES,
+      minimumWinRate: ADAPTIVE_SUPERTREND_AUTO_MIN_WIN_RATE,
+      switchMarginPercent: ADAPTIVE_SUPERTREND_AUTO_SWITCH_MARGIN,
       completedBullishSections: selectedSummary?.completedBullishSections ?? 0,
       winningBullishSections: selectedSummary?.winningBullishSections ?? 0,
       winRatePercent: selectedSummary?.winRatePercent ?? null,
@@ -483,13 +495,13 @@ export function calculateVargaTrendAuto(
   };
 }
 
-export function calculateVargaTrendBacktest(
+export function calculateAdaptiveSupertrendBacktest(
   candles: CryptoCandle[],
   period = 10,
   multiplier = 3,
   useStandardAtr = true,
-): VargaTrendBacktest {
-  const result = calculateVargaTrend(candles, period, multiplier, useStandardAtr);
+): AdaptiveSupertrendBacktest {
+  const result = calculateAdaptiveSupertrend(candles, period, multiplier, useStandardAtr);
   const candleByOpenTime = new Map(candles.map((candle) => [candle.openTime, candle]));
   const longReturns: number[] = [];
   const shortReturns: number[] = [];
@@ -525,34 +537,33 @@ export function calculateVargaTrendBacktest(
   };
 }
 
-export function selectVargaTrendCase(
-  backtests: Partial<Record<VargaTrendAnalysisTimeframe, VargaTrendBacktest>>,
+export function selectAdaptiveSupertrendCase(
+  backtests: Partial<Record<AdaptiveSupertrendAnalysisTimeframe, AdaptiveSupertrendBacktest>>,
   side: "long" | "short",
   weeklyMinimumTrades = 10,
   fallbackMinimumTrades = 5,
-): VargaTrendCase | null {
-  const weekly = backtests["1w"];
-  if (weekly && weekly[side].trades >= weeklyMinimumTrades) {
-    return {
-      timeframe: "1w",
-      direction: weekly.result.trend,
-      stats: weekly[side],
-      selection: "weekly",
-    };
-  }
-
-  const candidates = (["1d", "4h", "1h"] as const)
+): AdaptiveSupertrendCase | null {
+  const candidates = (["1h", "4h", "1d", "1w"] as const)
     .flatMap((timeframe) => {
       const backtest = backtests[timeframe];
-      return backtest && backtest[side].trades >= fallbackMinimumTrades
-        ? [{ timeframe, backtest }]
-        : [];
+      if (!backtest) return [];
 
+      const stats = backtest[side];
+      const minimumTrades = timeframe === "1w" ? weeklyMinimumTrades : fallbackMinimumTrades;
+      const averageTrade = side === "long"
+        ? stats.geometricAverageTradePercent ?? stats.averageTradePercent ?? stats.averageWinPercent
+        : stats.averageTradePercent ?? stats.averageWinPercent;
+      const reliable = stats.trades >= minimumTrades &&
+        stats.wins > 0 &&
+        (averageTrade ?? 0) > 0;
+
+      return reliable ? [{ timeframe, backtest, averageTrade: averageTrade ?? 0 }] : [];
     })
     .sort((left, right) => {
+      if (right.averageTrade !== left.averageTrade) return right.averageTrade - left.averageTrade;
       const winRateDifference = (right.backtest[side].winRate ?? -1) - (left.backtest[side].winRate ?? -1);
       if (winRateDifference !== 0) return winRateDifference;
-      return (right.backtest[side].averageWinPercent ?? -1) - (left.backtest[side].averageWinPercent ?? -1);
+      return right.backtest[side].trades - left.backtest[side].trades;
     });
 
   const selected = candidates[0];
@@ -561,7 +572,7 @@ export function selectVargaTrendCase(
         timeframe: selected.timeframe,
         direction: selected.backtest.result.trend,
         stats: selected.backtest[side],
-        selection: "fallback",
+        selection: selected.timeframe === "1w" ? "weekly" : "fallback",
       }
     : null;
 }

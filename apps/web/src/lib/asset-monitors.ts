@@ -114,7 +114,7 @@ export const assetMonitorDefinitions: AssetMonitorDefinition[] = [
     id: "crypto",
     label: "Digital assets",
     shortLabel: "Crypto research monitor",
-    description: "The dedicated VargaTrend monitor for public spot crypto markets.",
+    description: "The dedicated Adaptive Supertrend monitor for public spot crypto markets.",
     href: "/app/crypto-monitor",
     icon: "₿",
     tone: "cyan",

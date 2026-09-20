@@ -590,9 +590,9 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
               <Bitcoin className="size-4" />
               Crypto research monitor
             </div>
-            <h1 className="type-display mt-5 text-3xl text-white sm:text-5xl">VargaTrend market map</h1>
+            <h1 className="type-display mt-5 text-3xl text-white sm:text-5xl">Adaptive Supertrend market map</h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-400">
-              Compare confirmed VargaTrend states across the most liquid {payload?.meta.providerLabel ?? provider} dollar-quoted spot markets. Hover a market for the multi-timeframe long and short research record. Signals are descriptive indicators, not trade instructions.
+              Compare confirmed Adaptive Supertrend states across the most liquid {payload?.meta.providerLabel ?? provider} dollar-quoted spot markets. Hover a market for the multi-timeframe long and short research record. Signals are descriptive indicators, not trade instructions.
             </p>
           </div>
           <div className="flex flex-col items-start gap-2 text-xs text-zinc-500 lg:items-end">
@@ -736,7 +736,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
               </span>
             </label>
             <label className="min-w-[8.75rem] flex-1 2xl:min-w-0">
-              <span className="sr-only">VargaTrend timeframe</span>
+              <span className="sr-only">Adaptive Supertrend timeframe</span>
               <span className="relative block">
                 <select
                   value={interval}
