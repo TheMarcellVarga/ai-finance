@@ -98,6 +98,7 @@ test("curriculum includes complete lesson contracts across all nine modules", ()
   const lessons = getAllLessons();
   assert.equal(learningModules.length, 9);
   assert.equal(lessons.length, 18);
+  assert.deepEqual(learningModules.map((module) => module.number), ["01", "02", "03", "04", "05", "06", "07", "08", "09"]);
   for (const lesson of lessons) {
     assert.ok(lesson.objective.length > 0);
     assert.ok(lesson.workedExample.length > 0);

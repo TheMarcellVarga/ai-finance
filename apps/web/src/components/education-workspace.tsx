@@ -12,11 +12,11 @@ import {
   Clock3,
   ExternalLink,
   FlaskConical,
-  GraduationCap,
   ShieldCheck,
   Sparkles,
   Target,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useEducationState } from "@/lib/education-state";
@@ -30,6 +30,10 @@ import {
 
 function moduleAccent(module: LearningModule) {
   return module.order % 3 === 0 ? "cyan" : module.order % 3 === 1 ? "amber" : "violet";
+}
+
+function moduleDisplayNumber(module: LearningModule) {
+  return String(module.order + 1);
 }
 
 function moduleProgress(module: LearningModule, progress: ReturnType<typeof useEducationState>["state"]["progress"]) {
@@ -51,7 +55,7 @@ function statusLabel(status?: string) {
 function ModuleGlyph({ module, large = false }: { module: LearningModule; large?: boolean }) {
   return (
     <span className={`grid ${large ? "size-12 text-base" : "size-9 text-xs"} place-items-center rounded-[0.8rem] border border-cyan-200/15 bg-cyan-200/[0.05] font-mono text-cyan-100`} aria-hidden="true">
-      {module.number}
+      {moduleDisplayNumber(module)}
     </span>
   );
 }
@@ -79,44 +83,44 @@ export function EducationDashboard() {
     ?? allLessons[0];
   const artifactCount = state.artifacts.length;
   const overallPercent = allLessons.length ? Math.round((completedLessons / allLessons.length) * 100) : 0;
+  const summaryCards: Array<{ value: number; label: string; description: string; Icon: LucideIcon }> = [
+    { value: learningModules.length, label: "Modules", description: "From account boundaries to governance", Icon: BookOpenCheck },
+    { value: 6, label: "Labs", description: "Math, assumptions, and market mechanics", Icon: FlaskConical },
+    { value: artifactCount, label: "Artifacts", description: "Decisions you can revisit", Icon: Target },
+  ];
 
   return (
     <div className="space-y-6">
-      <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
-        <div className="workspace-hero-glow" aria-hidden="true" />
-        <div className="relative grid gap-8 xl:grid-cols-[1fr_19rem] xl:items-end">
-          <div className="max-w-3xl">
-            <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-[0.16em] text-cyan-100/80">
-              <GraduationCap className="size-4" aria-hidden="true" />
-              Education system · process over prediction
-            </div>
-            <h1 className="type-display mt-5 text-4xl text-white sm:text-6xl">Build a process you can inspect.</h1>
-            <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-300/80">
-              An original, interactive course for reading the Market Monitor, defining mechanical rules, sizing risk, testing evidence, and reviewing behavior without pretending uncertainty is gone.
+      <section className="education-hero relative overflow-hidden px-1 py-2 sm:px-2 sm:py-4">
+        <div className="relative grid gap-10 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-center">
+          <div className="education-hero-copy max-w-3xl">
+            <h1 className="type-display max-w-2xl text-4xl text-white sm:text-6xl">Build a process you can inspect.</h1>
+            <p className="mt-5 max-w-2xl text-sm leading-6 text-zinc-300/80">
+              Process over prediction: an original, interactive course for reading the Market Monitor, defining mechanical rules, sizing risk, testing evidence, and reviewing behavior without pretending uncertainty is gone.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-7 flex flex-wrap gap-3">
               <Link href={`/app/learn/${nextModule.slug}/${inProgressLesson.slug}`} className="inline-flex h-10 items-center gap-2 rounded-lg bg-cyan-100 px-4 text-sm font-medium text-[#071012] transition hover:bg-white">
-                {completedLessons > 0 ? "Continue study" : "Start with module 00"}<ArrowRight className="size-4" aria-hidden="true" />
+                {completedLessons > 0 ? "Continue study" : `Start with module ${moduleDisplayNumber(nextModule)}`}<ArrowRight className="size-4" aria-hidden="true" />
               </Link>
               <Link href="/app/crypto-monitor" className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.025] px-4 text-sm text-zinc-200 transition hover:bg-white/[0.07] hover:text-white">
                 Open Market Monitor<ExternalLink className="size-3.5" aria-hidden="true" />
               </Link>
             </div>
           </div>
-          <div className="glass-surface rounded-[1rem] p-5">
+          <div className="education-record-card rounded-[1rem] border border-white/[0.09] bg-black/25 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.24)] backdrop-blur-xl">
             <div className="flex items-center justify-between gap-4">
               <p className="text-xs uppercase tracking-[0.16em] text-zinc-300">Your study record</p>
               <LocalSaveStatus hydrated={hydrated} persistenceError={persistenceError} />
             </div>
-            <div className="mt-6 flex items-center gap-4">
-              <div className="relative grid size-20 place-items-center rounded-full border border-cyan-100/20 bg-cyan-200/[0.06]">
-                <div className="absolute inset-1 rounded-full border border-dashed border-cyan-100/20" />
-                <span className="font-mono text-xl text-white">{overallPercent}%</span>
+            <div className="mt-7">
+              <div className="flex items-end justify-between gap-4">
+                <p className="font-mono text-4xl tracking-[-0.04em] text-white">{overallPercent}<span className="ml-1 text-lg text-cyan-100/70">%</span></p>
+                <p className="pb-1 text-right text-xs text-zinc-300">{completedLessons} of {allLessons.length} lessons</p>
               </div>
-              <div>
-                <p className="text-sm text-white">{completedLessons} of {allLessons.length} lessons</p>
-                <p className="mt-2 text-xs leading-5 text-zinc-300">{artifactCount} saved learning artifact{artifactCount === 1 ? "" : "s"}. Progress rewards evidence and consistency, never profit.</p>
+              <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/[0.08]" role="progressbar" aria-label="Study progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={overallPercent}>
+                <span className="block h-full rounded-full bg-cyan-200/75 transition-[width]" style={{ width: `${overallPercent}%` }} />
               </div>
+              <p className="mt-4 text-xs leading-5 text-zinc-300">{artifactCount} saved learning artifact{artifactCount === 1 ? "" : "s"}. Progress rewards evidence and consistency, never profit.</p>
             </div>
           </div>
         </div>
@@ -124,18 +128,16 @@ export function EducationDashboard() {
 
       <SafeBoundary />
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        {[
-          ["09", "Modules", "From account boundaries to governance", BookOpenCheck],
-          ["06", "Labs", "Math, assumptions, and market mechanics", FlaskConical],
-          [String(artifactCount).padStart(2, "0"), "Artifacts", "Decisions you can revisit", Target],
-        ].map(([value, label, description, Icon]) => (
-          <article key={label as string} className="glass-surface rounded-[1rem] p-5">
-            <div className="flex items-start justify-between gap-3"><p className="text-xs uppercase tracking-[0.15em] text-zinc-300">{label as string}</p><Icon className="size-4 text-cyan-100/75" aria-hidden="true" /></div>
-            <p className="mt-5 font-mono text-2xl text-white">{value as string}</p>
-            <p className="mt-2 text-xs leading-5 text-zinc-300">{description as string}</p>
-          </article>
-        ))}
+      <section className="glass-surface rounded-[1rem] px-5 py-4 sm:px-6" aria-label="Learning summary">
+        <div className="grid gap-4 sm:grid-cols-3">
+          {summaryCards.map(({ value, label, description, Icon }) => (
+            <article key={label} className="relative py-2 sm:px-5 sm:first:pl-0 sm:not-last:border-r sm:not-last:border-white/[0.08] sm:last:pr-0">
+              <div className="flex items-start justify-between gap-3"><p className="text-xs uppercase tracking-[0.15em] text-zinc-300">{label}</p><Icon className="size-4 text-cyan-100/75" aria-hidden="true" /></div>
+              <p className="mt-4 font-mono text-3xl tracking-[-0.04em] text-white">{value}</p>
+              <p className="mt-2 text-xs leading-5 text-zinc-300">{description}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section>
@@ -152,7 +154,7 @@ export function EducationDashboard() {
                 <div className="flex items-start gap-4">
                   <ModuleGlyph module={module} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-4"><p className="text-xs uppercase tracking-[0.14em] text-zinc-300">Module {module.number}</p><span className="font-mono text-[0.65rem] text-cyan-100/65">{progress.completed}/{progress.total}</span></div>
+                    <div className="flex items-start justify-between gap-4"><p className="text-xs uppercase tracking-[0.14em] text-zinc-300">Module {moduleDisplayNumber(module)}</p><span className="font-mono text-[0.65rem] text-cyan-100/65">{progress.completed}/{progress.total}</span></div>
                     <h3 className="type-card-title mt-2 text-xl text-white">{module.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-zinc-300">{module.description}</p>
                     <div className="mt-5 flex items-center gap-3"><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]"><span className="block h-full rounded-full bg-cyan-200/70" style={{ width: `${progress.percent}%` }} /></div><span className="text-[0.68rem] text-zinc-300">{statusLabel(progress.completed === progress.total ? "completed" : progress.completed > 0 ? "in_progress" : undefined)}</span><ChevronRight className="size-4 text-zinc-400 transition group-hover:translate-x-1 group-hover:text-cyan-100" aria-hidden="true" /></div>
@@ -184,14 +186,14 @@ export function EducationModulePage({ module }: { module: LearningModule }) {
   const progress = moduleProgress(module, state.progress);
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 text-xs text-zinc-300"><Link href="/app/learn" className="hover:text-cyan-100">Learn</Link><ChevronRight className="size-3" aria-hidden="true" /><span>Module {module.number}</span></div>
-      <section className="section-shell rounded-[1.25rem] p-6 sm:p-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"><div className="max-w-3xl"><div className="flex items-center gap-4"><ModuleGlyph module={module} large /><p className="text-xs uppercase tracking-[0.16em] text-cyan-100/75">Module {module.number}</p></div><h1 className="type-display mt-6 text-4xl text-white sm:text-5xl">{module.title}</h1><p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-400">{module.description}</p></div><div className="glass-surface rounded-[1rem] p-5 lg:w-64"><p className="text-xs uppercase tracking-[0.14em] text-zinc-300">Mastery</p><p className="mt-3 font-mono text-2xl text-white">{progress.completed}/{progress.total}</p><p className="mt-2 text-xs text-zinc-300">{hydrated ? "Progress saved locally" : "Loading progress"}</p><div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/[0.06]"><span className="block h-full rounded-full bg-cyan-200/70" style={{ width: `${progress.percent}%` }} /></div></div></div>
+      <div className="flex items-center gap-2 text-xs text-zinc-300"><Link href="/app/learn" className="hover:text-cyan-100">Learn</Link><ChevronRight className="size-3" aria-hidden="true" /><span>Module {moduleDisplayNumber(module)}</span></div>
+      <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"><div className="max-w-3xl"><div className="flex items-center gap-4"><ModuleGlyph module={module} large /><p className="text-xs uppercase tracking-[0.16em] text-cyan-100/75">Module {moduleDisplayNumber(module)}</p></div><h1 className="type-display mt-6 text-4xl text-white sm:text-5xl">{module.title}</h1><p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-400">{module.description}</p></div><div className="glass-surface rounded-[1rem] p-5 lg:w-64"><p className="text-xs uppercase tracking-[0.14em] text-zinc-300">Mastery</p><p className="mt-3 font-mono text-2xl text-white">{progress.completed}/{progress.total}</p><p className="mt-2 text-xs text-zinc-300">{hydrated ? "Progress saved locally" : "Loading progress"}</p><div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/[0.06]"><span className="block h-full rounded-full bg-cyan-200/70" style={{ width: `${progress.percent}%` }} /></div></div></div>
         <div className="mt-8 grid gap-3 border-t border-white/[0.06] pt-6 sm:grid-cols-2 lg:grid-cols-4">{module.topics.map((topic) => <div key={topic} className="rounded-[0.85rem] bg-black/20 p-3 text-xs text-zinc-400"><span className="mr-2 text-cyan-100/70">·</span>{topic}</div>)}</div>
       </section>
       <SafeBoundary />
       <section className="space-y-3">
-        {module.lessons.map((lesson, index) => { const lessonState = currentLessonProgress(lesson, state.progress); return <Link key={lesson.id} href={`/app/learn/${module.slug}/${lesson.slug}`} className="glass-surface group flex flex-col gap-4 rounded-[1.05rem] p-5 transition hover:bg-[#0c1415] sm:flex-row sm:items-center"><span className="font-mono text-xs text-zinc-300">0{index + 1}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-3"><h2 className="text-lg text-white">{lesson.title}</h2><span className={`rounded-full border px-2 py-1 text-[0.62rem] uppercase tracking-[0.1em] ${lessonState?.status === "completed" ? "border-emerald-200/15 bg-emerald-200/[0.04] text-emerald-100/80" : "border-white/10 bg-white/[0.02] text-zinc-300"}`}>{statusLabel(lessonState?.status)}</span></div><p className="mt-2 text-sm leading-6 text-zinc-300">{lesson.objective}</p></div><span className="flex items-center gap-2 text-xs text-zinc-300"><Clock3 className="size-3.5" aria-hidden="true" />{lesson.estimatedMinutes} min<ArrowRight className="ml-2 size-4 transition group-hover:translate-x-1 group-hover:text-cyan-100" aria-hidden="true" /></span></Link>; })}
+        {module.lessons.map((lesson, index) => { const lessonState = currentLessonProgress(lesson, state.progress); return <Link key={lesson.id} href={`/app/learn/${module.slug}/${lesson.slug}`} className="glass-surface group flex flex-col gap-4 rounded-[1.05rem] p-5 transition hover:bg-[#0c1415] sm:flex-row sm:items-center"><span className="font-mono text-xs text-zinc-300">{index + 1}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-3"><h2 className="text-lg text-white">{lesson.title}</h2><span className={`rounded-full border px-2 py-1 text-[0.62rem] uppercase tracking-[0.1em] ${lessonState?.status === "completed" ? "border-emerald-200/15 bg-emerald-200/[0.04] text-emerald-100/80" : "border-white/10 bg-white/[0.02] text-zinc-300"}`}>{statusLabel(lessonState?.status)}</span></div><p className="mt-2 text-sm leading-6 text-zinc-300">{lesson.objective}</p></div><span className="flex items-center gap-2 text-xs text-zinc-300"><Clock3 className="size-3.5" aria-hidden="true" />{lesson.estimatedMinutes} min<ArrowRight className="ml-2 size-4 transition group-hover:translate-x-1 group-hover:text-cyan-100" aria-hidden="true" /></span></Link>; })}
       </section>
       <section className="glass-surface flex flex-col gap-4 rounded-[1.05rem] p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs uppercase tracking-[0.14em] text-zinc-300">Practical artifact</p><p className="mt-2 text-sm text-white">{module.artifactLabel}</p><p className="mt-1 text-xs text-zinc-300">Finish the module by making one decision or boundary explicit.</p></div><Link href={getArtifactHref(module.artifactType)} className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-cyan-200/20 bg-cyan-200/[0.04] px-3 text-sm text-cyan-100 transition hover:bg-cyan-200/[0.1]">Open artifact<ArrowRight className="size-4" aria-hidden="true" /></Link></section>
     </div>
@@ -262,8 +264,8 @@ export function EducationLessonPage({ module, lesson }: { module: LearningModule
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-300"><Link href="/app/learn" className="hover:text-cyan-100">Learn</Link><ChevronRight className="size-3" aria-hidden="true" /><Link href={`/app/learn/${module.slug}`} className="hover:text-cyan-100">Module {module.number}</Link><ChevronRight className="size-3" aria-hidden="true" /><span>{lesson.title}</span></div>
-      <section className="section-shell rounded-[1.25rem] p-6 sm:p-8"><div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.15em] text-cyan-100/75"><span className="font-mono">Module {module.number}</span><span className="text-zinc-400">/</span><span className="inline-flex items-center gap-2"><Clock3 className="size-3.5" aria-hidden="true" />{lesson.estimatedMinutes} min</span><span className="text-zinc-400">/</span><span>Content v{lesson.contentVersion}</span></div><h1 className="type-display mt-6 max-w-4xl text-4xl text-white sm:text-6xl">{lesson.title}</h1><p className="mt-5 max-w-3xl text-sm leading-6 text-zinc-300/80"><span className="mr-2 font-medium text-cyan-100">Objective</span>{lesson.objective}</p></section>
+      <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-300"><Link href="/app/learn" className="hover:text-cyan-100">Learn</Link><ChevronRight className="size-3" aria-hidden="true" /><Link href={`/app/learn/${module.slug}`} className="hover:text-cyan-100">Module {moduleDisplayNumber(module)}</Link><ChevronRight className="size-3" aria-hidden="true" /><span>{lesson.title}</span></div>
+      <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8"><div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.15em] text-cyan-100/75"><span className="font-mono">Module {moduleDisplayNumber(module)}</span><span className="text-zinc-400">/</span><span className="inline-flex items-center gap-2"><Clock3 className="size-3.5" aria-hidden="true" />{lesson.estimatedMinutes} min</span><span className="text-zinc-400">/</span><span>Content v{lesson.contentVersion}</span></div><h1 className="type-display mt-6 max-w-4xl text-4xl text-white sm:text-6xl">{lesson.title}</h1><p className="mt-5 max-w-3xl text-sm leading-6 text-zinc-300/80"><span className="mr-2 font-medium text-cyan-100">Objective</span>{lesson.objective}</p></section>
       <SafeBoundary />
       {monitorMarket ? <section className="rounded-[1.05rem] border border-cyan-200/15 bg-cyan-200/[0.035] p-5 sm:p-6"><div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div><p className="text-xs uppercase tracking-[0.14em] text-cyan-100/70">Market monitor context attached</p><h2 className="mt-2 text-xl text-white">{monitorMarket}</h2><p className="mt-2 text-sm leading-6 text-zinc-400">The Market Monitor recorded a <span className="text-cyan-100">{monitorState ?? "descriptive"}</span> state on the <span className="font-mono text-zinc-300">{monitorTimeframe ?? "selected"}</span> timeframe. Treat this as a provider snapshot to annotate, not as a trade instruction.</p></div><div className="grid grid-cols-2 gap-3 text-xs lg:min-w-56"><div className="rounded-[0.75rem] bg-black/20 p-3"><p className="text-zinc-300">Flip level</p><p className="mt-2 font-mono text-zinc-200">{monitorFlipLevel ?? "Not supplied"}</p></div><div className="rounded-[0.75rem] bg-black/20 p-3"><p className="text-zinc-300">Captured</p><p className="mt-2 font-mono text-zinc-200">{monitorCapturedAt ? new Date(monitorCapturedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "Not supplied"}</p></div></div></div><Link href={journalHref} className="mt-4 inline-flex items-center gap-2 text-xs text-cyan-100 hover:text-white">Save as an annotated observation<ArrowRight className="size-3.5" aria-hidden="true" /></Link></section> : null}
 
@@ -280,7 +282,7 @@ export function EducationLessonPage({ module, lesson }: { module: LearningModule
 
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="glass-surface rounded-[1.05rem] p-5 sm:p-6"><div className="flex items-center gap-3"><Sparkles className="size-4 text-cyan-100" aria-hidden="true" /><h2 className="type-card-title text-xl text-white">Interactive exercise</h2></div><p className="mt-4 text-sm leading-6 text-zinc-400">{lesson.exercise.prompt}</p><div className="mt-4 space-y-2">{lesson.exercise.options.map((option) => <button key={option} type="button" aria-pressed={exerciseAnswer === option} onClick={() => { setExerciseAnswer(option); setExerciseSubmitted(false); }} className={`flex w-full items-start gap-3 rounded-[0.8rem] border p-3 text-left text-sm transition ${exerciseAnswer === option ? "border-cyan-200/30 bg-cyan-200/[0.08] text-cyan-50" : "border-white/[0.08] bg-white/[0.02] text-zinc-400 hover:bg-white/[0.05]"}`}><span className={`mt-0.5 grid size-4 place-items-center rounded-full border text-[0.6rem] ${exerciseAnswer === option ? "border-cyan-100 bg-cyan-100 text-[#071012]" : "border-white/20 text-transparent"}`}><Check className="size-3" /></span>{option}</button>)}</div><Button type="button" variant="outline" className="mt-4" disabled={!exerciseAnswer || !hydrated} onClick={() => { setExerciseSubmitted(true); const completeAfterExercise = submitted && scorePercent >= 67 && exerciseCorrect; markProgress(completeAfterExercise ? "completed" : "in_progress", submitted ? scorePercent : undefined, false); }}>{exerciseSubmitted ? "Exercise checked" : "Check exercise"}</Button>{exerciseSubmitted ? <p className={`mt-3 rounded-[0.75rem] p-3 text-xs leading-5 ${exerciseCorrect ? "bg-emerald-200/[0.05] text-emerald-50/80" : "bg-amber-200/[0.05] text-amber-50/85"}`}>{exerciseCorrect ? "Correct. " : "Not quite. "}{lesson.exercise.explanation}</p> : null}</div>
-        <form onSubmit={submitQuiz} className="glass-surface rounded-[1.05rem] p-5 sm:p-6"><div className="flex items-center gap-3"><BookOpenCheck className="size-4 text-cyan-100" aria-hidden="true" /><h2 className="type-card-title text-xl text-white">Objective quiz</h2></div><div className="mt-5 space-y-6">{lesson.quiz.map((question, index) => <fieldset key={question.id}><legend className="text-sm leading-6 text-zinc-300"><span className="mr-2 font-mono text-xs text-zinc-300">0{index + 1}</span>{question.prompt}</legend><div className="mt-3 space-y-2">{question.options.map((option) => <label key={option} className={`flex cursor-pointer items-start gap-3 rounded-[0.75rem] border p-3 text-sm transition ${answers[question.id] === option ? "border-cyan-200/25 bg-cyan-200/[0.06] text-cyan-50" : "border-white/[0.08] bg-white/[0.02] text-zinc-300 hover:bg-white/[0.05]"}`}><input type="radio" name={question.id} value={option} checked={answers[question.id] === option} onChange={() => { setAnswers((current) => ({ ...current, [question.id]: option })); setSubmitted(false); }} className="mt-1 accent-cyan-200" />{option}</label>)}</div>{submitted ? <p className="mt-3 text-xs leading-5 text-zinc-300">{answers[question.id] === question.answer ? "Correct. " : "Review. "}{question.explanation}</p> : null}</fieldset>)}</div><div className="mt-6 flex flex-wrap items-center gap-3"><Button type="submit" disabled={!hydrated || Object.keys(answers).length !== lesson.quiz.length}>Check quiz</Button>{submitted ? <span className={`text-xs ${lessonComplete ? "text-emerald-100" : "text-amber-100"}`}>{score}/{lesson.quiz.length} · {scorePercent}%{lessonComplete ? " · lesson complete" : scorePercent < 67 ? " · reach 67% to finish" : !exerciseSubmitted ? " · check the exercise to finish" : " · answer the exercise correctly to finish"}</span> : null}</div>{storedProgress?.attempts ? <p className="mt-4 text-[0.68rem] text-zinc-300">Quiz attempts recorded: {storedProgress.attempts} · Retries remain reviewable.</p> : null}</form>
+        <form onSubmit={submitQuiz} className="glass-surface rounded-[1.05rem] p-5 sm:p-6"><div className="flex items-center gap-3"><BookOpenCheck className="size-4 text-cyan-100" aria-hidden="true" /><h2 className="type-card-title text-xl text-white">Objective quiz</h2></div><div className="mt-5 space-y-6">{lesson.quiz.map((question, index) => <fieldset key={question.id}><legend className="text-sm leading-6 text-zinc-300"><span className="mr-2 font-mono text-xs text-zinc-300">{index + 1}</span>{question.prompt}</legend><div className="mt-3 space-y-2">{question.options.map((option) => <label key={option} className={`flex cursor-pointer items-start gap-3 rounded-[0.75rem] border p-3 text-sm transition ${answers[question.id] === option ? "border-cyan-200/25 bg-cyan-200/[0.06] text-cyan-50" : "border-white/[0.08] bg-white/[0.02] text-zinc-300 hover:bg-white/[0.05]"}`}><input type="radio" name={question.id} value={option} checked={answers[question.id] === option} onChange={() => { setAnswers((current) => ({ ...current, [question.id]: option })); setSubmitted(false); }} className="mt-1 accent-cyan-200" />{option}</label>)}</div>{submitted ? <p className="mt-3 text-xs leading-5 text-zinc-300">{answers[question.id] === question.answer ? "Correct. " : "Review. "}{question.explanation}</p> : null}</fieldset>)}</div><div className="mt-6 flex flex-wrap items-center gap-3"><Button type="submit" disabled={!hydrated || Object.keys(answers).length !== lesson.quiz.length}>Check quiz</Button>{submitted ? <span className={`text-xs ${lessonComplete ? "text-emerald-100" : "text-amber-100"}`}>{score}/{lesson.quiz.length} · {scorePercent}%{lessonComplete ? " · lesson complete" : scorePercent < 67 ? " · reach 67% to finish" : !exerciseSubmitted ? " · check the exercise to finish" : " · answer the exercise correctly to finish"}</span> : null}</div>{storedProgress?.attempts ? <p className="mt-4 text-[0.68rem] text-zinc-300">Quiz attempts recorded: {storedProgress.attempts} · Retries remain reviewable.</p> : null}</form>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1fr_0.85fr]">

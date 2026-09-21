@@ -288,7 +288,7 @@ function makeModule(input: Omit<LearningModule, "id" | "order"> & { order: numbe
 
 export const learningModules: LearningModule[] = [
   makeModule({
-    number: "00",
+    number: "01",
     slug: "protect-the-account",
     title: "Protect the account",
     description: "Start with boundaries that keep learning capital separate from identity, rent, and emergency reserves.",
@@ -343,7 +343,7 @@ export const learningModules: LearningModule[] = [
     ],
   }),
   makeModule({
-    number: "01",
+    number: "02",
     slug: "understand-the-market-map",
     title: "Understand the market map",
     description: "Read OHLCV, timeframes, volatility, and the Supertrend record as descriptive data—not a command.",
@@ -398,7 +398,7 @@ export const learningModules: LearningModule[] = [
     ],
   }),
   makeModule({
-    number: "02",
+    number: "03",
     slug: "turn-an-indicator-into-a-strategy",
     title: "Turn an indicator into a strategy",
     description: "Move from a chart label to a falsifiable, versioned specification with entry, exit, invalidation, and no-trade rules.",
@@ -452,7 +452,7 @@ export const learningModules: LearningModule[] = [
     ],
   }),
   makeModule({
-    number: "03",
+    number: "04",
     slug: "position-sizing-and-survival",
     title: "Position sizing and survival",
     description: "Translate a risk budget into position size while keeping portfolio heat, gaps, leverage, and nonlinear recovery visible.",
@@ -507,7 +507,7 @@ export const learningModules: LearningModule[] = [
     ],
   }),
   makeModule({
-    number: "04",
+    number: "05",
     slug: "honest-backtesting",
     title: "Honest backtesting",
     description: "Build an evidence trail that shows what was known, what it cost, and where the method can fail.",
@@ -562,7 +562,7 @@ export const learningModules: LearningModule[] = [
     ],
   }),
   makeModule({
-    number: "05",
+    number: "06",
     slug: "evaluate-the-evidence",
     title: "Evaluate the evidence",
     description: "Look beyond headline return: expectancy, drawdown, exposure, benchmark-relative outcomes, and sample quality.",
@@ -618,7 +618,7 @@ export const learningModules: LearningModule[] = [
     ],
   }),
   makeModule({
-    number: "06",
+    number: "07",
     slug: "execution",
     title: "Execution",
     description: "Model the gap between a clean chart and a real venue: orders, fills, liquidity, alerts, downtime, and custody.",
@@ -671,7 +671,7 @@ export const learningModules: LearningModule[] = [
     ],
   }),
   makeModule({
-    number: "07",
+    number: "08",
     slug: "behaviour-and-psychology",
     title: "Behaviour and psychology",
     description: "Study the human failure modes that turn a declared process into a different process under stress.",
@@ -724,7 +724,7 @@ export const learningModules: LearningModule[] = [
     ],
   }),
   makeModule({
-    number: "08",
+    number: "09",
     slug: "graduation",
     title: "Graduation",
     description: "Move deliberately from historical research to paper practice and only then review whether a controlled experiment is appropriate.",

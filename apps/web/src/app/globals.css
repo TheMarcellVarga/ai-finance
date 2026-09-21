@@ -497,6 +497,23 @@
   filter: blur(74px);
 }
 
+.education-hero-copy {
+  position: relative;
+  padding-left: clamp(1.1rem, 3vw, 2.25rem);
+}
+
+.education-hero-copy::before {
+  content: "";
+  position: absolute;
+  inset: 0.35rem auto 0.35rem 0;
+  width: 1px;
+  background: linear-gradient(180deg, rgb(165 243 252 / 0.78), rgb(165 243 252 / 0.16) 72%, transparent);
+}
+
+.education-record-card {
+  position: relative;
+}
+
 .workspace-sync {
   position: relative;
   z-index: 1;
