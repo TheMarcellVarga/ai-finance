@@ -338,7 +338,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
 
   return (
     <div className="space-y-6">
-      <section className="section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
+      <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
         <WorkspaceWaveAccent className="pointer-events-none absolute right-4 top-3 hidden sm:block lg:right-8 lg:top-5" />
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">

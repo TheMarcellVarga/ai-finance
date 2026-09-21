@@ -37,7 +37,7 @@ export default function ResearchEvaluationsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="section-shell overflow-hidden rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
+      <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div className="max-w-4xl">
             <div className="flex items-center gap-3 text-cyan-100">

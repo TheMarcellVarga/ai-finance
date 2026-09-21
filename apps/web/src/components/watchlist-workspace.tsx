@@ -119,7 +119,7 @@ export function WatchlistWorkspace({ initialWatchlist, initialMeta, initialError
 
   return (
     <div className="space-y-6">
-      <section className="section-shell rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
+      <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
         <div className="grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-end">
           <div className="max-w-3xl">
             <p className="type-label inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">

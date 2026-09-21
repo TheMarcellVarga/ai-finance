@@ -73,7 +73,7 @@ export function GoalPlannerWorkspace({ portfolio, initialError }: GoalPlannerWor
 
   return (
     <section className="space-y-6">
-      <div className="section-shell rounded-[1.25rem] p-6 sm:p-8">
+      <div className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8">
         <div className="grid gap-6 lg:grid-cols-[1fr_20rem] lg:items-end">
           <div>
             <h1 className="type-display text-3xl text-white sm:text-5xl">Plan from your actual portfolio.</h1>

@@ -13,7 +13,7 @@ export default async function BillingPage() {
 
   return (
     <div className="space-y-6">
-      <section className="section-shell rounded-[1.25rem] p-6 sm:p-8">
+      <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="type-label inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100">

@@ -31,7 +31,7 @@ export default async function RiskPage() {
 
   return (
     <section className="space-y-6">
-      <div className="section-shell rounded-[8px] p-6 sm:p-8">
+      <div className="workspace-hero section-shell relative overflow-hidden rounded-[8px] p-6 sm:p-8">
         <p className="type-label text-xs uppercase text-cyan-100">Risk explainer</p>
         <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_18rem] lg:items-end">
           <div>

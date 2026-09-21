@@ -358,7 +358,7 @@ export function ResearchWorkspace({
 
   return (
     <div className="space-y-6">
-      <section className="section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
+      <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
         <WorkspaceWaveAccent className="pointer-events-none absolute right-4 top-3 hidden sm:block lg:right-8 lg:top-5" />
         <div className="grid gap-7 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
