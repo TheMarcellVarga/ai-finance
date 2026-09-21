@@ -50,7 +50,7 @@ export function PublicInfoPage({
                 return (
                   <article key={item.title} className="public-info-row">
                     <div className="public-info-row-index" aria-hidden="true">
-                      {String(index + 1).padStart(2, "0")}
+                      {index + 1}
                     </div>
                     <div className="public-info-row-icon">
                       <Icon className="size-5" aria-hidden="true" />
