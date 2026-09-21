@@ -214,6 +214,14 @@
   display: none;
 }
 
+.market-table td + td {
+  vertical-align: middle;
+}
+
+.market-table td:first-child {
+  vertical-align: top;
+}
+
 @media (max-width: 1023px) {
   .market-filter-scroll {
     overflow-x: scroll;

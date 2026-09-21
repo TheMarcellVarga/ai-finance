@@ -583,7 +583,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
 
   return (
     <div className="space-y-5">
-      <section className="section-shell overflow-hidden rounded-[1.25rem] p-5 sm:p-7 lg:p-8">
+      <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-5 sm:p-7 lg:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-[0.16em] text-cyan-100/80">
@@ -789,7 +789,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
           </div>
         ) : (
           <>
-            <div className="hidden overflow-x-auto md:block">
+            <div className="market-table hidden overflow-x-auto md:block">
               <table className="w-full min-w-[940px] border-collapse text-left">
                 <thead className="bg-white/[0.018] text-[0.68rem] uppercase tracking-[0.12em] text-zinc-600">
                   <tr>
@@ -819,7 +819,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
                         className="group border-t border-white/[0.05] transition-colors hover:bg-white/[0.022]"
                         dataMarketRow={getMarketRowKey(row.symbol)}
                       >
-                        <td className="px-5 py-3.5">
+                        <td className="px-5 py-3.5 align-top">
                           <div className="flex items-center gap-3">
                             <CryptoAssetIcon baseAsset={row.baseAsset} iconUrl={row.iconUrl} size="size-8" />
                             <div className="min-w-0">
