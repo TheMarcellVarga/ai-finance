@@ -68,7 +68,7 @@ export function AssetPicker({ value, onChange, onSelect, label = "Asset", descri
         <div className="flex items-center justify-between gap-3">
           <label htmlFor={inputId} className="text-sm text-zinc-300">{label}</label>
           {results.length > 0 ? (
-            <button type="button" onClick={() => setResults([])} className="text-xs text-zinc-500 hover:text-zinc-200" aria-label="Close asset search results">
+            <button type="button" onClick={() => setResults([])} className="text-xs text-zinc-400 hover:text-zinc-200" aria-label="Close asset search results">
               <X className="size-3.5" />
             </button>
           ) : null}
@@ -94,16 +94,16 @@ export function AssetPicker({ value, onChange, onSelect, label = "Asset", descri
             <span className="hidden sm:inline">{loading ? "Searching" : "Search"}</span>
           </button>
         </div>
-        <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_7rem]">
+        <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem]">
           <select value={assetClass} onChange={(event) => setAssetClass(event.target.value)} className="h-9 rounded-[0.65rem] border border-white/10 bg-zinc-950/70 px-2 text-xs text-zinc-300 outline-none focus:border-cyan-200/40" aria-label="Filter by asset class">
             {assetClassOptions.map(([optionValue, optionLabel]) => <option key={optionValue} value={optionValue}>{optionLabel}</option>)}
           </select>
           <label className="relative">
-            <Globe2 className="pointer-events-none absolute left-2 top-2.5 size-3.5 text-zinc-500" />
+            <Globe2 className="pointer-events-none absolute left-2 top-2.5 size-3.5 text-zinc-400" />
             <input value={countryCode} onChange={(event) => setCountryCode(event.target.value.toUpperCase())} maxLength={2} className="h-9 w-full rounded-[0.65rem] border border-white/10 bg-zinc-950/70 pl-7 pr-2 font-mono text-xs text-zinc-300 outline-none focus:border-cyan-200/40" placeholder="ISO country" aria-label="Filter by ISO country code" />
           </label>
         </div>
-        {description ? <p className="mt-2 text-xs leading-5 text-zinc-500">{description}</p> : null}
+        {description ? <p className="mt-2 text-xs leading-5 text-zinc-400">{description}</p> : null}
       </div>
       {error ? <p className="mt-2 text-xs leading-5 text-amber-100/80">{error}</p> : null}
       {results.length > 0 ? (
@@ -115,7 +115,7 @@ export function AssetPicker({ value, onChange, onSelect, label = "Asset", descri
                 <span className="text-[0.65rem] uppercase tracking-[0.12em] text-cyan-100/70">{formatAssetClass(asset.assetClass ?? asset.type)}</span>
               </span>
               <span className="mt-1 block truncate text-xs text-zinc-400">{asset.name}</span>
-              <span className="mt-1 block truncate text-[0.68rem] text-zinc-600">{[asset.exchange, asset.countryCode, asset.currency].filter(Boolean).join(" · ") || "Provider metadata pending"}</span>
+              <span className="mt-1 block truncate text-[0.68rem] text-zinc-400">{[asset.exchange, asset.countryCode, asset.currency].filter(Boolean).join(" · ") || "Provider metadata pending"}</span>
             </button>
           ))}
         </div>

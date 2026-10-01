@@ -49,7 +49,7 @@ export function PublicInfoPage({
 
                 return (
                   <article key={item.title} className="public-info-row">
-                    <div className="public-info-row-index" aria-hidden="true">
+                    <div className="public-info-row-index hidden min-[641px]:block" aria-hidden="true">
                       {index + 1}
                     </div>
                     <div className="public-info-row-icon">

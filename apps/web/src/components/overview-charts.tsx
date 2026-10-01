@@ -32,6 +32,10 @@ type OverviewChartsProps = {
 };
 
 const allocationColors = ["#a5f3fc", "#67e8f9", "#5eead4", "#fcd34d", "#94a3b8", "#c4b5fd"];
+const movementGridClassName = [
+  "grid grid-cols-[6rem_minmax(0,1fr)_4.75rem]",
+  "items-center gap-2 sm:grid-cols-[7.5rem_minmax(0,1fr)_5.25rem] sm:gap-3",
+].join(" ");
 
 function percentFromBps(value: number) {
   return `${(value / 100).toFixed(1)}%`;
@@ -120,7 +124,7 @@ export function OverviewCharts({ allocation, watchlist, portfolioProvider = "mar
                   <p className="font-mono text-2xl font-light text-white">
                     {activeAllocationIndex == null ? percentFromBps(allocationTotal) : percentFromBps(allocationData[activeAllocationIndex]?.weightBps ?? 0)}
                   </p>
-                  <p className="mt-1 text-[0.62rem] uppercase tracking-[0.14em] text-zinc-500">
+                  <p className="mt-1 text-[0.62rem] uppercase tracking-[0.14em] text-zinc-400">
                     {activeAllocationIndex == null ? "allocated" : allocationData[activeAllocationIndex]?.label}
                   </p>
                 </div>
@@ -155,7 +159,7 @@ export function OverviewCharts({ allocation, watchlist, portfolioProvider = "mar
           </p>
         )}
 
-        <p className="mt-6 text-xs leading-5 text-zinc-500">
+        <p className="mt-6 text-xs leading-5 text-zinc-400">
           {portfolioEmpty
             ? "Portfolio snapshot pending · add a holding to calculate owner-scoped value and allocation."
             : `Current snapshot · ${portfolioProvider} · ${formatSnapshot(portfolioCapturedAt)}. Allocation is a research signal, not a recommendation.`}
@@ -179,7 +183,7 @@ export function OverviewCharts({ allocation, watchlist, portfolioProvider = "mar
 
         {movementItems.length ? (
           <div className="mt-6 space-y-4">
-            <div className="grid grid-cols-[3.8rem_1fr_3.5rem] items-center gap-3 text-[0.62rem] uppercase tracking-[0.14em] text-zinc-600">
+            <div className={`${movementGridClassName} text-[0.62rem] uppercase tracking-[0.14em] text-zinc-400`}>
               <span>Symbol</span>
               <span className="text-center">Relative move</span>
               <span className="text-right">Move</span>
@@ -189,26 +193,26 @@ export function OverviewCharts({ allocation, watchlist, portfolioProvider = "mar
               const width = movementWidth(value, movementMax) / 2;
               const isPositive = (value ?? 0) >= 0;
               return (
-                <div key={item.id} className="grid grid-cols-[3.8rem_1fr_3.5rem] items-center gap-3">
+                <div key={item.id} className={movementGridClassName}>
                   <div className="min-w-0">
-                    <p className="font-mono text-sm text-white">{item.ticker}</p>
-                    <p className="truncate text-[0.65rem] text-zinc-600">{item.name}</p>
+                    <p className="truncate whitespace-nowrap font-mono text-sm font-medium text-white" title={item.ticker}>{item.ticker}</p>
+                    <p className="truncate text-[0.7rem] text-zinc-400" title={item.name}>{item.name}</p>
                   </div>
-                  <div className="relative h-7 rounded-[0.6rem] bg-white/[0.035]" aria-label={`${item.ticker} ${formatMove(value)} provider-reported movement`}>
-                    <span className="absolute inset-y-1/2 left-1/2 w-px -translate-y-1/2 bg-white/20" aria-hidden="true" />
+                  <div className="relative h-7 rounded-[0.6rem] bg-white/[0.055]" aria-label={`${item.ticker} ${formatMove(value)} provider-reported movement`}>
+                    <span className="absolute inset-y-1.5 left-1/2 w-px -translate-x-1/2 bg-white/30" aria-hidden="true" />
                     {value == null ? (
                       <span className="absolute inset-y-1/2 left-1/2 w-8 -translate-y-1/2 border-t border-dashed border-white/20" aria-hidden="true" />
                     ) : (
                       <span
-                        className={`absolute top-1/2 h-2 -translate-y-1/2 rounded-full ${isPositive ? "bg-cyan-200/85" : "bg-amber-200/85"}`}
+                        className={`absolute top-1/2 h-2.5 -translate-y-1/2 rounded-full ${isPositive ? "bg-cyan-200/85" : "bg-amber-200/85"}`}
                         style={isPositive ? { left: "50%", width: `${width}%` } : { right: "50%", width: `${width}%` }}
                         aria-hidden="true"
                       />
                     )}
                   </div>
                   <div className="text-right">
-                    <p className={`font-mono text-xs ${value == null ? "text-zinc-600" : isPositive ? "text-cyan-100" : "text-amber-100"}`}>{formatMove(value)}</p>
-                    <p className="mt-1 truncate font-mono text-[0.62rem] text-zinc-600">{item.displayPrice ?? "N/A"}</p>
+                    <p className={`font-mono text-xs ${value == null ? "text-zinc-400" : isPositive ? "text-cyan-100" : "text-amber-100"}`}>{formatMove(value)}</p>
+                    <p className="mt-1 truncate font-mono text-[0.68rem] text-zinc-400" title={item.displayPrice ?? "N/A"}>{item.displayPrice ?? "N/A"}</p>
                   </div>
                 </div>
               );
@@ -220,7 +224,7 @@ export function OverviewCharts({ allocation, watchlist, portfolioProvider = "mar
           </p>
         )}
 
-        <p className="mt-6 text-xs leading-5 text-zinc-500">
+        <p className="mt-6 text-xs leading-5 text-zinc-400">
           {movementProvider} · {formatSnapshot(movementCapturedAt)}. Bars are scaled to the largest absolute move in this {movementSource === "market" ? "public market" : "watchlist"} snapshot. They show market context, not a trade signal.
         </p>
       </div>

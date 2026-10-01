@@ -111,7 +111,7 @@ const sortLabels: Record<SortKey, string> = {
 };
 
 function SelectChevron() {
-  return <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" aria-hidden="true" />;
+  return <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" aria-hidden="true" />;
 }
 
 function presetForSort(sort: SortState): SortMode | "custom" {
@@ -174,7 +174,7 @@ function SortableHeader({
       <button
         type="button"
         onClick={() => onSort(column)}
-        className={`inline-flex min-h-8 items-center gap-1.5 rounded-md px-1.5 transition-colors hover:bg-white/[0.04] hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/35 ${align === "right" ? "justify-end" : "justify-start"} ${active ? "text-cyan-100" : "text-zinc-600"}`}
+        className={`inline-flex min-h-8 items-center gap-1.5 rounded-md px-1.5 transition-colors hover:bg-white/[0.04] hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/35 ${align === "right" ? "justify-end" : "justify-start"} ${active ? "text-cyan-100" : "text-zinc-400"}`}
         title={`Sort by ${label}`}
       >
         <span>{label}</span>
@@ -382,8 +382,8 @@ function MarketRowMobile({ row, now, interval, capturedAt }: { row: CryptoMonito
         <div className="flex min-w-0 items-center gap-3">
           <CryptoAssetIcon baseAsset={row.baseAsset} iconUrl={row.iconUrl} size="size-9" />
           <div className="min-w-0">
-            <a href={researchUrl} target="_blank" rel="noreferrer" className="truncate font-mono text-sm text-white hover:text-cyan-100">{row.baseAsset}<span className="text-zinc-600">/{row.quoteAsset}</span></a>
-            <p className="mt-1 font-mono text-xs text-zinc-500">{formatCompactCurrency(row.quoteVolume)} volume</p>
+            <a href={researchUrl} target="_blank" rel="noreferrer" className="truncate font-mono text-sm text-white hover:text-cyan-100">{row.baseAsset}<span className="text-zinc-400">/{row.quoteAsset}</span></a>
+            <p className="mt-1 font-mono text-xs text-zinc-400">{formatCompactCurrency(row.quoteVolume)} volume</p>
           </div>
         </div>
         <div className="flex items-start gap-2">
@@ -391,30 +391,30 @@ function MarketRowMobile({ row, now, interval, capturedAt }: { row: CryptoMonito
             <TrendIcon className="size-3" />
             {row.trend}
           </span>
-          <span className="text-right text-[0.6rem] uppercase tracking-[0.08em] text-zinc-600">{autoPeriodLabel(row)}</span>
-          <ExternalLink className="mt-1 size-3.5 shrink-0 text-zinc-600" aria-hidden="true" />
+          <span className="text-right text-[0.6rem] uppercase tracking-[0.08em] text-zinc-400">{autoPeriodLabel(row)}</span>
+          <ExternalLink className="mt-1 size-3.5 shrink-0 text-zinc-400" aria-hidden="true" />
         </div>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-3 text-xs">
         <div>
-          <p className="text-zinc-600">Price</p>
+          <p className="text-zinc-400">Price</p>
           <p className="mt-1 font-mono text-zinc-200">{formatPrice(row.price)}</p>
         </div>
         <div>
-          <p className="text-zinc-600">Last flip</p>
+          <p className="text-zinc-400">Last flip</p>
           <Link href={getLessonUrl(row, interval, capturedAt, "supertrend-anatomy")} className="mt-1 inline-flex font-mono text-zinc-200 hover:text-cyan-100" title="Study how the trailing bands and confirmed flip work">{formatTimeAgo(row.lastFlipAt, row.historyComplete, now)}</Link>
         </div>
         <div>
-          <p className="text-zinc-600">Flip level</p>
+          <p className="text-zinc-400">Flip level</p>
           <p className="mt-1 font-mono text-zinc-200">{formatPrice(row.nextFlipLevel)}</p>
         </div>
         <div>
-          <p className="text-zinc-600">Distance</p>
+          <p className="text-zinc-400">Distance</p>
           <Link href={getLessonUrl(row, interval, capturedAt, "rules-and-invalidation")} className="mt-1 inline-flex font-mono text-zinc-200 hover:text-cyan-100" title="Study invalidation distance and declared rules">{row.distanceToFlipPercent.toFixed(2)}%</Link>
         </div>
       </div>
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3">
-        <span className="text-[0.65rem] uppercase tracking-[0.12em] text-zinc-600">Descriptive state only</span>
+        <span className="text-[0.65rem] uppercase tracking-[0.12em] text-zinc-400">Descriptive state only</span>
         <div className="flex items-center gap-3"><Link href={getEducationUrl(row, interval, capturedAt)} className="inline-flex items-center gap-1.5 text-xs text-cyan-100 hover:text-white"><BookOpenCheck className="size-3.5" aria-hidden="true" />Study this state</Link><Link href={getLabUrl(row, interval, capturedAt)} className="text-xs text-zinc-400 hover:text-white">Use in lab</Link></div>
       </div>
     </>
@@ -595,7 +595,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
               Compare confirmed Adaptive Supertrend states across the most liquid {payload?.meta.providerLabel ?? provider} dollar-quoted spot markets. Hover a market for the multi-timeframe long and short research record. Signals are descriptive indicators, not trade instructions.
             </p>
           </div>
-          <div className="flex flex-col items-start gap-2 text-xs text-zinc-500 lg:items-end">
+          <div className="flex flex-col items-start gap-2 text-xs text-zinc-400 lg:items-end">
             <span className="inline-flex items-center gap-2 font-mono text-zinc-300">
               <Database className="size-3.5 text-cyan-200/70" />
               Free public {payload?.meta.providerLabel ?? provider} data
@@ -621,19 +621,19 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
 
       <section className="grid grid-cols-2 overflow-hidden rounded-[1.1rem] border border-white/[0.06] bg-[#090e0f]/95 lg:grid-cols-4">
         <div className="p-4 sm:p-5">
-          <p className="text-xs text-zinc-500">Markets monitored</p>
+          <p className="text-xs text-zinc-400">Markets monitored</p>
           <p className="mt-2 font-mono text-2xl text-white">{payload?.meta.returnedMarkets ?? "--"}</p>
-          <p className="mt-1 text-xs text-zinc-600">Top dollar-quoted markets</p>
+          <p className="mt-1 text-xs text-zinc-400">Top dollar-quoted markets</p>
         </div>
         <div className="border-l border-white/[0.06] p-4 sm:p-5">
-          <p className="text-xs text-zinc-500">Bullish</p>
+          <p className="text-xs text-zinc-400">Bullish</p>
           <p className="mt-2 font-mono text-2xl text-emerald-100">{payload ? metrics.bullish : "--"}</p>
-          <p className="mt-1 text-xs text-zinc-600">Confirmed candle</p>
+          <p className="mt-1 text-xs text-zinc-400">Confirmed candle</p>
         </div>
         <div className="border-t border-white/[0.06] p-4 sm:p-5 lg:border-l lg:border-t-0">
-          <p className="text-xs text-zinc-500">Bearish</p>
+          <p className="text-xs text-zinc-400">Bearish</p>
           <p className="mt-2 font-mono text-2xl text-rose-100">{payload ? metrics.bearish : "--"}</p>
-          <p className="mt-1 text-xs text-zinc-600">Confirmed candle</p>
+          <p className="mt-1 text-xs text-zinc-400">Confirmed candle</p>
         </div>
         <button
           type="button"
@@ -642,9 +642,9 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
           disabled={!metrics.nearest}
           aria-label={metrics.nearest ? `Jump to ${metrics.nearest.baseAsset} nearest flip level` : "Nearest flip level unavailable"}
         >
-          <p className="text-xs text-zinc-500">Nearest flip level</p>
+          <p className="text-xs text-zinc-400">Nearest flip level</p>
           <p className="mt-2 truncate text-2xl text-cyan-100 group-hover:text-cyan-50">{metrics.nearest?.assetName ?? "--"}</p>
-          <p className="mt-1 text-xs text-zinc-600">
+          <p className="mt-1 text-xs text-zinc-400">
             {metrics.nearest ? `${metrics.nearest.distanceToFlipPercent.toFixed(2)}% away` : "Waiting for data"}
           </p>
         </button>
@@ -654,18 +654,18 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
         <div className="grid gap-3 border-b border-white/[0.06] p-4 lg:grid-cols-2 2xl:grid-cols-[minmax(15rem,1.1fr)_minmax(10rem,0.8fr)_minmax(14.25rem,1fr)_minmax(32rem,1.55fr)] 2xl:items-center">
           <label className="relative block">
             <span className="sr-only">Search crypto markets</span>
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-600" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search BTC, ETH, SOL..."
-              className="h-9 w-full rounded-[0.65rem] border border-white/8 bg-white/[0.025] pl-9 pr-3 font-mono text-sm text-white outline-none placeholder:text-zinc-700 focus:border-cyan-200/30 focus:ring-2 focus:ring-cyan-200/10"
+              className="h-9 w-full rounded-[0.65rem] border border-white/8 bg-white/[0.025] pl-9 pr-3 font-mono text-sm text-white outline-none placeholder:text-zinc-400 focus:border-cyan-200/30 focus:ring-2 focus:ring-cyan-200/10"
             />
           </label>
 
           <label className="flex min-w-0 items-center gap-2">
             <span className="sr-only">Filter by trend</span>
-            <SlidersHorizontal className="size-4 shrink-0 text-zinc-600" />
+            <SlidersHorizontal className="size-4 shrink-0 text-zinc-400" />
             <span className="relative block min-w-[10.5rem]">
               <select
                 value={trendFilter}
@@ -785,13 +785,13 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
           <div className="p-8 text-center">
             <Search className="mx-auto size-5 text-cyan-200" />
             <h2 className="mt-4 text-lg text-white">No markets match this view</h2>
-            <p className="mt-2 text-sm text-zinc-500">Clear the search or choose another trend filter.</p>
+            <p className="mt-2 text-sm text-zinc-400">Clear the search or choose another trend filter.</p>
           </div>
         ) : (
           <>
             <div className="market-table hidden overflow-x-auto md:block">
               <table className="w-full min-w-[940px] border-collapse text-left">
-                <thead className="bg-white/[0.018] text-[0.68rem] uppercase tracking-[0.12em] text-zinc-600">
+                <thead className="bg-white/[0.018] text-[0.68rem] uppercase tracking-[0.12em] text-zinc-400">
                   <tr>
                     <SortableHeader column="symbol" label="Market" sort={sort} onSort={handleHeaderSort} />
                     <SortableHeader column="price" label="Price" sort={sort} onSort={handleHeaderSort} />
@@ -823,8 +823,8 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
                           <div className="flex items-center gap-3">
                             <CryptoAssetIcon baseAsset={row.baseAsset} iconUrl={row.iconUrl} size="size-8" />
                             <div className="min-w-0">
-                              <a href={researchUrl} target="_blank" rel="noreferrer" className="font-mono text-sm text-white hover:text-cyan-100 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/50">{row.baseAsset}<span className="text-zinc-600">/{row.quoteAsset}</span><span className="sr-only"> research</span></a>
-                              <p className="mt-1 font-mono text-[0.67rem] text-zinc-600">{formatCompactCurrency(row.quoteVolume)} vol</p>
+                              <a href={researchUrl} target="_blank" rel="noreferrer" className="font-mono text-sm text-white hover:text-cyan-100 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/50">{row.baseAsset}<span className="text-zinc-400">/{row.quoteAsset}</span><span className="sr-only"> research</span></a>
+                              <p className="mt-1 font-mono text-[0.67rem] text-zinc-400">{formatCompactCurrency(row.quoteVolume)} vol</p>
                             </div>
                             <ExternalLink className="size-3.5 shrink-0 text-zinc-700 transition-colors group-hover:text-cyan-200" aria-hidden="true" />
                           </div>
@@ -838,15 +838,15 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
                             <TrendIcon className="size-3" />
                             {row.trend}
                           </span>
-                          <p className="mt-1 text-[0.6rem] uppercase tracking-[0.08em] text-zinc-600">{autoPeriodLabel(row)}</p>
+                          <p className="mt-1 text-[0.6rem] uppercase tracking-[0.08em] text-zinc-400">{autoPeriodLabel(row)}</p>
                         </td>
                         <td className="px-4 py-3.5">
                           <Link href={getLessonUrl(row, interval, payload?.meta.capturedAt, "supertrend-anatomy")} className="font-mono text-xs text-zinc-200 hover:text-cyan-100" title="Study how the trailing bands and confirmed flip work">{formatTimeAgo(row.lastFlipAt, row.historyComplete, now)}</Link>
-                          <p className="mt-1 text-[0.65rem] text-zinc-600">Confirmed close</p>
+                          <p className="mt-1 text-[0.65rem] text-zinc-400">Confirmed close</p>
                         </td>
                         <td className="px-4 py-3.5 font-mono text-xs text-zinc-200">{formatPrice(row.nextFlipLevel)}</td>
                         <td className="px-4 py-3.5 font-mono text-xs text-cyan-100"><Link href={getLessonUrl(row, interval, payload?.meta.capturedAt, "rules-and-invalidation")} className="hover:text-white" title="Study invalidation distance and declared rules">{row.distanceToFlipPercent.toFixed(2)}%</Link></td>
-                        <td className={`px-5 py-3.5 text-right font-mono text-xs ${row.sinceFlipPercent == null ? "text-zinc-600" : row.sinceFlipPercent >= 0 ? "text-emerald-100" : "text-rose-100"}`}>
+                        <td className={`px-5 py-3.5 text-right font-mono text-xs ${row.sinceFlipPercent == null ? "text-zinc-400" : row.sinceFlipPercent >= 0 ? "text-emerald-100" : "text-rose-100"}`}>
                           {formatPercent(row.sinceFlipPercent)}
                         </td>
                         <td className="px-4 py-3.5 text-right">
@@ -865,7 +865,7 @@ export function CryptoMonitorWorkspace({ initialPayload, initialError }: CryptoM
           </>
         )}
 
-        <footer className="flex flex-col gap-2 border-t border-white/[0.06] px-4 py-3 text-[0.68rem] text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
+        <footer className="flex flex-col gap-2 border-t border-white/[0.06] px-4 py-3 text-[0.68rem] text-zinc-400 sm:flex-row sm:items-center sm:justify-between">
           <span>{rows.length} visible markets. Auto ATR {payload?.meta.atrPeriodMin ?? 10}–{payload?.meta.atrPeriodMax ?? 20} × {payload?.meta.atrMultiplier ?? 3}; provider-bounded, in-sample history; rows may remain on the fallback during warm-up.</span>
           <span className="inline-flex items-center gap-1.5"><Clock3 className="size-3" />Values use closed candles. Not financial advice.</span>
         </footer>

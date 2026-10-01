@@ -93,7 +93,7 @@ export default function Home() {
                     alt="A quiet desk with a notebook, pen, tablet, and city lights beyond a window"
                     width={1672}
                     height={941}
-                    className="h-full w-full object-cover"
+                    className="block w-full object-cover"
                   />
                   <figcaption>A research surface for people who want context without a finance terminal.</figcaption>
                 </figure>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 
-export function BrandMark() {
+export function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
     <Link href="/" className="group flex items-center gap-3" aria-label="Aperture home">
       <span className="grid size-9 shrink-0 place-items-center transition-transform group-hover:scale-[1.03]">
@@ -19,7 +19,7 @@ export function BrandMark() {
         <span className="block text-[0.98rem] font-medium tracking-[-0.02em] text-white">
           Aperture
         </span>
-        <span className="mt-1 block text-[0.61rem] font-medium uppercase tracking-[0.13em] text-zinc-500">
+        <span className={`${compact ? "hidden min-[360px]:block" : "block"} mt-1 text-[0.61rem] font-medium uppercase tracking-[0.13em] text-zinc-400`}>
           Financial Intelligence
         </span>
       </span>

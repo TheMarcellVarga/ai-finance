@@ -391,7 +391,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
             <div>
               <p className="text-sm font-medium text-white">Market data is temporarily unavailable.</p>
               <p className="mt-2 text-sm leading-6 text-zinc-400">{error}</p>
-              <p className="mt-2 text-xs leading-5 text-zinc-500">Refresh again shortly. No estimated or fabricated prices are shown while the feed is unavailable.</p>
+              <p className="mt-2 text-xs leading-5 text-zinc-400">Refresh again shortly. No estimated or fabricated prices are shown while the feed is unavailable.</p>
             </div>
           </div>
         </section>
@@ -402,7 +402,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
           <Plus className="size-5 text-cyan-200" />
           <div>
             <h2 className="type-card-title text-xl text-white">{portfolio ? "Add a holding" : "Build your real portfolio"}</h2>
-            <p className="mt-1 text-sm text-zinc-500">Enter your own position; Aperture supplies only the provider quote and freshness metadata.</p>
+            <p className="mt-1 text-sm text-zinc-400">Enter your own position; Aperture supplies only the provider quote and freshness metadata.</p>
           </div>
         </div>
         <div className="mt-5 grid gap-4 md:grid-cols-2 2xl:grid-cols-5">
@@ -453,7 +453,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
               ["As of", formatTimestamp(portfolio.dataFreshness.capturedAt), liveRefresh ? "Auto refresh every 90s" : freshnessLabel],
             ].map(([label, value, detail]) => (
               <div key={label} className="glass-surface rounded-[1rem] p-5">
-                <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">{label}</p>
+                <p className="text-xs uppercase tracking-[0.14em] text-zinc-400">{label}</p>
                 <p className="mt-3 font-mono text-2xl font-light text-white">{value}</p>
                 <p className="mt-2 text-xs text-cyan-100/70">{detail}</p>
               </div>
@@ -468,7 +468,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                     <WalletCards className="size-4 text-cyan-200" />
                     Holdings
                   </div>
-                  <p className="mt-1 text-xs text-zinc-500">Latest available prices with source freshness.</p>
+                  <p className="mt-1 text-xs text-zinc-400">Latest available prices with source freshness.</p>
                 </div>
                 <Button variant="outline" size="sm" onClick={loadRealPortfolio} disabled={loading}>
                   <RefreshCw className={loading ? "size-3.5 animate-spin" : "size-3.5"} />
@@ -490,7 +490,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                     <span className="flex items-start justify-between gap-3">
                       <span className="min-w-0">
                         <span className="block font-mono text-base text-white">{holding.asset.ticker}</span>
-                        <span className="mt-1 block truncate text-xs text-zinc-500">{holding.asset.name}</span>
+                        <span className="mt-1 block truncate text-xs text-zinc-400">{holding.asset.name}</span>
                         <span className="mt-1 block text-[0.65rem] uppercase tracking-[0.12em] text-cyan-100/60">{assetClassLabel(holding.asset)}{holding.asset.countryCode ? ` · ${holding.asset.countryCode}` : ""}</span>
                       </span>
                       <span className={(holding.asset.dailyChangeBps ?? 0) >= 0 ? "font-mono text-sm text-emerald-200" : "font-mono text-sm text-amber-200"}>
@@ -500,15 +500,15 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                     </span>
                     <span className="mt-4 grid grid-cols-3 gap-3">
                       <span>
-                        <span className="block text-[0.62rem] uppercase tracking-[0.14em] text-zinc-500">Value</span>
+                        <span className="block text-[0.62rem] uppercase tracking-[0.14em] text-zinc-400">Value</span>
                         <span className="mt-1 block font-mono text-sm text-white">{holding.displayValue}</span>
                       </span>
                       <span>
-                        <span className="block text-[0.62rem] uppercase tracking-[0.14em] text-zinc-500">Weight</span>
+                        <span className="block text-[0.62rem] uppercase tracking-[0.14em] text-zinc-400">Weight</span>
                         <span className="mt-1 block font-mono text-sm text-zinc-300">{percentFromBps(holding.weightBps)}</span>
                       </span>
                       <span>
-                        <span className="block text-[0.62rem] uppercase tracking-[0.14em] text-zinc-500">Last</span>
+                        <span className="block text-[0.62rem] uppercase tracking-[0.14em] text-zinc-400">Last</span>
                         <span className="mt-1 block truncate font-mono text-sm text-zinc-300">{holding.asset.displayPrice ?? "N/A"}</span>
                       </span>
                     </span>
@@ -520,7 +520,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                   <caption className="sr-only">
                     Current portfolio holdings. Select an asset name to load its price history.
                   </caption>
-                  <thead className="text-xs uppercase tracking-[0.14em] text-zinc-500">
+                  <thead className="text-xs uppercase tracking-[0.14em] text-zinc-400">
                     <tr>
                       <th className="py-3 font-normal">Asset</th>
                       <th className="py-3 font-normal">Qty</th>
@@ -546,7 +546,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                             className="rounded text-left hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60"
                           >
                             <span className="block font-mono text-white">{holding.asset.ticker}</span>
-                            <span className="mt-1 block text-xs text-zinc-500">{holding.asset.name}</span>
+                            <span className="mt-1 block text-xs text-zinc-400">{holding.asset.name}</span>
                             <span className="mt-1 block text-[0.65rem] uppercase tracking-[0.12em] text-cyan-100/60">{assetClassLabel(holding.asset)}{holding.asset.countryCode ? ` · ${holding.asset.countryCode}` : ""}</span>
                           </button>
                         </td>
@@ -586,7 +586,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                     }`}
                   >
                     <span className="block font-mono text-sm text-white">{holding.asset.ticker}</span>
-                    <span className="mt-1 block text-xs text-zinc-500">{holding.displayValue}</span>
+                    <span className="mt-1 block text-xs text-zinc-400">{holding.displayValue}</span>
                   </a>
                 ))}
               </div>
@@ -600,13 +600,13 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                       <Activity className="size-4 text-cyan-200" />
                       Market pulse
                     </div>
-                    <p className="mt-1 text-xs text-zinc-500">
+                    <p className="mt-1 text-xs text-zinc-400">
                       {selectedTicker} · {interval} bars · {chartMode}
                     </p>
                   </div>
                   <div className="text-right">
                     {hoveredPoint ? <span className="block font-mono text-sm text-white">{hoveredPoint.displayClose}</span> : null}
-                    {hoveredPoint ? <span className="mt-1 block text-xs text-zinc-500">{compactTime(hoveredPoint.timestamp)}</span> : null}
+                    {hoveredPoint ? <span className="mt-1 block text-xs text-zinc-400">{compactTime(hoveredPoint.timestamp)}</span> : null}
                   </div>
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -678,7 +678,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                         <div className="pointer-events-none absolute left-4 top-4 rounded-[0.8rem] bg-black/70 px-3 py-2 text-xs shadow-2xl backdrop-blur">
                           <span className="block font-mono text-white">{hoveredPoint.displayClose}</span>
                           <span className="mt-1 block text-zinc-400">{compactTime(hoveredPoint.timestamp)}</span>
-                          <span className="mt-1 block text-zinc-500">Vol {new Intl.NumberFormat("en-US").format(hoveredPoint.volume ?? 0)}</span>
+                          <span className="mt-1 block text-zinc-400">Vol {new Intl.NumberFormat("en-US").format(hoveredPoint.volume ?? 0)}</span>
                         </div>
                       ) : null}
                     </div>
@@ -687,7 +687,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                         {chartMoveBps >= 0 ? "+" : ""}
                         {percentFromBps(chartMoveBps)} today
                       </span>
-                      <span className="text-zinc-500">Updated {formatTimestamp(chart.meta.capturedAt)}</span>
+                      <span className="text-zinc-400">Updated {formatTimestamp(chart.meta.capturedAt)}</span>
                     </div>
                   </div>
                 ) : (
@@ -770,19 +770,19 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
               </div>
               <div className="mt-5 grid gap-3 md:grid-cols-3">
                 <div className="rounded-[1rem] bg-black/18 p-4">
-                  <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Contribution weight</p>
+                  <p className="text-xs uppercase tracking-[0.14em] text-zinc-400">Contribution weight</p>
                   <p className="mt-3 font-mono text-xl text-white">{percentFromBps(contributionBps)}</p>
-                  <p className="mt-2 text-xs leading-5 text-zinc-500">New monthly cash compared with current portfolio value.</p>
+                  <p className="mt-2 text-xs leading-5 text-zinc-400">New monthly cash compared with current portfolio value.</p>
                 </div>
                 <div className="rounded-[1rem] bg-black/18 p-4">
-                  <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Largest after cash</p>
+                  <p className="text-xs uppercase tracking-[0.14em] text-zinc-400">Largest after cash</p>
                   <p className="mt-3 font-mono text-xl text-white">{percentFromBps(largestAfterContributionBps)}</p>
-                  <p className="mt-2 text-xs leading-5 text-zinc-500">Concentration if new cash is left unallocated for review.</p>
+                  <p className="mt-2 text-xs leading-5 text-zinc-400">Concentration if new cash is left unallocated for review.</p>
                 </div>
                 <div className="rounded-[1rem] bg-black/18 p-4">
-                  <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">Review queue</p>
+                  <p className="text-xs uppercase tracking-[0.14em] text-zinc-400">Review queue</p>
                   <p className="mt-3 font-mono text-xl text-white">{portfolio.summary.reviewFlags}</p>
-                  <p className="mt-2 text-xs leading-5 text-zinc-500">Flags are risk prompts, not recommendations.</p>
+                  <p className="mt-2 text-xs leading-5 text-zinc-400">Flags are risk prompts, not recommendations.</p>
                 </div>
               </div>
               <p className="mt-4 text-sm leading-6 text-zinc-400">

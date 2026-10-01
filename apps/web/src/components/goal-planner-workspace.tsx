@@ -82,9 +82,9 @@ export function GoalPlannerWorkspace({ portfolio, initialError }: GoalPlannerWor
             </p>
           </div>
           <div className="rounded-[1rem] bg-black/20 p-5">
-            <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Current provider-backed value</p>
+            <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">Current provider-backed value</p>
             <p className="mt-2 font-mono text-2xl text-white">{portfolio?.summary.displayTotalValue ?? "No portfolio"}</p>
-            <p className="mt-2 text-xs leading-5 text-zinc-500">
+            <p className="mt-2 text-xs leading-5 text-zinc-400">
               {portfolio ? `${portfolio.dataFreshness.provider} · ${portfolio.dataFreshness.freshness}` : "Add a holding to establish a real starting balance."}
             </p>
           </div>
@@ -117,14 +117,14 @@ export function GoalPlannerWorkspace({ portfolio, initialError }: GoalPlannerWor
       {plan ? (
         <>
           <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
-            {[["Current", plan.currentAmount], ["Target", plan.targetAmount], ["Funding gap", plan.fundingGap], ["Funded", `${(plan.progressBps / 100).toFixed(1)}%`]].map(([label, value]) => <article key={label} className="glass-surface rounded-[1rem] p-5"><p className="text-xs uppercase tracking-[0.14em] text-zinc-500">{label}</p><p className="mt-3 font-mono text-2xl text-white">{value}</p></article>)}
+            {[["Current", plan.currentAmount], ["Target", plan.targetAmount], ["Funding gap", plan.fundingGap], ["Funded", `${(plan.progressBps / 100).toFixed(1)}%`]].map(([label, value]) => <article key={label} className="glass-surface rounded-[1rem] p-5"><p className="text-xs uppercase tracking-[0.14em] text-zinc-400">{label}</p><p className="mt-3 font-mono text-2xl text-white">{value}</p></article>)}
           </div>
           <div className="grid gap-4 lg:grid-cols-3">
-            {plan.milestones.map((milestone) => <article key={milestone.title} className="glass-surface rounded-[1rem] p-5"><div className="flex items-start justify-between gap-4"><Flag className="size-5 text-cyan-100" /><span className="text-xs uppercase tracking-[0.12em] text-zinc-500">{milestone.status}</span></div><h2 className="mt-4 text-lg font-medium text-white">{milestone.title}</h2><p className="mt-2 text-sm text-cyan-100/80">{milestone.targetDate}</p><p className="mt-3 text-sm leading-6 text-zinc-400">{milestone.reviewMetric}</p></article>)}
+            {plan.milestones.map((milestone) => <article key={milestone.title} className="glass-surface rounded-[1rem] p-5"><div className="flex items-start justify-between gap-4"><Flag className="size-5 text-cyan-100" /><span className="text-xs uppercase tracking-[0.12em] text-zinc-400">{milestone.status}</span></div><h2 className="mt-4 text-lg font-medium text-white">{milestone.title}</h2><p className="mt-2 text-sm text-cyan-100/80">{milestone.targetDate}</p><p className="mt-3 text-sm leading-6 text-zinc-400">{milestone.reviewMetric}</p></article>)}
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="glass-surface rounded-[1rem] p-6"><div className="flex items-center gap-3"><Target className="size-5 text-cyan-100" /><h2 className="text-lg font-medium text-white">Contribution arithmetic</h2></div><div className="mt-5 space-y-4">{plan.contributionScenarios.map((scenario) => <div key={scenario.cadence} className="rounded-[0.85rem] bg-black/20 p-4"><p className="text-sm font-medium text-white">{scenario.cadence} · {scenario.amount}</p><p className="mt-2 text-sm leading-6 text-zinc-400">{scenario.assumption}</p></div>)}</div></div>
-            <div className="glass-surface rounded-[1rem] p-6"><div className="flex items-center gap-3"><GraduationCap className="size-5 text-cyan-100" /><h2 className="text-lg font-medium text-white">Assumptions and boundaries</h2></div><div className="mt-5 space-y-3">{plan.assumptions.map((item) => <p key={item} className="text-sm leading-6 text-zinc-400">{item}</p>)}</div><p className="mt-5 flex items-start gap-2 text-xs leading-5 text-zinc-500"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-200" />{plan.disclaimer}</p></div>
+            <div className="glass-surface rounded-[1rem] p-6"><div className="flex items-center gap-3"><GraduationCap className="size-5 text-cyan-100" /><h2 className="text-lg font-medium text-white">Assumptions and boundaries</h2></div><div className="mt-5 space-y-3">{plan.assumptions.map((item) => <p key={item} className="text-sm leading-6 text-zinc-400">{item}</p>)}</div><p className="mt-5 flex items-start gap-2 text-xs leading-5 text-zinc-400"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-200" />{plan.disclaimer}</p></div>
           </div>
         </>
       ) : null}

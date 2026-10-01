@@ -204,11 +204,11 @@ export default async function AppOverviewPage() {
             <div className="flex items-start gap-3">
               <span className={`mt-1.5 size-2 shrink-0 rounded-full ${marketDataAvailable ? "bg-cyan-200 shadow-[0_0_0_6px_rgba(103,232,249,0.08)]" : "bg-amber-200 shadow-[0_0_0_6px_rgba(253,230,138,0.08)]"}`} />
               <div>
-                <p className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-zinc-500">Workspace pulse</p>
+                <p className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-zinc-400">Workspace pulse</p>
                 <p className="mt-2 text-sm text-zinc-100">
                   {marketDataAvailable ? "Source-aware context is ready." : "Local market services are offline."}
                 </p>
-                <p className="mt-2 text-xs leading-5 text-zinc-500">
+                <p className="mt-2 text-xs leading-5 text-zinc-400">
                   {portfolio ? `${portfolio.dataFreshness.provider} · ${formatTimestamp(portfolio.dataFreshness.capturedAt)}` : marketDataAvailable ? "Finance API connected · add your own data to begin." : "Start local services to restore provider-backed values."}
                 </p>
               </div>
@@ -221,11 +221,11 @@ export default async function AppOverviewPage() {
         {summaryMetrics.map(({ label, value, detail, icon: Icon, tone }) => (
           <article key={label} className={`overview-metric glass-surface rounded-[1rem] p-5 overview-metric-${tone}`}>
             <div className="flex items-start justify-between gap-4">
-              <p className="text-xs uppercase tracking-[0.15em] text-zinc-500">{label}</p>
+              <p className="text-xs uppercase tracking-[0.15em] text-zinc-400">{label}</p>
               <Icon className={`size-4 ${tone === "amber" ? "text-amber-100/80" : "text-cyan-100/80"}`} />
             </div>
             <p className="mt-5 min-w-0 truncate font-mono text-2xl font-light text-white">{value}</p>
-            <p className="mt-2 text-xs leading-5 text-zinc-500">{detail}</p>
+            <p className="mt-2 text-xs leading-5 text-zinc-400">{detail}</p>
           </article>
         ))}
       </section>
@@ -256,11 +256,11 @@ export default async function AppOverviewPage() {
                 <div className="grid size-9 place-items-center rounded-[0.75rem] bg-cyan-200/[0.055] text-cyan-100">
                   <Icon className="size-4" />
                 </div>
-                <ArrowRight className="size-4 text-zinc-600 transition group-hover:translate-x-1 group-hover:text-cyan-100" />
+                <ArrowRight className="size-4 text-zinc-400 transition group-hover:translate-x-1 group-hover:text-cyan-100" />
               </div>
               <p className="type-label mt-6 text-[0.62rem] uppercase text-cyan-100/65">{eyebrow}</p>
               <h3 className="type-card-title mt-2 text-xl text-white">{title}</h3>
-              <p className="mt-3 text-sm leading-6 text-zinc-500">{body}</p>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">{body}</p>
               <p className="mt-auto pt-5 font-mono text-[0.62rem] uppercase tracking-[0.15em] text-amber-100/65">{meta}</p>
             </Link>
           ))}
@@ -268,7 +268,7 @@ export default async function AppOverviewPage() {
       </section>
 
       <section className="section-shell rounded-[1.1rem] p-5">
-        <p className="max-w-3xl text-xs leading-5 text-zinc-500">
+        <p className="max-w-3xl text-xs leading-5 text-zinc-400">
           Aperture supports market research, financial organization, and scenario planning. It does not execute trades, provide personalized investment advice, or promise outcomes.
         </p>
       </section>
