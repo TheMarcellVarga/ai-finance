@@ -6,6 +6,9 @@ import { Activity, AlertTriangle, BarChart3, Gauge, Layers3, Plus, RefreshCw, Sh
 
 import { Button } from "@/components/ui/button";
 import { AssetPicker } from "@/components/asset-picker";
+import { InvestmentGlobe } from "@/components/investment-globe";
+import { assetGeography, countryLocation, geographyLabel } from "@/lib/investment-geography";
+import type { FinanceAssetSearchResponse } from "@/lib/finance-api";
 import { WorkspaceWaveAccent } from "@/components/workspace-wave-accent";
 
 type Asset = {
@@ -17,6 +20,8 @@ type Asset = {
   sector?: string;
   countryCode?: string;
   country?: string;
+  mic?: string;
+  isin?: string;
   currency?: string;
   capturedAt?: string;
   freshness?: string;
@@ -192,6 +197,8 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
   const [monthlyContribution, setMonthlyContribution] = useState(1500);
   const [riskLens, setRiskLens] = useState<"concentration" | "income" | "review">("concentration");
   const [portfolioName, setPortfolioName] = useState("");
+  const [providerCountries, setProviderCountries] = useState<Record<string, { code: string; source: string }>>({});
+  const geographyLookedUp = useRef(new Set<string>());
   const [holdingTicker, setHoldingTicker] = useState("");
   const [holdingQuantity, setHoldingQuantity] = useState("");
   const [holdingAverageCost, setHoldingAverageCost] = useState("");
@@ -200,6 +207,32 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
   const chartWrapRef = useRef<HTMLDivElement | null>(null);
 
   const holdings = useMemo(() => portfolio?.holdings ?? [], [portfolio]);
+  const globeItems = useMemo(() => holdings.map((holding) => {
+    const providerCountry = providerCountries[holding.id];
+    return assetGeography({ ...holding.asset, countryCode: providerCountry?.code ?? holding.asset.countryCode, countrySource: providerCountry?.source ?? holding.asset.provider }, holding.id, holding.marketValueCents);
+  }), [holdings, providerCountries]);
+  const geographyByHoldingId = useMemo(() => new Map(globeItems.map((item) => [item.id, item])), [globeItems]);
+  const holdingLocationLabel = (holding: Holding) => geographyLabel(geographyByHoldingId.get(holding.id)!);
+
+  useEffect(() => {
+    const candidates = holdings.filter((holding) => !countryLocation(holding.asset.countryCode) && assetGeography(holding.asset, holding.id).scope !== "global" && !geographyLookedUp.current.has(holding.id));
+    for (const holding of candidates) geographyLookedUp.current.add(holding.id);
+    void (async () => {
+      for (let index = 0; index < candidates.length; index += 3) {
+        await Promise.all(candidates.slice(index, index + 3).map(async (holding) => {
+          try {
+            const response = await fetch(`/api/finance/assets/search?q=${encodeURIComponent(holding.asset.ticker)}&limit=10`, { cache: "no-store" });
+            if (!response.ok) return;
+            const payload = await response.json() as FinanceAssetSearchResponse;
+            const exact = payload.data.find((asset) => asset.ticker.toUpperCase() === holding.asset.ticker.toUpperCase() && countryLocation(asset.countryCode));
+            if (exact?.countryCode) setProviderCountries((current) => ({ ...current, [holding.id]: { code: exact.countryCode!, source: exact.provider ?? payload.meta.provider } }));
+          } catch {
+            // Keep the holding visible with its existing venue or missing-data label.
+          }
+        }));
+      }
+    })();
+  }, [holdings]);
   const providerLabel = portfolio?.dataFreshness.provider ?? meta?.provider ?? "market data provider";
   const freshnessLabel = portfolio?.dataFreshness.freshness ?? meta?.freshness ?? "provider-reported";
   const chartLine = chart ? chartPath(chart.data) : "";
@@ -460,6 +493,8 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
             ))}
           </section>
 
+          <InvestmentGlobe items={globeItems} title="Where your holdings are based" description="Inspect the reported country behind each holding and see how much portfolio value can be mapped. Use this as a starting point for a diversification review." selectedId={selectedHolding?.id} onSelect={(id) => { const holding = holdings.find((entry) => entry.id === id); if (holding) void loadChart(holding.asset.ticker, interval); }} valueLabel="portfolio value" />
+
           <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
             <div className="section-shell rounded-[1.25rem] p-5 sm:p-6">
               <div className="flex items-center justify-between gap-4">
@@ -491,7 +526,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                       <span className="min-w-0">
                         <span className="block font-mono text-base text-white">{holding.asset.ticker}</span>
                         <span className="mt-1 block truncate text-xs text-zinc-400">{holding.asset.name}</span>
-                        <span className="mt-1 block text-[0.65rem] uppercase tracking-[0.12em] text-cyan-100/60">{assetClassLabel(holding.asset)}{holding.asset.countryCode ? ` · ${holding.asset.countryCode}` : ""}</span>
+                        <span className="mt-1 block text-[0.65rem] uppercase tracking-[0.12em] text-cyan-100/60">{assetClassLabel(holding.asset)} · {holdingLocationLabel(holding)}</span>
                       </span>
                       <span className={(holding.asset.dailyChangeBps ?? 0) >= 0 ? "font-mono text-sm text-emerald-200" : "font-mono text-sm text-amber-200"}>
                         {(holding.asset.dailyChangeBps ?? 0) >= 0 ? "+" : ""}
@@ -547,7 +582,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                           >
                             <span className="block font-mono text-white">{holding.asset.ticker}</span>
                             <span className="mt-1 block text-xs text-zinc-400">{holding.asset.name}</span>
-                            <span className="mt-1 block text-[0.65rem] uppercase tracking-[0.12em] text-cyan-100/60">{assetClassLabel(holding.asset)}{holding.asset.countryCode ? ` · ${holding.asset.countryCode}` : ""}</span>
+                            <span className="mt-1 block text-[0.65rem] uppercase tracking-[0.12em] text-cyan-100/60">{assetClassLabel(holding.asset)} · {holdingLocationLabel(holding)}</span>
                           </button>
                         </td>
                         <td className="py-4 font-mono">{holding.displayQuantity}</td>

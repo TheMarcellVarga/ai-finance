@@ -63,6 +63,15 @@ Avoid nested cards and decorative card-heavy layouts.
 - AI citations must be inspectable.
 - Data freshness should be visible near AI and market-data surfaces.
 
+## Investment Geography
+
+- Every asset in Portfolio and Markets must appear in the geographic breakdown and remain selectable, even when it has no single country pin.
+- Resolve a country from live provider profile metadata first, then an explicit provider country name, ISIN registration, or a reported listing venue mapped to its country. Label the basis. Do not use a hand-maintained company-symbol list or assume a U.S. listing from ticker shape.
+- A fund's profile or listing country is its domicile/listing lens, not its underlying country allocation. Show look-through exposure only when a provider supplies actual country weights; the current FMP plan restricts that endpoint.
+- Decentralized crypto, currency pairs, commodities, and other genuinely cross-border references belong in a global band, without a fabricated country pin.
+- If a provider supplies no defensible country or cross-border classification, show the asset in a separate "Country not supplied" band. This is a mapped data-quality state, never an invented country or a claim of worldwide exposure.
+- Country, global, and missing-attribution amounts or counts must reconcile to the full displayed asset set. The globe and table must expose the same classification.
+
 ## Marketing Rules
 
 - Build the actual product signal into the first viewport.

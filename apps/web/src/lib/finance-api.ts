@@ -53,6 +53,8 @@ export type MarketMonitorRow = {
   symbol: string;
   name: string;
   venue?: string;
+  countryCode?: string;
+  countrySource?: string;
   currency?: string;
   unit?: string;
   price: number;

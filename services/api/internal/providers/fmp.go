@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	assetcatalog "github.com/marcellvarga/ai-finance/services/api/internal/assets"
@@ -20,6 +21,16 @@ type FMPProvider struct {
 	APIKey string
 	Client *http.Client
 }
+
+type cachedFMPCountry struct {
+	code      string
+	expiresAt time.Time
+}
+
+var fmpCountryCache = struct {
+	sync.Mutex
+	entries map[string]cachedFMPCountry
+}{entries: make(map[string]cachedFMPCountry)}
 
 func (p FMPProvider) SearchAssets(ctx context.Context, query string) ([]AssetProfile, error) {
 	if strings.TrimSpace(p.APIKey) == "" {
@@ -37,6 +48,10 @@ func (p FMPProvider) SearchAssets(ctx context.Context, query string) ([]AssetPro
 				ts = time.Unix(quote.Timestamp, 0).UTC()
 			}
 			priceCents := int64(math.Round(quote.Price * 100))
+			countryCode := assetcatalog.NormalizeCountryCode(quote.CountryCode)
+			if countryCode == "" {
+				countryCode = p.profileCountry(ctx, quote.Symbol)
+			}
 			return []AssetProfile{{
 				Ticker:         strings.ToUpper(quote.Symbol),
 				ProviderSymbol: strings.ToUpper(quote.Symbol),
@@ -44,7 +59,7 @@ func (p FMPProvider) SearchAssets(ctx context.Context, query string) ([]AssetPro
 				Exchange:       quote.Exchange,
 				Type:           assetcatalog.NormalizeAssetClass(firstNonEmpty(quote.Type, "equity")),
 				AssetClass:     assetcatalog.NormalizeAssetClass(firstNonEmpty(quote.Type, "equity")),
-				CountryCode:    assetcatalog.NormalizeCountryCode(quote.CountryCode),
+				CountryCode:    countryCode,
 				Country:        quote.Country,
 				Currency:       assetcatalog.NormalizeCurrencyCode(quote.Currency),
 				PriceCents:     priceCents,
@@ -53,6 +68,9 @@ func (p FMPProvider) SearchAssets(ctx context.Context, query string) ([]AssetPro
 				FreshAt:        ts,
 				Provider:       "fmp",
 			}}, nil
+		}
+		if profile, err := p.profileAsset(ctx, query); err == nil {
+			return []AssetProfile{profile}, nil
 		}
 	}
 
@@ -174,6 +192,86 @@ func (p FMPProvider) latestQuoteRow(ctx context.Context, ticker string) (fmpQuot
 		return fmpQuoteRow{}, fmt.Errorf("quote not found for %s", ticker)
 	}
 	return rows[0], nil
+}
+
+// profileCountry supplements quote/search responses that omit country. The
+// result is issuer or fund-profile geography, not look-through exposure.
+func (p FMPProvider) profileCountry(ctx context.Context, ticker string) string {
+	ticker = strings.ToUpper(strings.TrimSpace(ticker))
+	if ticker == "" || p.APIKey == "" {
+		return ""
+	}
+	fmpCountryCache.Lock()
+	cached, ok := fmpCountryCache.entries[ticker]
+	fmpCountryCache.Unlock()
+	if ok && time.Now().Before(cached.expiresAt) {
+		return cached.code
+	}
+
+	code := ""
+	if row, err := p.latestProfileRow(ctx, ticker); err == nil {
+		code = assetcatalog.NormalizeCountryCode(row.Country)
+	}
+	retention := 15 * time.Minute
+	if code != "" {
+		retention = 24 * time.Hour
+	}
+	fmpCountryCache.Lock()
+	fmpCountryCache.entries[ticker] = cachedFMPCountry{code: code, expiresAt: time.Now().Add(retention)}
+	fmpCountryCache.Unlock()
+	return code
+}
+
+type fmpProfileRow struct {
+	Symbol   string  `json:"symbol"`
+	Name     string  `json:"companyName"`
+	Exchange string  `json:"exchangeShortName"`
+	Venue    string  `json:"exchange"`
+	Country  string  `json:"country"`
+	IsETF    bool    `json:"isEtf"`
+	IsFund   bool    `json:"isFund"`
+	Price    float64 `json:"price"`
+}
+
+func (p FMPProvider) latestProfileRow(ctx context.Context, ticker string) (fmpProfileRow, error) {
+	values := url.Values{}
+	values.Set("symbol", strings.ToUpper(strings.TrimSpace(ticker)))
+	values.Set("apikey", p.APIKey)
+	lookupCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	var rows []fmpProfileRow
+	if err := p.get(lookupCtx, "https://financialmodelingprep.com/stable/profile?"+values.Encode(), &rows); err != nil {
+		return fmpProfileRow{}, err
+	}
+	for _, row := range rows {
+		if strings.EqualFold(row.Symbol, ticker) {
+			return row, nil
+		}
+	}
+	return fmpProfileRow{}, fmt.Errorf("profile not found for %s", ticker)
+}
+
+func (p FMPProvider) profileAsset(ctx context.Context, ticker string) (AssetProfile, error) {
+	row, err := p.latestProfileRow(ctx, ticker)
+	if err != nil {
+		return AssetProfile{}, err
+	}
+	assetClass := "equity"
+	if row.IsETF {
+		assetClass = "etf"
+	} else if row.IsFund {
+		assetClass = "fund"
+	}
+	return AssetProfile{
+		Ticker:         strings.ToUpper(row.Symbol),
+		ProviderSymbol: strings.ToUpper(row.Symbol),
+		Name:           row.Name,
+		Exchange:       firstNonEmpty(row.Exchange, row.Venue),
+		Type:           assetClass,
+		AssetClass:     assetClass,
+		CountryCode:    assetcatalog.NormalizeCountryCode(row.Country),
+		Provider:       "fmp-profile",
+	}, nil
 }
 
 func (p FMPProvider) get(ctx context.Context, endpoint string, target any) error {

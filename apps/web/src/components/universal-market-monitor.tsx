@@ -6,9 +6,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowDownRight, ArrowUp, ArrowUpDown, ArrowUpRight, BookOpenCheck, BookmarkPlus, Check, ChevronDown, Clock3, Database, ExternalLink, FlaskConical, MoreHorizontal, RefreshCw, Search, SlidersHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { InvestmentGlobe } from "@/components/investment-globe";
+import { countryLocation, geographyLabel, marketGeography } from "@/lib/investment-geography";
 import { assetMonitorDefinitions } from "@/lib/asset-monitors";
 import { cryptoMonitorIntervals, type CryptoMonitorInterval } from "@/lib/crypto-monitor-intervals";
-import type { MarketMonitorResponse, MarketMonitorRow } from "@/lib/finance-api";
+import type { FinanceAssetSearchResponse, MarketMonitorResponse, MarketMonitorRow } from "@/lib/finance-api";
 
 type TrendFilter = "all" | "bullish" | "bearish" | "recent" | "near" | "unavailable";
 type SortKey = "symbol" | "price" | "dailyChangePercent" | "trend" | "lastFlipAt" | "nextFlipLevel" | "distanceToFlipPercent" | "sinceFlipPercent" | "volume" | "assetClassLabel";
@@ -20,6 +22,7 @@ type UniversalRow = MarketMonitorRow & {
   assetClass: string;
   assetClassLabel: string;
 };
+type ProviderCountry = { code: string; source: string };
 
 type CryptoPayload = {
   data: Array<{
@@ -329,6 +332,10 @@ export function UniversalMarketMonitor({ initialAssetClass = "all" }: { initialA
   const [failures, setFailures] = useState<string[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [savedKeys, setSavedKeys] = useState<string[]>([]);
+  const [selectedGeoId, setSelectedGeoId] = useState<string | undefined>();
+  const [marketCountries, setMarketCountries] = useState<Record<string, ProviderCountry>>({});
+  const [geoCheckingId, setGeoCheckingId] = useState<string | undefined>();
+  const geoLookedUp = useRef(new Set<string>());
   const [visibleColumns, setVisibleColumns] = useState<Record<ColumnKey, boolean>>(defaultVisibleColumns);
   const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
   const [columnsMenuPosition, setColumnsMenuPosition] = useState<ColumnPopoverPosition | null>(null);
@@ -418,6 +425,47 @@ export function UniversalMarketMonitor({ initialAssetClass = "all" }: { initialA
       return true;
     }).sort((left, right) => compareRows(left, right, sortKey, sortDirection) || left.symbol.localeCompare(right.symbol));
   }, [interval, query, rows, sortDirection, sortKey, trendFilter]);
+  const geographyForRow = useCallback((row: UniversalRow) => {
+    const providerCountry = marketCountries[`${row.assetClass}:${row.symbol}`];
+    return marketGeography({ ...row, countryCode: providerCountry?.code ?? row.countryCode, countrySource: providerCountry?.source ?? row.countrySource });
+  }, [marketCountries]);
+  const globeItems = useMemo(() => visibleRows.map((row) => {
+    const id = `${row.assetClass}:${row.symbol}`;
+    const item = geographyForRow(row);
+    return id === geoCheckingId ? { ...item, basis: "Checking available provider country metadata…" } : item;
+  }), [geoCheckingId, geographyForRow, visibleRows]);
+
+  const lookupCountry = useCallback(async (row: UniversalRow, id: string, showChecking = false) => {
+    if (geoLookedUp.current.has(id)) return;
+    geoLookedUp.current.add(id);
+    if (showChecking) setGeoCheckingId(id);
+    try {
+      const response = await fetch(`/api/finance/assets/search?q=${encodeURIComponent(row.symbol)}&limit=10`, { cache: "no-store" });
+      if (!response.ok) return;
+      const payload = await response.json() as FinanceAssetSearchResponse;
+      const exact = payload.data.find((asset) => asset.ticker.toUpperCase() === row.symbol.toUpperCase() && countryLocation(asset.countryCode));
+      if (exact?.countryCode) setMarketCountries((current) => ({ ...current, [id]: { code: exact.countryCode!, source: exact.provider ?? payload.meta.provider } }));
+    } catch {
+      // Keep the provider venue or explicit missing-country state when lookup fails.
+    } finally {
+      if (showChecking) setGeoCheckingId((current) => current === id ? undefined : current);
+    }
+  }, []);
+
+  useEffect(() => {
+    const companies = rows.filter((row) => row.assetClass === "equities" && !row.countryCode);
+    void (async () => {
+      for (let index = 0; index < companies.length; index += 3) {
+        await Promise.all(companies.slice(index, index + 3).map((row) => lookupCountry(row, `${row.assetClass}:${row.symbol}`)));
+      }
+    })();
+  }, [lookupCountry, rows]);
+
+  async function selectGeography(id: string) {
+    setSelectedGeoId(id);
+    const row = visibleRows.find((entry) => `${entry.assetClass}:${entry.symbol}` === id);
+    if (row && !row.countryCode && !marketCountries[id]) await lookupCountry(row, id, true);
+  }
 
   const metrics = useMemo(() => {
     const signaled = rows.filter((row) => row.trend);
@@ -515,7 +563,9 @@ export function UniversalMarketMonitor({ initialAssetClass = "all" }: { initialA
     {columnsPopover}
     <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-4 sm:p-6 md:p-7 lg:p-8"><div className="flex flex-col gap-4 md:gap-5 lg:flex-row lg:items-end lg:justify-between"><div className="max-w-3xl"><h1 className="type-display text-3xl text-white sm:text-4xl md:text-5xl">{title}</h1><p className="mt-3 max-w-xl text-sm leading-6 text-zinc-400 sm:mt-4">Closed-candle trend states and flip levels across the configured market universe.</p></div><div className="flex max-w-xl flex-wrap items-center gap-x-3 gap-y-1 text-[0.68rem] text-zinc-400 lg:justify-end lg:text-right"><p className="inline-flex items-center gap-2"><Database className="size-3.5 text-cyan-200/70" />Provider-backed public data</p><span className="text-zinc-700" aria-hidden="true">·</span><p>Refresh: {formatCapturedAt(metrics.latest)}</p><p className="hidden w-full md:block">ATR 10-20 x 3 · confirmed candles · OHLC where available; FX bands close-derived.</p></div></div></section>
 
-    <section className="grid grid-cols-2 overflow-hidden border-y border-white/[0.06] bg-black/10 lg:grid-cols-4"><div className="p-4 sm:p-5"><p className="text-xs text-zinc-500">Markets monitored</p><p className="mt-2 font-mono text-2xl text-white">{rows.length || "—"}</p><p className="mt-1 text-xs text-zinc-600">{new Set(rows.map((row) => row.assetClass)).size || "—"} classes loaded</p></div><div className="border-l border-white/[0.06] p-4 sm:p-5"><p className="text-xs text-zinc-500">Bullish</p><p className="mt-2 font-mono text-2xl text-emerald-100">{rows.length ? metrics.bullish : "—"}</p><p className="mt-1 text-xs text-zinc-600">Confirmed candle</p></div><div className="border-t border-white/[0.06] p-4 sm:p-5 lg:border-l lg:border-t-0"><p className="text-xs text-zinc-500">Bearish</p><p className="mt-2 font-mono text-2xl text-rose-100">{rows.length ? metrics.bearish : "—"}</p><p className="mt-1 text-xs text-zinc-600">Confirmed candle</p></div><button type="button" onClick={jumpToNearest} disabled={!metrics.nearest} className="border-l border-t border-white/[0.06] p-4 text-left hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-200/35 disabled:cursor-default sm:p-5 lg:border-t-0"><p className="text-xs text-zinc-500">Nearest flip</p><p className="mt-2 truncate text-xl text-cyan-100">{metrics.nearest?.symbol ?? "—"}</p><p className="mt-1 text-xs text-zinc-600">{metrics.nearest ? `${metrics.nearest.distanceToFlipPercent!.toFixed(2)}% away` : "Waiting for signals"}</p></button></section>
+    <section className="grid grid-cols-2 overflow-hidden border-y border-white/[0.06] bg-black/10 lg:grid-cols-4"><div className="p-4 sm:p-5"><p className="text-xs text-zinc-400">Markets monitored</p><p className="mt-2 font-mono text-2xl text-white">{rows.length || "—"}</p><p className="mt-1 text-xs text-zinc-400">{new Set(rows.map((row) => row.assetClass)).size || "—"} classes loaded</p></div><div className="border-l border-white/[0.06] p-4 sm:p-5"><p className="text-xs text-zinc-400">Bullish</p><p className="mt-2 font-mono text-2xl text-emerald-100">{rows.length ? metrics.bullish : "—"}</p><p className="mt-1 text-xs text-zinc-400">Confirmed candle</p></div><div className="border-t border-white/[0.06] p-4 sm:p-5 lg:border-l lg:border-t-0"><p className="text-xs text-zinc-400">Bearish</p><p className="mt-2 font-mono text-2xl text-rose-100">{rows.length ? metrics.bearish : "—"}</p><p className="mt-1 text-xs text-zinc-400">Confirmed candle</p></div><button type="button" onClick={jumpToNearest} disabled={!metrics.nearest} className="border-l border-t border-white/[0.06] p-4 text-left hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-200/35 disabled:cursor-default sm:p-5 lg:border-t-0"><p className="text-xs text-zinc-400">Nearest flip</p><p className="mt-2 truncate text-xl text-cyan-100">{metrics.nearest?.symbol ?? "—"}</p><p className="mt-1 text-xs text-zinc-400">{metrics.nearest ? `${metrics.nearest.distanceToFlipPercent!.toFixed(2)}% away` : "Waiting for signals"}</p></button></section>
+
+    <InvestmentGlobe items={globeItems} title="Where these markets are based" description="Select a market to inspect its reported issuer or operating location. The view follows your current asset class and table filters." selectedId={selectedGeoId} onSelect={(id) => void selectGeography(id)} />
 
     <section className="relative overflow-hidden rounded-[1rem] border border-white/[0.06] bg-[#080d0e]/96">
       <div className="relative border-b border-white/[0.06]">
@@ -549,7 +599,7 @@ export function UniversalMarketMonitor({ initialAssetClass = "all" }: { initialA
         {visibleColumns.sinceFlipPercent ? <SortHeader column="sinceFlipPercent" label="Since" active={sortKey === "sinceFlipPercent"} direction={sortDirection} onSort={handleSort} /> : null}
         {visibleColumns.study ? <th className="px-2 py-2 text-center text-[0.6875rem] font-medium uppercase tracking-[0.08em]">Study</th> : null}
       </tr></thead><tbody>{visibleRows.map((row) => { const TrendIcon = row.trend === "bullish" ? ArrowUpRight : ArrowDownRight; const key = `${row.assetClass}:${row.symbol}`; return <tr key={key} data-universal-market={key} tabIndex={-1} className="border-t border-white/[0.05] hover:bg-white/[0.022] focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-cyan-200/35">
-        {visibleColumns.market ? <td className="pl-6 pr-2 py-2.5 align-top"><div className="flex min-w-0 items-center gap-1.5"><a href={row.sourceUrl} target="_blank" rel="noreferrer" className="truncate font-mono text-[0.74rem] text-white hover:text-cyan-100">{row.symbol}</a><ExternalLink className="size-2.5 shrink-0 text-zinc-700" /></div><p className="mt-0.5 truncate text-[0.6875rem] text-zinc-400">{formatCompact(row.volume)} vol</p></td> : null}
+        {visibleColumns.market ? <td className="pl-6 pr-2 py-2.5 align-top"><div className="flex min-w-0 items-center gap-1.5"><a href={row.sourceUrl} target="_blank" rel="noreferrer" className="truncate font-mono text-[0.74rem] text-white hover:text-cyan-100">{row.symbol}</a><ExternalLink className="size-2.5 shrink-0 text-zinc-700" /></div><p className="mt-0.5 truncate text-[0.6875rem] text-zinc-400">{formatCompact(row.volume)} vol</p><button type="button" onClick={() => void selectGeography(key)} className="mt-1 max-w-full truncate text-left text-[0.6875rem] text-cyan-100/75 hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/50" title={`Show ${row.symbol} on globe`}>{geographyLabel(geographyForRow(row))}</button></td> : null}
         {visibleColumns.class ? <td className="px-2 py-2.5 text-center align-middle text-xs text-cyan-100/75"><Link href={classHref(row.assetClass)} className="block truncate hover:text-white" title={row.assetClassLabel}>{row.assetClassLabel}</Link>{row.signalBasis === "close-derived" ? <p className="mt-0.5 truncate text-[0.6875rem] text-amber-100/60">Close-derived</p> : null}</td> : null}
         {visibleColumns.price ? <td className="truncate px-2 py-2.5 text-center align-middle font-mono text-xs text-zinc-200" title={row.displayValue || formatPrice(row.price, row.currency)}>{row.displayValue || formatPrice(row.price, row.currency)}</td> : null}
         {visibleColumns.dailyChangePercent ? <td className={`px-2 py-2.5 text-center align-middle font-mono text-xs ${row.dailyChangePercent >= 0 ? "text-emerald-100" : "text-rose-100"}`}>{formatPercent(row.dailyChangePercent)}</td> : null}
@@ -560,7 +610,7 @@ export function UniversalMarketMonitor({ initialAssetClass = "all" }: { initialA
         {visibleColumns.sinceFlipPercent ? <td className={`px-2 py-2.5 text-center align-middle font-mono text-xs ${row.sinceFlipPercent == null ? "text-zinc-400" : row.sinceFlipPercent >= 0 ? "text-emerald-100" : "text-rose-100"}`}>{formatPercent(row.sinceFlipPercent)}</td> : null}
         {visibleColumns.study ? <td className="px-1.5 py-2.5 text-center align-middle"><div className="flex items-center justify-center"><MarketStudyActions row={row} interval={interval} saved={savedKeys.includes(key)} onWatch={watch} /></div></td> : null}
       </tr>; })}</tbody></table></div>
-      <div className="divide-y divide-white/[0.06] lg:hidden">{visibleRows.map((row) => <article key={`${row.assetClass}:${row.symbol}`} className="p-4"><div className="flex items-start justify-between gap-4"><div className="min-w-0"><a href={row.sourceUrl} target="_blank" rel="noreferrer" className="font-mono text-sm text-white">{row.symbol}</a>{visibleColumns.class ? <p className="mt-1 truncate text-xs text-zinc-400">{row.assetClassLabel}</p> : null}</div>{visibleColumns.trend ? <span className={`shrink-0 rounded-[0.55rem] border px-2 py-1 text-xs uppercase ${trendClass(row.trend)}`}>{row.trend ?? "Unavailable"}</span> : null}</div><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{visibleColumns.price ? <div><p className="text-xs text-zinc-400">Price</p><p className="mt-1 truncate font-mono text-xs text-zinc-200">{row.displayValue}</p></div> : null}{visibleColumns.dailyChangePercent ? <div><p className="text-xs text-zinc-400">24h</p><p className={`mt-1 font-mono text-xs ${row.dailyChangePercent >= 0 ? "text-emerald-100" : "text-rose-100"}`}>{formatPercent(row.dailyChangePercent)}</p></div> : null}{visibleColumns.lastFlipAt ? <div><p className="text-xs text-zinc-400">Last flip</p><p className="mt-1 truncate font-mono text-xs text-zinc-200">{formatTimeAgo(row.lastFlipAt, row.historyComplete)}</p></div> : null}{visibleColumns.nextFlipLevel ? <div><p className="text-xs text-zinc-400">Flip level</p><p className="mt-1 truncate font-mono text-xs text-zinc-200">{formatPrice(row.nextFlipLevel, row.currency)}</p></div> : null}{visibleColumns.distanceToFlipPercent ? <div><p className="text-xs text-zinc-400">Distance</p><p className="mt-1 font-mono text-xs text-cyan-100">{formatPercent(row.distanceToFlipPercent)}</p></div> : null}{visibleColumns.sinceFlipPercent ? <div><p className="text-xs text-zinc-400">Since flip</p><p className="mt-1 font-mono text-xs text-zinc-200">{formatPercent(row.sinceFlipPercent)}</p></div> : null}</div><div className="mt-4 flex items-center justify-between gap-3"><p className="truncate text-xs text-zinc-400">{formatCompact(row.volume)} volume</p>{visibleColumns.study ? <Link href={studyHref(row, interval)} className="inline-flex items-center gap-1.5 text-xs text-cyan-100"><BookOpenCheck className="size-3.5" />Study state</Link> : null}</div></article>)}</div></> : null}
+      <div className="divide-y divide-white/[0.06] lg:hidden">{visibleRows.map((row) => <article key={`${row.assetClass}:${row.symbol}`} className="p-4"><div className="flex items-start justify-between gap-4"><div className="min-w-0"><a href={row.sourceUrl} target="_blank" rel="noreferrer" className="font-mono text-sm text-white">{row.symbol}</a>{visibleColumns.class ? <p className="mt-1 truncate text-xs text-zinc-400">{row.assetClassLabel}</p> : null}<button type="button" onClick={() => void selectGeography(`${row.assetClass}:${row.symbol}`)} className="mt-2 block text-left text-xs text-cyan-100/75 hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/50">{geographyLabel(geographyForRow(row))}</button></div>{visibleColumns.trend ? <span className={`shrink-0 rounded-[0.55rem] border px-2 py-1 text-xs uppercase ${trendClass(row.trend)}`}>{row.trend ?? "Unavailable"}</span> : null}</div><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{visibleColumns.price ? <div><p className="text-xs text-zinc-400">Price</p><p className="mt-1 truncate font-mono text-xs text-zinc-200">{row.displayValue}</p></div> : null}{visibleColumns.dailyChangePercent ? <div><p className="text-xs text-zinc-400">24h</p><p className={`mt-1 font-mono text-xs ${row.dailyChangePercent >= 0 ? "text-emerald-100" : "text-rose-100"}`}>{formatPercent(row.dailyChangePercent)}</p></div> : null}{visibleColumns.lastFlipAt ? <div><p className="text-xs text-zinc-400">Last flip</p><p className="mt-1 truncate font-mono text-xs text-zinc-200">{formatTimeAgo(row.lastFlipAt, row.historyComplete)}</p></div> : null}{visibleColumns.nextFlipLevel ? <div><p className="text-xs text-zinc-400">Flip level</p><p className="mt-1 truncate font-mono text-xs text-zinc-200">{formatPrice(row.nextFlipLevel, row.currency)}</p></div> : null}{visibleColumns.distanceToFlipPercent ? <div><p className="text-xs text-zinc-400">Distance</p><p className="mt-1 font-mono text-xs text-cyan-100">{formatPercent(row.distanceToFlipPercent)}</p></div> : null}{visibleColumns.sinceFlipPercent ? <div><p className="text-xs text-zinc-400">Since flip</p><p className="mt-1 font-mono text-xs text-zinc-200">{formatPercent(row.sinceFlipPercent)}</p></div> : null}</div><div className="mt-4 flex items-center justify-between gap-3"><p className="truncate text-xs text-zinc-400">{formatCompact(row.volume)} volume</p>{visibleColumns.study ? <Link href={studyHref(row, interval)} className="inline-flex items-center gap-1.5 text-xs text-cyan-100"><BookOpenCheck className="size-3.5" />Study state</Link> : null}</div></article>)}</div></> : null}
       <footer className="flex flex-col gap-2 border-t border-white/[0.06] px-4 py-3 text-[0.68rem] text-zinc-400 sm:flex-row sm:items-center sm:justify-between"><span>{visibleRows.length} visible markets · {visibleColumnCount} of {columnOptions.length} columns shown.</span><span className="inline-flex items-center gap-1.5"><Clock3 className="size-3" />Closed-candle research indicators. Not financial advice.</span></footer>
     </section>
   </div>;
