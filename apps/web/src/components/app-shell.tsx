@@ -1,6 +1,7 @@
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Bell } from "lucide-react";
 
 import { BrandMark } from "@/components/brand";
 import { WorkspaceNavigation } from "@/components/workspace-navigation";
@@ -20,6 +21,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
         <WorkspaceNavigation />
         <div className="mt-auto flex items-center gap-2 border-t border-white/10 pt-4">
+          <Link href="/app/settings#flip-digests" aria-label="Confirmed flip notifications" title="Confirmed flip notifications" className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-white/5 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/50"><Bell className="size-4" aria-hidden="true" /></Link>
           <Link href="/app/settings" className="flex min-h-11 flex-1 items-center rounded-lg px-2 text-sm text-zinc-400 hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/50">Settings</Link>
           <UserButton userProfileMode="navigation" userProfileUrl="/app/settings/account" />
         </div>
@@ -31,6 +33,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <BrandMark compact />
               <div className="order-2 ml-auto shrink-0 md:order-3 md:ml-0">
                 <div className="flex items-center gap-1">
+                  <Link href="/app/settings#flip-digests" aria-label="Confirmed flip notifications" title="Confirmed flip notifications" className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-white/5 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/50"><Bell className="size-4" /></Link>
                   <UserButton userProfileMode="navigation" userProfileUrl="/app/settings/account" />
                 </div>
               </div>

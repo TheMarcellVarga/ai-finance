@@ -170,6 +170,50 @@ paths:
                 $ref: "#/components/schemas/UsageResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
+  /v1/flip-digest/preferences:
+    get:
+      operationId: getFlipDigestPreferences
+      summary: Get owner-scoped confirmed-flip digest preferences
+      responses:
+        "200":
+          description: Saved preferences or opt-in defaults
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlipDigestPreferencesResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      operationId: putFlipDigestPreferences
+      summary: Replace owner-scoped confirmed-flip digest preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FlipDigestPreferences"
+      responses:
+        "200":
+          description: Saved preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlipDigestPreferencesResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /v1/flip-digest/notifications:
+    get:
+      operationId: listFlipDigestNotifications
+      summary: List owner-scoped in-app confirmed-flip digests
+      responses:
+        "200":
+          description: Recent digests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlipDigestNotificationListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /v1/portfolios:
     get:
       operationId: listPortfolios
@@ -930,6 +974,72 @@ components:
                     type: integer
                   status:
                     type: string
+    FlipDigestPreferences:
+      type: object
+      required: [enabled, direction, cadence, emailEnabled, inAppEnabled]
+      properties:
+        enabled:
+          type: boolean
+        direction:
+          type: string
+          enum: [bull, bear, both]
+        cadence:
+          type: string
+          enum: [daily, weekly]
+        emailEnabled:
+          type: boolean
+        inAppEnabled:
+          type: boolean
+    FlipDigestPreferencesResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/FlipDigestPreferences"
+    FlipDigestNotificationListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            required: [id, periodStart, periodEnd, direction, cadence, entries, coverage]
+            properties:
+              id:
+                type: string
+              periodStart:
+                type: string
+                format: date-time
+              periodEnd:
+                type: string
+                format: date-time
+              direction:
+                type: string
+              cadence:
+                type: string
+              entries:
+                type: array
+                items:
+                  type: object
+                  required: [assetClass, symbol, direction, lastFlipAt, source, capturedAt]
+                  properties:
+                    assetClass:
+                      type: string
+                    symbol:
+                      type: string
+                    direction:
+                      type: string
+                    lastFlipAt:
+                      type: string
+                      format: date-time
+                    source:
+                      type: string
+                    capturedAt:
+                      type: string
+                      format: date-time
+              coverage:
+                type: object
     ContractMeta:
       type: object
       required: [provider, freshness, capturedAt]

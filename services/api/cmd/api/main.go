@@ -13,6 +13,7 @@ import (
 	"github.com/marcellvarga/ai-finance/services/api/internal/auth"
 	"github.com/marcellvarga/ai-finance/services/api/internal/config"
 	"github.com/marcellvarga/ai-finance/services/api/internal/db"
+	"github.com/marcellvarga/ai-finance/services/api/internal/flipdigest"
 	"github.com/marcellvarga/ai-finance/services/api/internal/httpapi"
 	"github.com/marcellvarga/ai-finance/services/api/internal/providers"
 	"github.com/marcellvarga/ai-finance/services/api/internal/research"
@@ -49,6 +50,7 @@ func main() {
 	defer researchRuntime.Close()
 
 	var workspace store.WorkspaceRepository = store.NewWorkspaceStore()
+	var flipDigests flipdigest.Repository = flipdigest.NewMemoryStore()
 	var workspacePoolCloser func()
 	if cfg.DatabaseURL != "" {
 		workspacePool, poolErr := db.OpenPool(context.Background(), cfg.DatabaseURL)
@@ -62,6 +64,7 @@ func main() {
 			os.Exit(1)
 		}
 		workspace = store.NewPostgresWorkspaceStore(workspacePool)
+		flipDigests = flipdigest.NewPostgresStore(workspacePool)
 		workspacePoolCloser = workspacePool.Close
 	} else if cfg.Environment == "production" {
 		logger.Error("DATABASE_URL is required for persistent finance workspaces")
@@ -87,6 +90,7 @@ func main() {
 		ResearchEmbedder: researchRuntime.Embedder,
 		DocumentStore:    researchRuntime.Storage,
 		Workspace:        workspace,
+		FlipDigests:      flipDigests,
 		Logger:           logger,
 	})
 

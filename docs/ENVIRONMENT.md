@@ -43,6 +43,9 @@ Never expose service-role keys, provider keys, webhook secrets, raw JWTs, or pri
 - `UPSTASH_REDIS_REST_URL`
 - `UPSTASH_REDIS_REST_TOKEN`
 - `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`, a sender address on a verified Resend domain for opt-in flip digests
+- `CRON_SECRET`, configured in Vercel for the daily `/api/cron/flip-digest` invocation
+- `FLIP_DIGEST_JOB_SECRET`, the same private secret on Next.js and Go for internal digest operations
 - `SENTRY_DSN`
 - `POSTHOG_SERVER_API_KEY`
 - `POSTHOG_PERSONAL_API_KEY` if needed server-side
@@ -77,6 +80,15 @@ server-side monitor route falls back to the same free Yahoo Finance and
 Frankfurter/ECB sources directly. The fallback is read-only, keeps provider
 and freshness metadata visible, and applies only to public asset-monitor data;
 production deployments should still configure a reachable Go API origin.
+
+Confirmed flip digests are opt-in under Settings. The Vercel cron runs at 02:00
+UTC, scans closed daily candles across the Markets classes, and creates owner-
+scoped in-app digests for recent matching flips. Email requires a verified Clerk
+primary address, `RESEND_API_KEY`, and `RESEND_FROM_EMAIL`. Local and CI runs do
+not send mail without those variables. Weekly subscribers are processed on
+Monday UTC. Provider gaps are included in each digest; missing market values
+are never fabricated. The Go API must have the matching migration applied and
+`FLIP_DIGEST_JOB_SECRET` configured.
 
 ## AI Configuration
 

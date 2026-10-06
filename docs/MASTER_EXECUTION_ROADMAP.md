@@ -637,6 +637,7 @@ The primary experience is now five destinations: **Overview, Markets, Portfolio,
 
 - **Markets** consolidates global assets, asset-class monitors, crypto monitoring, and watch items into one searchable mega table with class filters and optional drill-downs.
 - `/app/crypto-monitor` is the canonical interaction contract for every monitor: timeframe controls, confirmed state, last flip, next flip level, distance, since-flip movement, sortable columns, contextual study/lab actions, freshness, and provider limitations.
+- Opt-in confirmed-flip digests use the same closed-candle monitor signals across Markets. Settings select bull (default), bear, or both directions; daily or weekly cadence; and email and/or in-app delivery. Messages disclose source freshness and coverage and contain no trade instructions.
 - **Portfolio** owns user-entered assets, holdings, allocation, concentration, and contextual research or risk explanation.
 - **Plan** combines income, recurring expenses, contribution capacity, goals, a configurable future chart, and an investment scenario calculator.
 - **Learn** retains the education system and links lessons contextually from Markets, Portfolio, and Plan.

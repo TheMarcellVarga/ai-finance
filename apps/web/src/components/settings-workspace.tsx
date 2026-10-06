@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Bell, CheckCircle2, Database, Download, KeyRound, Lock, MonitorCog, ShieldCheck, UserRound } from "lucide-react";
+import { FlipDigestSettings } from "@/components/flip-digest-settings";
 
 
 const controlGroups = [
@@ -44,11 +45,6 @@ const controls: Array<{ title: string; body: string; status: string }> = [
     title: "Show freshness badges",
     body: "Display provider, timestamp, and stale-data labels anywhere market or AI context appears.",
     status: "Enforced",
-  },
-  {
-    title: "Weekly research digest",
-    body: "No notification delivery is configured for this workspace.",
-    status: "Off",
   },
   {
     title: "AI boundary notices",
@@ -174,11 +170,9 @@ export function SettingsWorkspace({ financeApiConnected, externalAiEnabled }: Se
           <div className="glass-surface rounded-[1.25rem] p-5">
             <div className="flex items-center gap-3">
               <Bell className="size-5 text-cyan-200" />
-              <h2 className="type-card-title text-xl text-white">Notification posture</h2>
+              <h2 className="type-card-title text-xl text-white">Confirmed flip alerts</h2>
             </div>
-            <p className="mt-4 text-sm leading-6 text-zinc-400">
-              Notification content should summarize research activity and source freshness. It must not include trade instructions or exposed financial amounts in analytics payloads.
-            </p>
+            <div className="mt-4"><FlipDigestSettings /></div>
           </div>
         </aside>
       </section>

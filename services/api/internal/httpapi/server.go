@@ -5,42 +5,48 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	assetcatalog "github.com/marcellvarga/ai-finance/services/api/internal/assets"
 	"github.com/marcellvarga/ai-finance/services/api/internal/auth"
+	"github.com/marcellvarga/ai-finance/services/api/internal/flipdigest"
 	"github.com/marcellvarga/ai-finance/services/api/internal/providers"
 	"github.com/marcellvarga/ai-finance/services/api/internal/research"
 	"github.com/marcellvarga/ai-finance/services/api/internal/store"
 )
 
 type Options struct {
-	Authenticator    *auth.Authenticator
-	AssetProvider    providers.AssetSearchProvider
-	QuoteProvider    providers.QuoteProvider
-	ChartProvider    providers.IntradayProvider
-	MarketMonitor    providers.MarketMonitorProvider
-	Workspace        store.WorkspaceRepository
-	Research         research.Store
-	ResearchEmbedder research.Embedder
-	DocumentStore    research.ObjectStorage
-	Logger           *slog.Logger
+	Authenticator       *auth.Authenticator
+	AssetProvider       providers.AssetSearchProvider
+	QuoteProvider       providers.QuoteProvider
+	ChartProvider       providers.IntradayProvider
+	MarketMonitor       providers.MarketMonitorProvider
+	Workspace           store.WorkspaceRepository
+	FlipDigests         flipdigest.Repository
+	FlipDigestJobSecret string
+	Research            research.Store
+	ResearchEmbedder    research.Embedder
+	DocumentStore       research.ObjectStorage
+	Logger              *slog.Logger
 }
 
 type server struct {
-	auth          *auth.Authenticator
-	assetProvider providers.AssetSearchProvider
-	quoteProvider providers.QuoteProvider
-	chartProvider providers.IntradayProvider
-	marketMonitor providers.MarketMonitorProvider
-	workspace     store.WorkspaceRepository
-	research      research.Store
-	retriever     research.Retriever
-	documentStore research.ObjectStorage
-	logger        *slog.Logger
-	rateLimiter   *rateLimiter
+	auth                *auth.Authenticator
+	assetProvider       providers.AssetSearchProvider
+	quoteProvider       providers.QuoteProvider
+	chartProvider       providers.IntradayProvider
+	marketMonitor       providers.MarketMonitorProvider
+	workspace           store.WorkspaceRepository
+	flipDigests         flipdigest.Repository
+	flipDigestJobSecret string
+	research            research.Store
+	retriever           research.Retriever
+	documentStore       research.ObjectStorage
+	logger              *slog.Logger
+	rateLimiter         *rateLimiter
 }
 
 func NewHandler(opts Options) http.Handler {
@@ -50,19 +56,27 @@ func NewHandler(opts Options) http.Handler {
 	if opts.Workspace == nil {
 		opts.Workspace = store.NewWorkspaceStore()
 	}
+	if opts.FlipDigests == nil {
+		opts.FlipDigests = flipdigest.NewMemoryStore()
+	}
+	if opts.FlipDigestJobSecret == "" {
+		opts.FlipDigestJobSecret = os.Getenv("FLIP_DIGEST_JOB_SECRET")
+	}
 
 	s := &server{
-		auth:          opts.Authenticator,
-		assetProvider: opts.AssetProvider,
-		quoteProvider: opts.QuoteProvider,
-		chartProvider: opts.ChartProvider,
-		marketMonitor: opts.MarketMonitor,
-		workspace:     opts.Workspace,
-		research:      opts.Research,
-		retriever:     research.Retriever{Store: opts.Research, Embedder: opts.ResearchEmbedder},
-		documentStore: opts.DocumentStore,
-		logger:        opts.Logger,
-		rateLimiter:   newRateLimiter(30, time.Minute),
+		auth:                opts.Authenticator,
+		assetProvider:       opts.AssetProvider,
+		quoteProvider:       opts.QuoteProvider,
+		chartProvider:       opts.ChartProvider,
+		marketMonitor:       opts.MarketMonitor,
+		workspace:           opts.Workspace,
+		flipDigests:         opts.FlipDigests,
+		flipDigestJobSecret: opts.FlipDigestJobSecret,
+		research:            opts.Research,
+		retriever:           research.Retriever{Store: opts.Research, Embedder: opts.ResearchEmbedder},
+		documentStore:       opts.DocumentStore,
+		logger:              opts.Logger,
+		rateLimiter:         newRateLimiter(30, time.Minute),
 	}
 
 	mux := http.NewServeMux()
@@ -74,6 +88,13 @@ func NewHandler(opts Options) http.Handler {
 	mux.HandleFunc("GET /v1/market-monitors/{class}", s.marketMonitorData)
 	mux.Handle("GET /v1/me", s.requireAuth(http.HandlerFunc(s.me)))
 	mux.Handle("GET /v1/usage", s.requireAuth(http.HandlerFunc(s.usage)))
+	mux.Handle("GET /v1/flip-digest/preferences", s.requireAuth(http.HandlerFunc(s.getFlipDigestPreferences)))
+	mux.Handle("PUT /v1/flip-digest/preferences", s.requireAuth(http.HandlerFunc(s.putFlipDigestPreferences)))
+	mux.Handle("GET /v1/flip-digest/notifications", s.requireAuth(http.HandlerFunc(s.listFlipDigestNotifications)))
+	mux.HandleFunc("GET /v1/internal/flip-digest/subscribers", s.flipDigestSubscribers)
+	mux.HandleFunc("GET /v1/internal/flip-digest/pending-emails", s.flipDigestPendingEmails)
+	mux.HandleFunc("POST /v1/internal/flip-digest/notifications", s.createFlipDigestNotification)
+	mux.HandleFunc("POST /v1/internal/flip-digest/notifications/{id}/email-sent", s.markFlipDigestEmailSent)
 	mux.Handle("GET /v1/portfolios", s.requireAuth(http.HandlerFunc(s.listPortfolios)))
 	mux.Handle("POST /v1/portfolios", s.requireAuth(http.HandlerFunc(s.createPortfolio)))
 	mux.Handle("GET /v1/portfolios/{id}", s.requireAuth(http.HandlerFunc(s.getPortfolio)))
