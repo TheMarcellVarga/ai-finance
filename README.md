@@ -72,6 +72,7 @@ Read these before implementation:
 - [Product spec](docs/PRODUCT_SPEC.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Mobile app scope and architecture](docs/MOBILE_APP_PLAN.md)
 - [Database schema](docs/DATABASE_SCHEMA.md)
 - [API spec](docs/API_SPEC.md)
 - [AI features](docs/AI_FEATURES.md)

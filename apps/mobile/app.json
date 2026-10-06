@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Aperture",
+    "slug": "aperture-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/aperture-icon.png",
+    "scheme": "aperture",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "bundleIdentifier": "com.aperture.workspace"
+    },
+    "android": {
+      "package": "com.aperture.workspace",
+      "adaptiveIcon": { "backgroundColor": "#09090B", "foregroundImage": "./assets/images/aperture-icon.png" },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/aperture-icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#09090B",
+          "image": "./assets/images/aperture-icon.png",
+          "imageWidth": 96
+        }
+      ],
+      "@clerk/expo",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

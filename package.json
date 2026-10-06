@@ -5,6 +5,11 @@
     "dev": "./scripts/dev-local",
     "build": "npm --prefix apps/web run build",
     "lint": "npm --prefix apps/web run lint",
-    "test": "cd services/api && go test ./... && cd ../../apps/web && npm run test:phase6"
-  }
+    "test": "cd services/api && go test ./... && cd ../../apps/web && npm run test:phase6",
+    "mobile:start": "npm --prefix apps/mobile run start",
+    "mobile:ios": "npm --prefix apps/mobile run ios",
+    "mobile:android": "npm --prefix apps/mobile run android",
+    "mobile:check": "npm --prefix apps/mobile run typecheck"
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

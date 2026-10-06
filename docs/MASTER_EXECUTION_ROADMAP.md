@@ -670,6 +670,14 @@ The primary experience is now five destinations: **Overview, Markets, Portfolio,
 - Education remains available and gains contextual links from the core workflows.
 - Supporting research and safety infrastructure remains functional without dominating the information architecture.
 
+## Mobile Companion Track
+
+Status: scoped in `docs/MOBILE_APP_PLAN.md`; implementation queued behind the active Product Simplification Track and its acceptance gate unless the user explicitly reprioritizes it. The iOS-first, Android-parity plan keeps the same five-destination product model and shares Clerk identity, Go finance APIs, and owner-scoped data. Before native implementation, centralize the confirmed market-signal contract and complete the server-side persistence needed by Overview, Plan, and digests.
+
+Primary skill for scope: `finance-product-guardrails`. Support skills: `go-finance-api`, `supabase-finance-schema`, and `security-review-fintech`. Native implementation should use the current Expo documentation; `nextjs-fintech-ui` is a reference for brand and product consistency, not a native coding guide.
+
+Acceptance gate: an installable iOS and Android build presents the same authoritative data, verified ownership and freshness, accessible navigation, safe notification behavior, and no trading/advice drift. Detailed slices and verification gates are in `docs/MOBILE_APP_PLAN.md`.
+
 ## AI Task Template
 Use this template for future agent tasks.
 

@@ -9,6 +9,7 @@ Aperture Financial Intelligence is a research and portfolio decision-support pro
 | Component | Responsibility |
 | --- | --- |
 | Next.js app | Marketing, authenticated UI, BFF surfaces, AI streaming UX, Stripe/Clerk webhooks |
+| Planned Expo app | Native iOS and Android companion consuming authenticated, versioned finance APIs; scope in `docs/MOBILE_APP_PLAN.md` |
 | Go API | Finance/data APIs, calculations, market-data normalization, SEC ingestion, audit-backed mutations |
 | Supabase Postgres | Relational system of record, SQL migrations, `pgvector` retrieval |
 | Clerk | Authentication, user sessions, future organizations |
