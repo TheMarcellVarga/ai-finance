@@ -29,25 +29,28 @@ func main() {
 		logger.Error("failed to configure auth", "error", err)
 		os.Exit(1)
 	}
-	researchRuntime, err := research.OpenRuntime(context.Background(), research.RuntimeConfig{
-		PersistenceMode:                  cfg.ResearchPersistence,
-		DatabaseURL:                      cfg.DatabaseURL,
-		StorageMode:                      cfg.DocumentStorage,
-		StorageDir:                       cfg.DocumentStorageDir,
-		SupabaseURL:                      cfg.SupabaseURL,
-		SupabaseKey:                      cfg.SupabaseServiceKey,
-		EmbeddingProvider:                cfg.ResearchEmbeddingProvider,
-		EmbeddingModel:                   cfg.ResearchEmbeddingModel,
-		OpenAIAPIKey:                     cfg.OpenAIAPIKey,
-		ExternalCallsEnabled:             cfg.AIExternalCallsEnabled,
-		Production:                       cfg.Environment == "production",
-		AllowLocalEmbeddingsInProduction: cfg.AllowLocalEmbeddingsInProduction,
-	})
-	if err != nil {
-		logger.Error("failed to configure research runtime", "error", err)
-		os.Exit(1)
+	var researchRuntime *research.Runtime
+	if !cfg.ResearchDisabled {
+		researchRuntime, err = research.OpenRuntime(context.Background(), research.RuntimeConfig{
+			PersistenceMode:                  cfg.ResearchPersistence,
+			DatabaseURL:                      cfg.DatabaseURL,
+			StorageMode:                      cfg.DocumentStorage,
+			StorageDir:                       cfg.DocumentStorageDir,
+			SupabaseURL:                      cfg.SupabaseURL,
+			SupabaseKey:                      cfg.SupabaseServiceKey,
+			EmbeddingProvider:                cfg.ResearchEmbeddingProvider,
+			EmbeddingModel:                   cfg.ResearchEmbeddingModel,
+			OpenAIAPIKey:                     cfg.OpenAIAPIKey,
+			ExternalCallsEnabled:             cfg.AIExternalCallsEnabled,
+			Production:                       cfg.Environment == "production",
+			AllowLocalEmbeddingsInProduction: cfg.AllowLocalEmbeddingsInProduction,
+		})
+		if err != nil {
+			logger.Error("failed to configure research runtime", "error", err)
+			os.Exit(1)
+		}
+		defer researchRuntime.Close()
 	}
-	defer researchRuntime.Close()
 
 	var workspace store.WorkspaceRepository = store.NewWorkspaceStore()
 	var flipDigests flipdigest.Repository = flipdigest.NewMemoryStore()
@@ -80,19 +83,22 @@ func main() {
 	twelveData := providers.TwelveDataProvider{APIKey: cfg.TwelveDataAPIKey}
 	freeMarketMonitors := providers.FreeMarketMonitorProvider{}
 	marketData := providers.FallbackMarketProvider{Primary: fmp, Secondary: twelveData, Tertiary: freeMarketMonitors}
-	handler := httpapi.NewHandler(httpapi.Options{
-		Authenticator:    authenticator,
-		AssetProvider:    marketData,
-		QuoteProvider:    marketData,
-		ChartProvider:    twelveData,
-		MarketMonitor:    freeMarketMonitors,
-		Research:         researchRuntime.Store,
-		ResearchEmbedder: researchRuntime.Embedder,
-		DocumentStore:    researchRuntime.Storage,
-		Workspace:        workspace,
-		FlipDigests:      flipDigests,
-		Logger:           logger,
-	})
+	options := httpapi.Options{
+		Authenticator: authenticator,
+		AssetProvider: marketData,
+		QuoteProvider: marketData,
+		ChartProvider: twelveData,
+		MarketMonitor: freeMarketMonitors,
+		Workspace:     workspace,
+		FlipDigests:   flipDigests,
+		Logger:        logger,
+	}
+	if researchRuntime != nil {
+		options.Research = researchRuntime.Store
+		options.ResearchEmbedder = researchRuntime.Embedder
+		options.DocumentStore = researchRuntime.Storage
+	}
+	handler := httpapi.NewHandler(options)
 
 	server := &http.Server{
 		Addr:              cfg.Addr(),
@@ -103,7 +109,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	if researchRuntime.Store.PersistenceMode() == "memory" {
+	if researchRuntime != nil && researchRuntime.Store.PersistenceMode() == "memory" {
 		parser, parserErr := research.NewPageAwareParser(cfg.PDFToTextPath)
 		if parserErr != nil {
 			logger.Error("failed to configure embedded document worker", "error", parserErr)
@@ -123,12 +129,17 @@ func main() {
 	}
 
 	go func() {
+		researchPersistence, documentStorage := "disabled", "disabled"
+		if researchRuntime != nil {
+			researchPersistence = researchRuntime.Store.PersistenceMode()
+			documentStorage = researchRuntime.Storage.Mode()
+		}
 		logger.Info(
 			"api listening",
 			"addr", server.Addr,
 			"authMode", cfg.Auth.Mode,
-			"researchPersistence", researchRuntime.Store.PersistenceMode(),
-			"documentStorage", researchRuntime.Storage.Mode(),
+			"researchPersistence", researchPersistence,
+			"documentStorage", documentStorage,
 		)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("api server failed", "error", err)

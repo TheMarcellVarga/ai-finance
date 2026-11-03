@@ -23,6 +23,7 @@ type Config struct {
 	SECUserAgent                     string
 	DatabaseURL                      string
 	ResearchPersistence              string
+	ResearchDisabled                 bool
 	DocumentStorage                  string
 	DocumentStorageDir               string
 	SupabaseURL                      string
@@ -81,6 +82,7 @@ func FromEnv() Config {
 		SECUserAgent:                     os.Getenv("SEC_USER_AGENT"),
 		DatabaseURL:                      os.Getenv("DATABASE_URL"),
 		ResearchPersistence:              strings.ToLower(researchPersistence),
+		ResearchDisabled:                 envBool("RESEARCH_DISABLED"),
 		DocumentStorage:                  strings.ToLower(documentStorage),
 		DocumentStorageDir:               getenv("DOCUMENT_STORAGE_DIR", "./var/research-documents"),
 		SupabaseURL:                      os.Getenv("SUPABASE_URL"),

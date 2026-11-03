@@ -116,7 +116,17 @@ func NewHandler(opts Options) http.Handler {
 	mux.Handle("POST /v1/research/workspaces/{workspaceID}/documents/{documentID}/retry", s.requireAuth(http.HandlerFunc(s.retryResearchDocument)))
 	mux.Handle("GET /v1/research/workspaces/{workspaceID}/documents/{documentID}/pages", s.requireAuth(http.HandlerFunc(s.listResearchDocumentPages)))
 
-	return requestID(accessLog(opts.Logger, mux))
+	var handler http.Handler = mux
+	if opts.Research == nil {
+		handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, "/v1/research/") {
+				writeError(w, r, http.StatusServiceUnavailable, "research_disabled", "Document research is unavailable in this deployment.")
+				return
+			}
+			mux.ServeHTTP(w, r)
+		})
+	}
+	return requestID(accessLog(opts.Logger, handler))
 }
 
 func (s *server) health(w http.ResponseWriter, r *http.Request) {
