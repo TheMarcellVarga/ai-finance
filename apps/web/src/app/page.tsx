@@ -10,7 +10,6 @@ import {
   Target,
 } from "lucide-react";
 
-import { HomeMotion } from "@/components/home-motion";
 import { MarketingPage } from "@/components/marketing-page";
 import { Button } from "@/components/ui/button";
 
@@ -48,10 +47,17 @@ const tiers = [
 export default function Home() {
   return (
     <MarketingPage>
-      <HomeMotion>
         <div className="home-index">
           <section id="top" className="home-hero relative isolate overflow-hidden px-4 sm:px-6 lg:px-8">
-            <div className="home-hero-art" aria-hidden="true" />
+            <Image
+              src="/media/aperture-private-study-hero-v2.webp"
+              alt=""
+              fill
+              unoptimized
+              fetchPriority="high"
+              sizes="100vw"
+              className="home-hero-art"
+            />
             <div className="home-hero-glow" aria-hidden="true" />
             <div className="home-hero-scrim" aria-hidden="true" />
 
@@ -79,7 +85,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section id="product" data-home-reveal className="home-section home-product scroll-mt-24 px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
+          <section id="product" className="home-section home-product scroll-mt-24 px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
             <div className="mx-auto max-w-7xl">
               <div className="home-section-heading max-w-3xl">
                 <h2>One picture before many tools.</h2>
@@ -93,6 +99,7 @@ export default function Home() {
                     alt="A quiet desk with a notebook, pen, tablet, and city lights beyond a window"
                     width={1672}
                     height={941}
+                    sizes="(max-width: 1023px) 100vw, 50vw"
                     className="block w-full object-cover"
                   />
                   <figcaption>A research surface for people who want context without a finance terminal.</figcaption>
@@ -119,19 +126,17 @@ export default function Home() {
             </div>
           </section>
 
-          <section id="how-it-works" data-story className="home-section home-story scroll-mt-24 px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
+          <section id="how-it-works" className="home-section home-story scroll-mt-24 px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
             <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[0.82fr_1.18fr] lg:gap-24">
-              <div data-story-visual className="home-story-visual self-start">
+              <div className="home-story-visual self-start">
                 <Image
                   src="/media/aperture-private-study-hero-v1.png"
                   alt="A warmly lit workspace facing a city at dusk"
                   width={1717}
                   height={916}
+                  sizes="(max-width: 1023px) 100vw, 45vw"
                   className="h-full w-full object-cover"
                 />
-                <div className="home-story-progress" aria-hidden="true">
-                  <span data-story-progress />
-                </div>
               </div>
 
               <div className="home-story-panels">
@@ -143,7 +148,7 @@ export default function Home() {
                 </div>
                 <div className="home-story-list">
                   {storyPanels.map(({ title, body, icon: Icon }) => (
-                    <article key={title} data-story-panel className="home-story-panel">
+                    <article key={title} className="home-story-panel">
                       <div className="home-story-icon"><Icon className="size-5" aria-hidden="true" /></div>
                       <div>
                         <h3>{title}</h3>
@@ -156,7 +161,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section id="security" data-home-reveal className="home-section home-boundary scroll-mt-24 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+          <section id="security" className="home-section home-boundary scroll-mt-24 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
             <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end lg:gap-20">
               <div>
                 <h2>Quiet by design.</h2>
@@ -178,7 +183,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section id="pricing" data-home-reveal className="home-section home-pricing scroll-mt-24 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+          <section id="pricing" className="home-section home-pricing scroll-mt-24 px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
             <div className="mx-auto max-w-7xl">
               <div className="home-section-heading max-w-3xl">
                 <h2>Choose the depth of your review rhythm.</h2>
@@ -199,7 +204,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section data-home-reveal className="home-close px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
+          <section className="home-close px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
             <div className="mx-auto flex max-w-7xl flex-col gap-8 border-t border-white/10 pt-10 sm:flex-row sm:items-end sm:justify-between">
               <div className="max-w-2xl">
                 <h2>Keep the final judgment with the person.</h2>
@@ -213,7 +218,6 @@ export default function Home() {
             </div>
           </section>
         </div>
-      </HomeMotion>
     </MarketingPage>
   );
 }

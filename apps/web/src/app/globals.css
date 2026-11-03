@@ -810,7 +810,8 @@
 }
 
 .home-hero-art {
-  background: url("/media/aperture-private-study-hero-v2.png") center / cover no-repeat;
+  object-fit: cover;
+  object-position: center;
   filter: brightness(1.06) saturate(0.92) contrast(1.03);
   transform: translateZ(0);
   will-change: transform, opacity;
@@ -968,24 +969,6 @@
   width: 100%;
   object-fit: cover;
   filter: saturate(0.82) brightness(0.86);
-}
-
-.home-story-progress {
-  position: absolute;
-  right: 1.2rem;
-  top: 1.2rem;
-  bottom: 1.2rem;
-  width: 1px;
-  overflow: hidden;
-  background: rgb(255 255 255 / 0.28);
-}
-
-.home-story-progress span {
-  display: block;
-  height: 100%;
-  width: 100%;
-  background: rgb(207 250 254 / 0.9);
-  transform: scaleY(0);
 }
 
 .home-story-list {
@@ -1238,19 +1221,23 @@
   }
 }
 
+@media (min-width: 1024px) {
+  .home-story-visual {
+    position: sticky;
+    top: 6rem;
+  }
+}
+
 @media (max-width: 899px) {
   .home-story-visual {
     min-height: 18rem;
   }
 
-  .home-story-progress {
-    display: none;
-  }
 }
 
 @media (max-width: 640px) {
   .home-hero-art {
-    background-position: 68% center;
+    object-position: 68% center;
   }
 
   .home-hero-scrim {
