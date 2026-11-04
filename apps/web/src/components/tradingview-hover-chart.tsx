@@ -34,7 +34,7 @@ const POPOVER_HEIGHT = 430;
 const VIEWPORT_GUTTER = 12;
 
 type TradingViewHoverChartProps = {
-  row: CryptoMonitorRow;
+  row: Pick<CryptoMonitorRow, "symbol" | "baseAsset" | "quoteAsset">;
   provider: CryptoMonitorProvider;
   interval: CryptoMonitorInterval;
   scope: CryptoMonitorScope;
@@ -45,6 +45,7 @@ type TradingViewHoverChartProps = {
   tabIndex?: number;
   ariaLabel?: string;
   dataMarketRow?: string;
+  dataUniversalMarket?: string;
   onClick?: MouseEventHandler<HTMLElement>;
   onKeyDown?: KeyboardEventHandler<HTMLElement>;
 };
@@ -128,7 +129,7 @@ function TradingViewChartPopover({
   onPointerEnter,
   onPointerLeave,
 }: {
-  row: CryptoMonitorRow;
+  row: Pick<CryptoMonitorRow, "symbol" | "baseAsset" | "quoteAsset">;
   provider: CryptoMonitorProvider;
   interval: CryptoMonitorInterval;
   scope: CryptoMonitorScope;
@@ -352,6 +353,7 @@ export function TradingViewHoverChart({
   tabIndex,
   ariaLabel,
   dataMarketRow,
+  dataUniversalMarket,
   onClick,
   onKeyDown,
 }: TradingViewHoverChartProps) {
@@ -452,6 +454,7 @@ export function TradingViewHoverChart({
     tabIndex,
     "aria-label": ariaLabel,
     "data-market-row": dataMarketRow,
+    "data-universal-market": dataUniversalMarket,
     onClick,
     onKeyDown,
     onMouseEnter: beginHover,
