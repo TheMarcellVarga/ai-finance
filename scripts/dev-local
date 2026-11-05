@@ -9,14 +9,20 @@ if [[ -f "${ROOT_DIR}/.env" ]]; then
   set +a
 fi
 
-API_URL="${FINANCE_API_BASE_URL:-http://127.0.0.1:8080}"
-WEB_PORT="${WEB_PORT:-3000}"
+API_URL="${FINANCE_API_BASE_URL:-http://127.0.0.1:8120}"
+API_PORT="$(node -e 'const u = new URL(process.argv[1]); process.stdout.write(u.port || (u.protocol === "https:" ? "443" : "80"));' "$API_URL")"
+WEB_PORT="${WEB_PORT:-3020}"
 API_PID=""
 WEB_PID=""
+WORKER_PID=""
 
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/local/go/bin:${PATH}"
 
 cleanup() {
+  if [[ -n "${WORKER_PID}" ]]; then
+    pkill -P "${WORKER_PID}" 2>/dev/null || true
+    kill "${WORKER_PID}" 2>/dev/null || true
+  fi
   if [[ -n "${WEB_PID}" ]]; then
     kill "${WEB_PID}" 2>/dev/null || true
   fi
@@ -28,7 +34,8 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 health_ok() {
-  curl -fsS --max-time 2 "${API_URL}/v1/health" >/dev/null 2>&1
+  curl -fsS --max-time 2 "${API_URL}/v1/health" 2>/dev/null |
+    node -e 'let s=""; process.stdin.on("data", d => s+=d); process.stdin.on("end", () => { try { const h=JSON.parse(s); process.exit(h.service === "finance-api" && h.status === "ok" ? 0 : 1); } catch { process.exit(1); } });'
 }
 
 wait_for_api() {
@@ -46,6 +53,22 @@ port_is_listening() {
   lsof -nP -iTCP:"${port}" -sTCP:LISTEN >/dev/null 2>&1
 }
 
+# Restart this project's existing local database stack without resetting volumes.
+# Remote databases and other projects' containers are never managed here.
+if [[ "${DATABASE_URL:-}" == *"@127.0.0.1:54322/"* || "${DATABASE_URL:-}" == *"@localhost:54322/"* ]] && docker inspect supabase_db_ai-finance >/dev/null 2>&1; then
+  for container in supabase_db_ai-finance supabase_auth_ai-finance supabase_rest_ai-finance supabase_storage_ai-finance supabase_kong_ai-finance; do
+    if [[ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null)" == "false" ]]; then
+      docker start "$container" >/dev/null
+    fi
+  done
+  for _ in $(seq 1 30); do
+    if docker exec supabase_db_ai-finance pg_isready -U postgres >/dev/null 2>&1; then
+      break
+    fi
+    sleep 1
+  done
+fi
+
 if health_ok; then
   echo "Finance API already healthy at ${API_URL}"
 else
@@ -54,13 +77,17 @@ else
     exit 1
   fi
 
+  if port_is_listening "${API_PORT}"; then
+    echo "Port ${API_PORT} belongs to another service. Set FINANCE_API_BASE_URL to a free local port." >&2
+    exit 1
+  fi
   echo "Starting Finance API at ${API_URL}"
   (
     cd "${ROOT_DIR}/services/api"
     set -a
     source .env
     set +a
-    go run ./cmd/api
+    HOST=127.0.0.1 PORT="${API_PORT}" RESEARCH_PERSISTENCE_MODE="${RESEARCH_PERSISTENCE_MODE:-postgres}" go run ./cmd/api
   ) &
   API_PID="$!"
 
@@ -70,10 +97,39 @@ else
   fi
 fi
 
+worker_running=false
+for worker_candidate in $(pgrep -f '^go run ./cmd/worker$' || true); do
+  worker_cwd="$(lsof -a -p "$worker_candidate" -d cwd -Fn | sed -n 's/^n//p')"
+  if [[ "$worker_cwd" == "${ROOT_DIR}/services/api" ]]; then
+    worker_running=true
+    break
+  fi
+done
+if [[ "$worker_running" == "false" ]]; then
+  echo "Starting persistent document worker"
+  (
+    cd "${ROOT_DIR}/services/api"
+    set -a
+    source .env
+    set +a
+    RESEARCH_PERSISTENCE_MODE="${RESEARCH_PERSISTENCE_MODE:-postgres}" go run ./cmd/worker
+  ) &
+  WORKER_PID="$!"
+fi
+
 if port_is_listening "${WEB_PORT}"; then
-  echo "Next.js already appears to be listening on http://127.0.0.1:${WEB_PORT}"
-  echo "Local services ready."
-  wait
+  existing_pid="$(lsof -tiTCP:"${WEB_PORT}" -sTCP:LISTEN | head -1)"
+  existing_cwd="$(lsof -a -p "${existing_pid}" -d cwd -Fn | sed -n 's/^n//p')"
+  if [[ "${existing_cwd}" != "${ROOT_DIR}/apps/web" ]]; then
+    echo "Port ${WEB_PORT} belongs to another project. Set WEB_PORT to a free port." >&2
+    exit 1
+  fi
+  echo "Aperture is already running at http://localhost:${WEB_PORT}"
+  if [[ -n "${API_PID}" ]]; then
+    wait "${API_PID}"
+  elif [[ -n "${WORKER_PID}" ]]; then
+    wait "${WORKER_PID}"
+  fi
 else
   echo "Starting Next.js at http://127.0.0.1:${WEB_PORT}"
   (

@@ -9,7 +9,7 @@ This file lists planned local and production configuration. Exact variable names
 - Supabase local Postgres
 - optional Redis-compatible local cache or Upstash dev credentials
 
-Run `npm run dev` from the repository root for local portfolio and AI development. It delegates to `scripts/dev-local`, starts the Go API with `services/api/.env`, verifies `/v1/health`, then starts or reuses the Next.js dev server with `FINANCE_API_BASE_URL` pointed at the local API.
+Run `npm run dev` from the repository root for local portfolio and AI development. The local defaults are web `http://localhost:3020` and finance API `http://127.0.0.1:8120`, avoiding common ports used by other projects. Set `WEB_PORT` and `FINANCE_API_BASE_URL` to override them. The startup script restarts existing `ai-finance` Supabase containers when the API is offline, without resetting data, and rejects ports owned by other projects. It delegates to `scripts/dev-local`, starts the Go API with `services/api/.env`, verifies `/v1/health`, then starts or reuses the Next.js dev server with `FINANCE_API_BASE_URL` pointed at the local API. It also starts or reuses the project document worker with Postgres persistence.
 
 ## Public Client Variables
 
@@ -71,7 +71,7 @@ Never expose service-role keys, provider keys, webhook secrets, raw JWTs, or pri
 - `SEC_USER_AGENT`
 - `FINANCE_API_BASE_URL` for the Next.js server-side BFF route when it calls the Go API
 - `FINANCE_API_AUTH_MODE`, optional Next.js local override; set to `clerk` only when the Go API validates Clerk JWTs locally
-- `WEB_PORT`, optional local override for `scripts/dev-local`; defaults to `3000`
+- `WEB_PORT`, optional local override for `scripts/dev-local`; defaults to `3020`
 
 The public asset-class monitor BFF uses the Go API as its primary source. If a
 Vercel deployment cannot reach `FINANCE_API_BASE_URL` (for example, because it
