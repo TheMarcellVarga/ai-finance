@@ -47,8 +47,8 @@ export default function Home() {
               {capabilities.map(({ title, description }) => <div key={title}><h3>{title}</h3><p>{description}</p></div>)}
             </div>
             <figure className="product-screen product-screen-wide">
-              <Image src="/media/market-workspace.jpg" alt="Aperture Markets workspace showing a cross-asset market monitor" width={1490} height={715} sizes="(max-width: 1280px) 100vw, 1280px" />
-              <figcaption>Aperture Markets · earlier workspace view</figcaption>
+              <Image src="/media/market-workspace-current.jpg" alt="Aperture Markets workspace showing a cross-asset market monitor" width={1512} height={741} sizes="(max-width: 1280px) 100vw, 1280px" />
+              <figcaption>Aperture Markets · captured 6 November 2026; market values are historical</figcaption>
             </figure>
           </div>
         </section>
