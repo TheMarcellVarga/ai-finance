@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 
 import { MarketingPage } from "@/components/marketing-page";
+import { HomeHeroImage } from "@/components/home-hero-image";
 import { Button } from "@/components/ui/button";
 import { WorkspaceParticleBloom } from "@/components/workspace-particle-bloom";
 
@@ -18,7 +19,8 @@ export default function Home() {
     <MarketingPage>
       <div className="home-index product-home">
         <section className="home-hero relative isolate overflow-hidden px-4 sm:px-6 lg:px-8">
-          <Image src="/media/aperture-private-study-hero-v2.webp" alt="" fill priority sizes="100vw" className="home-hero-art" />
+          <HomeHeroImage />
+          <noscript><style>{".home-hero-art { opacity: 1 !important; }"}</style></noscript>
           <div className="home-hero-glow" aria-hidden="true" />
           <div className="home-hero-scrim" aria-hidden="true" />
           <div className="product-hero-inner relative z-10 mx-auto flex w-full max-w-7xl items-center">

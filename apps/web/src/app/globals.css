@@ -813,8 +813,18 @@
   object-fit: cover;
   object-position: center;
   filter: brightness(1.06) saturate(0.92) contrast(1.03);
-  transform: translateZ(0);
-  will-change: transform, opacity;
+  opacity: 0;
+  transition: opacity 800ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.home-hero-art.is-loaded {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-art {
+    transition: none;
+  }
 }
 
 .home-hero-glow {
