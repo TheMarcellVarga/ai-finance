@@ -61,5 +61,14 @@
   },
   "overrides": {
     "postcss": "8.5.23"
+  },
+  "allowScripts": {
+    "@clerk/shared": false,
+    "bufferutil": false,
+    "ccxt": false,
+    "esbuild@0.28.1": true,
+    "protobufjs": false,
+    "unrs-resolver@1.11.1": true,
+    "fsevents@2.3.3": true
   }
 }
