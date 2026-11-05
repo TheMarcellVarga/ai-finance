@@ -13,13 +13,13 @@ export default async function RiskPage() {
   let snapshot;
   try {
     snapshot = await getPortfolioSnapshot({ requestAuthorization: `Bearer ${authToken}` });
-  } catch (error) {
+  } catch {
     return (
       <section className="section-shell rounded-[1.25rem] p-6 sm:p-8">
         <AlertTriangle className="size-5 text-amber-200" />
         <h1 className="type-display mt-5 text-3xl text-white sm:text-5xl">Risk review needs your portfolio.</h1>
         <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-400">
-          {error instanceof Error ? error.message : "No owner-scoped portfolio snapshot is available."} No sample allocation is substituted.
+          Your portfolio is unavailable. Add a holding or refresh your portfolio before reviewing risk.
         </p>
         <Link href="/app/portfolio" className="mt-6 inline-flex rounded-[0.85rem] bg-cyan-100 px-4 py-2 text-sm font-medium text-black">Add a real holding</Link>
       </section>
@@ -32,7 +32,7 @@ export default async function RiskPage() {
   return (
     <section className="space-y-6">
       <div className="workspace-hero section-shell relative overflow-hidden rounded-[8px] p-6 sm:p-8">
-        <p className="type-label text-xs uppercase text-cyan-100">Risk explainer</p>
+        <p className="text-sm text-zinc-400">Calculated from portfolio data · no AI generation</p>
         <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_18rem] lg:items-end">
           <div>
             <h1 className="text-3xl font-light tracking-normal text-white sm:text-5xl">Portfolio risk review</h1>
@@ -94,18 +94,7 @@ export default async function RiskPage() {
         <p className="mt-5 text-xs leading-5 text-zinc-500">{risk.disclaimer}</p>
       </div>
 
-      <AiActionPanel
-        title="Risk explainer route controls"
-        description="Save the risk review with citations and usage metadata. Running the live route requires the local finance API portfolio snapshot to be available for the authenticated workspace."
-        generateEndpoint="/api/ai/risk-explainer"
-        generatePayload={{
-          portfolioId: snapshot.id,
-          prompt: "Explain concentration and allocation risk as research.",
-        }}
-        saveTitle={`${snapshot.name} risk explainer`}
-        saveSourceType="risk_explainer"
-        citationCount={risk.citations.length}
-      />
+      <AiActionPanel title="Research report" />
     </section>
   );
 }

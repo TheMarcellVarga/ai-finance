@@ -76,13 +76,13 @@ export function GoalPlannerWorkspace({ portfolio, initialError }: GoalPlannerWor
       <div className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8">
         <div className="grid gap-6 lg:grid-cols-[1fr_20rem] lg:items-end">
           <div>
-            <h1 className="type-display text-3xl text-white sm:text-5xl">Plan from your actual portfolio.</h1>
+            <h1 className="type-display text-3xl text-white sm:text-5xl">Goal planner</h1>
             <p className="mt-4 max-w-3xl text-sm leading-6 text-zinc-400">
-              Set your own target, horizon, and contribution. Aperture uses the latest owner-scoped portfolio value and assumes zero investment return.
+              Compare your target with your current portfolio and planned contributions. Assumes zero investment return.
             </p>
           </div>
           <div className="rounded-[1rem] bg-black/20 p-5">
-            <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">Current provider-backed value</p>
+            <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">Starting portfolio value</p>
             <p className="mt-2 font-mono text-2xl text-white">{portfolio?.summary.displayTotalValue ?? "No portfolio"}</p>
             <p className="mt-2 text-xs leading-5 text-zinc-400">
               {portfolio ? `${portfolio.dataFreshness.provider} · ${portfolio.dataFreshness.freshness}` : "Add a holding to establish a real starting balance."}

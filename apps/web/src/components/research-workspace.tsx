@@ -14,7 +14,6 @@ import {
   AlertTriangle,
   Check,
   FileText,
-  FolderLock,
   LoaderCircle,
   RefreshCw,
   RotateCcw,
@@ -26,7 +25,6 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { StructuredResearchPanel } from "@/components/structured-research-panel";
-import { WorkspaceWaveAccent } from "@/components/workspace-wave-accent";
 import type {
   ResearchDocument,
   ResearchMeta,
@@ -347,9 +345,9 @@ export function ResearchWorkspace({
               Research workspace unavailable
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
-              {error ??
-                "Start the finance API and confirm the research persistence settings."}
+              Document storage is not connected. Uploads and research are disabled for this session.
             </p>
+            <Button disabled variant="outline" className="mt-5">Research unavailable</Button>
           </div>
         </div>
       </section>
@@ -359,19 +357,13 @@ export function ResearchWorkspace({
   return (
     <div className="space-y-6">
       <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
-        <WorkspaceWaveAccent className="pointer-events-none absolute right-4 top-3 hidden sm:block lg:right-8 lg:top-5" />
         <div className="grid gap-7 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-3xl">
-            <p className="type-label inline-flex items-center gap-2 rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100">
-              <FolderLock className="size-3.5" />
-              Private research room
-            </p>
-            <h1 className="type-display mt-6 text-3xl text-white sm:text-5xl">
-              Evidence before interpretation
+            <h1 className="type-display text-3xl text-white sm:text-4xl">
+              Research
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-400">
-              Secure source documents, preserve page boundaries, and retrieve
-              traceable evidence before forming a research view.
+              Upload sources, search evidence, and review cited findings.
             </p>
           </div>
           <div className="grid grid-cols-3 gap-px overflow-hidden rounded-[1rem] border border-white/7 bg-white/7">

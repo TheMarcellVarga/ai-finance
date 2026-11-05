@@ -9,7 +9,6 @@ import { AssetPicker } from "@/components/asset-picker";
 import { InvestmentGlobe } from "@/components/investment-globe";
 import { assetGeography, countryLocation, geographyLabel } from "@/lib/investment-geography";
 import type { FinanceAssetSearchResponse } from "@/lib/finance-api";
-import { WorkspaceWaveAccent } from "@/components/workspace-wave-accent";
 
 type Asset = {
   ticker: string;
@@ -188,6 +187,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
   const [chartError, setChartError] = useState<string | null>(initialChartError ?? null);
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [loading, setLoading] = useState(false);
+  const [serviceAvailable, setServiceAvailable] = useState(!initialError);
   const [chartLoading, setChartLoading] = useState(false);
   const [selectedTicker, setSelectedTicker] = useState(initialSelectedTicker ?? initialChart?.meta.ticker ?? initialPortfolio?.summary.topConcentrationTicker ?? "");
   const [interval, setInterval] = useState(initialInterval ?? initialChart?.meta.interval ?? "5min");
@@ -286,15 +286,22 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
     try {
       const response = await fetch("/api/finance/portfolio", { cache: "no-store" });
       const payload = (await response.json()) as PortfolioResponse | { error?: { message?: string } };
+      if (response.status === 404 && "error" in payload && payload.error && "code" in payload.error && payload.error.code === "finance_workspace_empty") {
+        setPortfolio(null);
+        setServiceAvailable(true);
+        return;
+      }
       if (!response.ok || !("data" in payload)) {
         const errorPayload = payload as { error?: { message?: string } };
         throw new Error(errorPayload.error?.message ?? "The real finance API request failed.");
       }
+      setServiceAvailable(true);
       setPortfolio(payload.data);
       setMeta(payload.meta);
       const nextTicker = payload.data.summary.topConcentrationTicker || selectedTicker;
       await loadChart(nextTicker, interval);
     } catch (requestError) {
+      setServiceAvailable(false);
       setError(requestError instanceof Error ? requestError.message : "Market data is temporarily unavailable.");
     } finally {
       setLoading(false);
@@ -303,6 +310,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
 
   async function submitHolding(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!serviceAvailable || mutating || loading) return;
     const quantity = Number.parseInt(holdingQuantity, 10);
     const averageCost = holdingAverageCost.trim() ? Number.parseFloat(holdingAverageCost) : 0;
     if (!holdingTicker.trim() || !Number.isInteger(quantity) || quantity <= 0 || !Number.isFinite(averageCost) || averageCost < 0) {
@@ -370,20 +378,16 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
   }
 
   return (
-    <div className="space-y-6">
-      <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
-        <WorkspaceWaveAccent className="pointer-events-none absolute right-4 top-3 hidden sm:block lg:right-8 lg:top-5" />
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-5">
+      <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-4 sm:p-6 md:p-7 lg:p-8">
+        <div className="flex flex-col gap-4 md:gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <p className="type-label inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-              Portfolio
-            </p>
-            <h1 className="type-display mt-6 text-3xl text-white sm:text-5xl">Portfolio intelligence</h1>
-            <p className="mt-4 text-sm leading-6 text-zinc-400">
-              Monitor live market values, concentration, allocation, and intraday movement for a research portfolio.
+            <h1 className="type-display text-3xl text-white sm:text-4xl md:text-5xl">Portfolio</h1>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-zinc-400 sm:mt-4">
+              Review your holdings, allocation, and latest available prices.
             </p>
           </div>
-          <Button onClick={loadRealPortfolio} disabled={loading} size="lg" className="w-full sm:w-fit">
+          <Button onClick={loadRealPortfolio} disabled={loading || mutating} size="lg" className="w-full sm:w-fit">
             <RefreshCw className={loading ? "size-4 animate-spin" : "size-4"} />
             {loading ? "Refreshing" : "Refresh"}
           </Button>
@@ -422,20 +426,21 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
           <div className="flex items-start gap-3">
             <AlertTriangle className="mt-1 size-4 text-amber-200" />
             <div>
-              <p className="text-sm font-medium text-white">Market data is temporarily unavailable.</p>
+              <p className="text-sm font-medium text-white">{serviceAvailable ? "Unable to update portfolio." : "Portfolio service is temporarily unavailable."}</p>
               <p className="mt-2 text-sm leading-6 text-zinc-400">{error}</p>
-              <p className="mt-2 text-xs leading-5 text-zinc-400">Refresh again shortly. No estimated or fabricated prices are shown while the feed is unavailable.</p>
+              {!serviceAvailable ? <p className="mt-2 text-xs leading-5 text-zinc-400">Refresh to retry. Previously loaded values may be out of date.</p> : null}
             </div>
           </div>
         </section>
       ) : null}
 
       <form onSubmit={submitHolding} className="section-shell rounded-[1.25rem] p-5 sm:p-6">
+        <fieldset disabled={!serviceAvailable || mutating || loading} className="min-w-0 disabled:opacity-60">
         <div className="flex items-center gap-3">
           <Plus className="size-5 text-cyan-200" />
           <div>
-            <h2 className="type-card-title text-xl text-white">{portfolio ? "Add a holding" : "Build your real portfolio"}</h2>
-            <p className="mt-1 text-sm text-zinc-400">Enter your own position; Aperture supplies only the provider quote and freshness metadata.</p>
+            <h2 className="type-card-title text-xl text-white">{portfolio ? "Add a holding" : "Add your first holding"}</h2>
+            <p className="mt-1 text-sm text-zinc-400">Enter a position to track its value and allocation.</p>
           </div>
         </div>
         <div className="mt-5 grid gap-4 md:grid-cols-2 2xl:grid-cols-5">
@@ -449,8 +454,8 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
             value={holdingTicker}
             onChange={setHoldingTicker}
             inputId="portfolio-asset"
-            label="Global asset"
-            description="Search provider-backed instruments across asset classes and ISO country codes."
+            label="Asset"
+            description="Search a symbol or company name."
           />
           <label className="text-sm text-zinc-300">
             Whole shares
@@ -465,18 +470,20 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
             <input value={holdingNotes} onChange={(event) => setHoldingNotes(event.target.value)} maxLength={180} className="mt-2 h-11 w-full rounded-[0.75rem] border border-white/10 bg-zinc-950/70 px-3 text-base text-white outline-none focus:border-cyan-200/40" />
           </label>
         </div>
-        <Button type="submit" disabled={mutating} className="mt-5 w-full sm:w-fit">
+        <Button type="submit" disabled={mutating || loading || !serviceAvailable} className="mt-5 w-full sm:w-fit">
           <Plus className="size-4" />
           {mutating ? "Checking provider" : portfolio ? "Add holding" : "Create portfolio"}
         </Button>
+        </fieldset>
+        {!serviceAvailable ? <p className="mt-3 text-sm text-amber-100" role="status">Adding holdings is disabled while the portfolio service is unavailable. Use Refresh to retry.</p> : null}
       </form>
 
-      {!portfolio ? (
+      {!portfolio && serviceAvailable ? (
         <section className="glass-surface rounded-[1.25rem] p-6">
           <h2 className="type-card-title text-xl text-white">No holdings yet</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">Your dashboard, planner, and risk review stay empty until you provide a real position. No sample holdings or estimated prices are inserted.</p>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">Add a holding above to see its value and allocation.</p>
         </section>
-      ) : (
+      ) : portfolio ? (
         <>
           <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
             {[
@@ -505,7 +512,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                   </div>
                   <p className="mt-1 text-xs text-zinc-400">Latest available prices with source freshness.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={loadRealPortfolio} disabled={loading}>
+                <Button variant="outline" size="sm" onClick={loadRealPortfolio} disabled={loading || mutating}>
                   <RefreshCw className={loading ? "size-3.5 animate-spin" : "size-3.5"} />
                   Refresh
                 </Button>
@@ -604,26 +611,6 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                     ))}
                   </tbody>
                 </table>
-              </div>
-              <div className="mt-4 hidden gap-3 md:grid md:grid-cols-3">
-                {holdings.map((holding) => (
-                  <a
-                    key={`quick-${holding.id}`}
-                    href={`/app/portfolio?ticker=${encodeURIComponent(holding.asset.ticker)}&interval=${encodeURIComponent(interval)}`}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      void loadChart(holding.asset.ticker, interval);
-                    }}
-                    className={`rounded-[0.9rem] border px-3 py-3 text-left transition ${
-                      selectedTicker === holding.asset.ticker
-                        ? "border-cyan-200/40 bg-cyan-200/10"
-                        : "border-white/8 bg-white/[0.03] hover:bg-white/[0.06]"
-                    }`}
-                  >
-                    <span className="block font-mono text-sm text-white">{holding.asset.ticker}</span>
-                    <span className="mt-1 block text-xs text-zinc-400">{holding.displayValue}</span>
-                  </a>
-                ))}
               </div>
             </div>
 
@@ -849,7 +836,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
             </div>
           </section>
         </>
-      )}
+      ) : null}
     </div>
   );
 }

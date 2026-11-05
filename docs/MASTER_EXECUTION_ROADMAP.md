@@ -715,3 +715,16 @@ The project is portfolio-ready when:
 - no linked route exposes visible scaffold, skeleton, placeholder, or future-work copy,
 - stock media and logo assets are license-safe and documented,
 - README/case study explain architecture and tradeoffs clearly.
+
+
+## Interview Presentation Pass (2026-11-05)
+
+Priority: user-authorized simplification of the current Product Simplification Track and Phase 9 presentation gate, before further feature expansion.
+
+Primary skill: `nextjs-fintech-ui`. Support: `impeccable` distill and finance product guardrails.
+
+Scope: overview, shared shell, markets, portfolio and planner copy, settings, and public entry points. Preserve existing working capabilities and user data. Remove duplicate introductions, ornamental UI, speculative commercial claims, and developer-facing control descriptions. Unfinished actions must be genuinely disabled with a short explanation. Keep auth, source freshness, and financial disclaimers intact. Paid AI remains disabled.
+
+Acceptance: five primary destinations remain; markets prioritize the table; account settings contain real actions or disabled controls; no paid-plan purchase path or status-only AI action is advertised as complete. Run web lint/build, existing planner/research checks, and desktop/mobile visual checks where authentication permits. Document any unverified authenticated paths explicitly.
+
+Interview follow-through: restore the existing local Supabase containers and apply pending checked-in migrations without resetting data; make `npm run dev` use conflict-free project ports; verify authenticated API ownership, provider-backed portfolio creation, planning, and document processing. Keep external AI spend disabled.

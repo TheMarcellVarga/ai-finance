@@ -1,16 +1,9 @@
-import Link from "next/link";
 import {
-  ArrowRight,
-  BookOpenCheck,
   CircleGauge,
-  Goal,
-  Layers3,
   Radar,
-  Sparkles,
   WalletCards,
 } from "lucide-react";
 
-import { getUsageSummaryForToken } from "@/lib/billing/usage";
 import {
   FinanceWorkspaceEmptyError,
   loadFreeAssetMonitor,
@@ -53,15 +46,13 @@ function formatTimestamp(value?: string) {
 }
 
 async function loadOverviewData(authToken: string) {
-  const [portfolioResult, watchlistResult, usageResult, financeUsageResult] = await Promise.allSettled([
+  const [portfolioResult, watchlistResult, financeUsageResult] = await Promise.allSettled([
     loadRealProviderPortfolio(authToken),
     loadRealProviderWatchlist(authToken),
-    getUsageSummaryForToken(authToken),
     loadFinanceUsage(authToken),
   ]);
 
   const financeUsage = financeUsageResult.status === "fulfilled" ? financeUsageResult.value.data : null;
-  const persistedUsage = usageResult.status === "fulfilled" ? usageResult.value : null;
   const watchlist = watchlistResult.status === "fulfilled" ? watchlistResult.value.data : null;
   let market: Awaited<ReturnType<typeof loadFreeAssetMonitor>> | null = null;
   if (!watchlist?.items.length) {
@@ -77,7 +68,6 @@ async function loadOverviewData(authToken: string) {
     watchlist,
     portfolioEmpty: portfolioResult.status === "rejected" && portfolioResult.reason instanceof FinanceWorkspaceEmptyError,
     watchlistEmpty: watchlistResult.status === "rejected" && watchlistResult.reason instanceof FinanceWorkspaceEmptyError,
-    usage: persistedUsage,
     financeUsage,
     marketDataAvailable: financeUsageResult.status === "fulfilled",
     market,
@@ -86,7 +76,7 @@ async function loadOverviewData(authToken: string) {
 
 export default async function AppOverviewPage() {
   const authToken = await authenticatedSessionToken();
-  const { portfolio, portfolioEmpty, watchlist, watchlistEmpty, usage, financeUsage, marketDataAvailable, market } = await loadOverviewData(authToken);
+  const { portfolio, portfolioEmpty, watchlist, watchlistEmpty, marketDataAvailable, market } = await loadOverviewData(authToken);
   const topHolding = portfolio ? [...portfolio.holdings].sort((left, right) => right.weightBps - left.weightBps)[0] : undefined;
   const watchlistItems = watchlist ? [...watchlist.items].sort(
     (left, right) => Math.abs(right.asset.dailyChangeBps ?? 0) - Math.abs(left.asset.dailyChangeBps ?? 0),
@@ -115,9 +105,6 @@ export default async function AppOverviewPage() {
     : marketItems[0]
       ? { ticker: marketItems[0].ticker, dailyChangeBps: marketItems[0].dailyChangeBps, source: "market" as const }
       : null;
-  const aiUsage = usage?.features.find((feature) => feature.feature === "portfolio_brief")
-    ?? financeUsage?.features.find((feature) => feature.feature === "portfolio_brief");
-
   const summaryMetrics = [
     {
       label: "Portfolio value",
@@ -142,82 +129,17 @@ export default async function AppOverviewPage() {
       icon: Radar,
       tone: "cyan",
     },
-    {
-      label: "Research usage",
-      value: aiUsage ? `${aiUsage.used}/${aiUsage.limit}` : unavailableValue,
-      detail: usage ? `${usage.entitlements.label} plan · ${usage.period}` : financeUsage ? `${financeUsage.plan} plan · ${financeUsage.period}` : "Usage service unavailable",
-      icon: Sparkles,
-      tone: "amber",
-    },
-  ];
 
-  const coreAreas = [
-    {
-      href: "/app/monitors",
-      eyebrow: "Markets",
-      title: "Scan every supported asset class",
-      body: "Filter the provider-backed market universe and keep freshness and coverage visible.",
-      icon: Layers3,
-      meta: "One market entry point",
-    },
-    {
-      href: "/app/portfolio",
-      eyebrow: "Portfolio",
-      title: "Understand what you own",
-      body: "Review holdings, allocation, concentration, and the source behind each value.",
-      icon: WalletCards,
-      meta: portfolio ? `${portfolio.summary.holdingCount} positions` : "Add your assets",
-    },
-    {
-      href: "/app/goals",
-      eyebrow: "Plan",
-      title: "Connect today to a future goal",
-      body: "Set a target and compare contribution scenarios with every assumption visible.",
-      icon: Goal,
-      meta: "Scenarios, not forecasts",
-    },
-    {
-      href: "/app/learn",
-      eyebrow: "Learn",
-      title: "Understand the numbers",
-      body: "Keep the education system, labs, and saved progress close to the decision they explain.",
-      icon: BookOpenCheck,
-      meta: "Education retained",
-    },
   ];
 
   return (
     <div className="space-y-6">
-      <section className="workspace-hero section-shell relative overflow-hidden rounded-[1.25rem] p-6 sm:p-8 lg:p-10">
-        <div className="workspace-hero-glow" aria-hidden="true" />
-        <div className="relative grid gap-8 xl:grid-cols-[1fr_20rem] xl:items-end">
-          <div className="max-w-3xl">
-            <p className="type-label inline-flex rounded-[0.9rem] bg-cyan-200/8 px-4 py-2 text-xs uppercase text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-              Overview
-            </p>
-            <h1 className="type-display mt-6 text-4xl text-white sm:text-5xl">Your financial picture, in one place.</h1>
-            <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-300/80">
-              Connect what you earn, spend, own, and want next—then test the assumptions that shape the path.
-            </p>
-          </div>
-          <div className="workspace-sync rounded-[1rem] p-4">
-            <div className="flex items-start gap-3">
-              <span className={`mt-1.5 size-2 shrink-0 rounded-full ${marketDataAvailable ? "bg-cyan-200 shadow-[0_0_0_6px_rgba(103,232,249,0.08)]" : "bg-amber-200 shadow-[0_0_0_6px_rgba(253,230,138,0.08)]"}`} />
-              <div>
-                <p className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-zinc-400">Workspace pulse</p>
-                <p className="mt-2 text-sm text-zinc-100">
-                  {marketDataAvailable ? "Source-aware context is ready." : "Local market services are offline."}
-                </p>
-                <p className="mt-2 text-xs leading-5 text-zinc-400">
-                  {portfolio ? `${portfolio.dataFreshness.provider} · ${formatTimestamp(portfolio.dataFreshness.capturedAt)}` : marketDataAvailable ? "Finance API connected · add your own data to begin." : "Start local services to restore provider-backed values."}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <header className="flex flex-wrap items-end justify-between gap-4 py-2">
+        <div><h1 className="type-display text-3xl text-white sm:text-4xl">Overview</h1><p className="mt-3 text-sm text-zinc-400">Your holdings, allocation, and market context.</p></div>
+        <p className="text-xs text-zinc-400">{portfolio ? `${portfolio.dataFreshness.provider} · ${formatTimestamp(portfolio.dataFreshness.capturedAt)}` : marketDataAvailable ? "Portfolio service connected" : "Portfolio service unavailable"}</p>
+      </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-3">
         {summaryMetrics.map(({ label, value, detail, icon: Icon, tone }) => (
           <article key={label} className={`overview-metric glass-surface rounded-[1rem] p-5 overview-metric-${tone}`}>
             <div className="flex items-start justify-between gap-4">
@@ -241,31 +163,6 @@ export default async function AppOverviewPage() {
         watchlistEmpty={watchlistEmpty && marketItems.length === 0}
         movementSource={watchlistItems?.length ? "watchlist" : "market"}
       />
-
-      <section>
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <p className="type-label text-xs uppercase text-cyan-100/75">Core workspace</p>
-            <h2 className="type-card-title mt-3 text-2xl text-white">Choose the job in front of you</h2>
-          </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-          {coreAreas.map(({ href, eyebrow, title, body, icon: Icon, meta }) => (
-            <Link key={href} className="overview-area glass-surface group flex h-full flex-col rounded-[1.1rem] p-5" href={href}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="grid size-9 place-items-center rounded-[0.75rem] bg-cyan-200/[0.055] text-cyan-100">
-                  <Icon className="size-4" />
-                </div>
-                <ArrowRight className="size-4 text-zinc-400 transition group-hover:translate-x-1 group-hover:text-cyan-100" />
-              </div>
-              <p className="type-label mt-6 text-[0.62rem] uppercase text-cyan-100/65">{eyebrow}</p>
-              <h3 className="type-card-title mt-2 text-xl text-white">{title}</h3>
-              <p className="mt-3 text-sm leading-6 text-zinc-400">{body}</p>
-              <p className="mt-auto pt-5 font-mono text-[0.62rem] uppercase tracking-[0.15em] text-amber-100/65">{meta}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
 
       <section className="section-shell rounded-[1.1rem] p-5">
         <p className="max-w-3xl text-xs leading-5 text-zinc-400">

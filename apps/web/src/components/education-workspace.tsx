@@ -99,12 +99,18 @@ export function EducationDashboard() {
               Process over prediction: an original, interactive course for reading the Market Monitor, defining mechanical rules, sizing risk, testing evidence, and reviewing behavior without pretending uncertainty is gone.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link href={`/app/learn/${nextModule.slug}/${inProgressLesson.slug}`} className="inline-flex h-10 items-center gap-2 rounded-lg bg-cyan-100 px-4 text-sm font-medium text-[#071012] transition hover:bg-white">
-                {completedLessons > 0 ? "Continue study" : `Start with module ${moduleDisplayNumber(nextModule)}`}<ArrowRight className="size-4" aria-hidden="true" />
-              </Link>
-              <Link href="/app/crypto-monitor" className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.025] px-4 text-sm text-zinc-200 transition hover:bg-white/[0.07] hover:text-white">
-                Open Market Monitor<ExternalLink className="size-3.5" aria-hidden="true" />
-              </Link>
+              <Button asChild size="lg" className="rounded-[0.95rem] px-5">
+                <Link href={`/app/learn/${nextModule.slug}/${inProgressLesson.slug}`}>
+                  {completedLessons > 0 ? "Continue study" : `Start with module ${moduleDisplayNumber(nextModule)}`}
+                  <ArrowRight data-icon="inline-end" aria-hidden="true" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="rounded-[0.95rem] px-5">
+                <Link href="/app/crypto-monitor">
+                  Open Market Monitor
+                  <ExternalLink data-icon="inline-end" aria-hidden="true" />
+                </Link>
+              </Button>
             </div>
           </div>
           <div className="education-record-card rounded-[1rem] border border-white/[0.09] bg-black/25 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.24)] backdrop-blur-xl">

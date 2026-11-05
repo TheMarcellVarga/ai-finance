@@ -23,7 +23,7 @@ export function PublicInfoPage({
 }: PublicInfoPageProps) {
   return (
     <MarketingPage>
-      <section className="public-info-page page-stage px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+      <section className="public-info-page page-stage px-4 pb-12 pt-20 sm:px-6 sm:pb-16 sm:pt-24 lg:px-8 lg:pb-20 lg:pt-32">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(103,232,249,0.14),transparent_24rem),radial-gradient(circle_at_76%_22%,rgba(39,39,42,0.7),transparent_28rem),linear-gradient(180deg,rgba(9,9,11,0),rgba(9,9,11,0.62)_76%)]" />
         <div className="pointer-events-none cinematic-grid absolute inset-0 opacity-35" />
         <div className="relative z-10 mx-auto max-w-6xl">

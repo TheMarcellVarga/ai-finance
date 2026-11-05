@@ -1,27 +1,20 @@
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Bell } from "lucide-react";
+import { Settings } from "lucide-react";
 
 import { BrandMark } from "@/components/brand";
 import { WorkspaceNavigation } from "@/components/workspace-navigation";
-import { WorkspaceParticleBloom } from "@/components/workspace-particle-bloom";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="page-stage workspace-stage min-h-dvh text-white">
-      <div className="workspace-atmosphere" aria-hidden="true">
-        <WorkspaceParticleBloom />
-        <span className="workspace-orb workspace-orb-cyan" />
-        <span className="workspace-orb workspace-orb-amber" />
-      </div>
       <aside className="workspace-sidebar fixed inset-y-4 left-4 z-20 hidden w-72 rounded-[1.2rem] p-5 shadow-[0_28px_76px_rgba(0,0,0,0.38)] backdrop-blur-2xl xl:flex xl:flex-col">
-        <div className="glass-surface rounded-[1rem] p-3">
+        <div className="px-3 py-2">
           <BrandMark />
         </div>
         <WorkspaceNavigation />
         <div className="mt-auto flex items-center gap-2 border-t border-white/10 pt-4">
-          <Link href="/app/settings#flip-digests" aria-label="Confirmed flip notifications" title="Confirmed flip notifications" className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-white/5 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/50"><Bell className="size-4" aria-hidden="true" /></Link>
           <Link href="/app/settings" className="flex min-h-11 flex-1 items-center rounded-lg px-2 text-sm text-zinc-400 hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/50">Settings</Link>
           <UserButton userProfileMode="navigation" userProfileUrl="/app/settings/account" />
         </div>
@@ -33,7 +26,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <BrandMark compact />
               <div className="order-2 ml-auto shrink-0 md:order-3 md:ml-0">
                 <div className="flex items-center gap-1">
-                  <Link href="/app/settings#flip-digests" aria-label="Confirmed flip notifications" title="Confirmed flip notifications" className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-white/5 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/50"><Bell className="size-4" /></Link>
+                  <Link href="/app/settings" aria-label="Settings" className="inline-flex size-11 items-center justify-center rounded-lg text-zinc-300 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"><Settings className="size-4" /></Link>
                   <UserButton userProfileMode="navigation" userProfileUrl="/app/settings/account" />
                 </div>
               </div>
