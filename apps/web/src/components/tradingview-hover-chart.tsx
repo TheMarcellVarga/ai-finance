@@ -27,7 +27,7 @@ import {
   type AdaptiveSupertrendResult,
 } from "@/lib/adaptive-supertrend";
 
-const HOVER_DELAY_MS = 1_000;
+const HOVER_DELAY_MS = 300;
 const CLOSE_GRACE_MS = 180;
 const POPOVER_WIDTH = 780;
 const POPOVER_HEIGHT = 430;
@@ -66,14 +66,14 @@ export function getTradingViewSymbol(provider: CryptoMonitorProvider, symbol: st
   return `${exchange}:${pair}`;
 }
 
-function getPopoverPosition(anchor: DOMRect): PopoverPosition {
+function getPopoverPosition(anchor: DOMRect, cursor?: { x: number; y: number } | null): PopoverPosition {
   const width = Math.min(POPOVER_WIDTH, Math.max(280, window.innerWidth - VIEWPORT_GUTTER * 2));
   const left = Math.min(
-    Math.max(VIEWPORT_GUTTER, anchor.left),
+    Math.max(VIEWPORT_GUTTER, cursor ? cursor.x + 16 : anchor.left),
     Math.max(VIEWPORT_GUTTER, window.innerWidth - width - VIEWPORT_GUTTER),
   );
-  const belowTop = anchor.bottom + VIEWPORT_GUTTER;
-  const aboveTop = anchor.top - POPOVER_HEIGHT - VIEWPORT_GUTTER;
+  const belowTop = (cursor ? cursor.y : anchor.bottom) + VIEWPORT_GUTTER;
+  const aboveTop = (cursor ? cursor.y : anchor.top) - POPOVER_HEIGHT - VIEWPORT_GUTTER;
   const top = belowTop + POPOVER_HEIGHT <= window.innerHeight - VIEWPORT_GUTTER
     ? belowTop
     : Math.max(VIEWPORT_GUTTER, aboveTop);
@@ -234,7 +234,7 @@ function TradingViewChartPopover({
 
   return createPortal(
     <aside
-      className="fixed z-[90] max-h-[calc(100vh-1.5rem)] overflow-y-auto rounded-[1rem] border border-cyan-100/15 bg-[#081011]/[.98] shadow-[0_24px_80px_rgba(0,0,0,.55)] ring-1 ring-black/40"
+      className="motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:duration-150 fixed z-[90] max-h-[calc(100vh-1.5rem)] overflow-y-auto rounded-[1rem] border border-cyan-100/15 bg-[#081011]/[.98] shadow-[0_24px_80px_rgba(0,0,0,.55)] ring-1 ring-black/40"
       style={{ top: position.top, left: position.left, width: position.width }}
       role="dialog"
       aria-label={`${row.baseAsset} chart preview`}
@@ -358,6 +358,7 @@ export function TradingViewHoverChart({
   onKeyDown,
 }: TradingViewHoverChartProps) {
   const targetRef = useRef<HTMLElement | null>(null);
+  const cursorRef = useRef<{ x: number; y: number } | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [open, setOpen] = useState(false);
@@ -380,7 +381,7 @@ export function TradingViewHoverChart({
   const updatePosition = useCallback(() => {
     const anchor = targetRef.current?.getBoundingClientRect();
     if (anchor) {
-      setPosition(getPopoverPosition(anchor));
+      setPosition(getPopoverPosition(anchor, cursorRef.current));
     }
   }, []);
 
@@ -458,10 +459,11 @@ export function TradingViewHoverChart({
     onClick,
     onKeyDown,
     onMouseEnter: beginHover,
+    onMouseMove: (event: React.MouseEvent<HTMLElement>) => { cursorRef.current = { x: event.clientX, y: event.clientY }; },
     onMouseLeave: scheduleClose,
-    onFocus: beginHover,
+    onFocus: () => { cursorRef.current = null; beginHover(); },
     onBlur: scheduleClose,
-    title: "Keep the pointer here for 1 second to preview the chart",
+    title: "Hover to preview the chart",
   };
 
   return (

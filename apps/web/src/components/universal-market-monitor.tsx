@@ -10,7 +10,7 @@ import { TradingViewHoverChart } from "@/components/tradingview-hover-chart";
 import { MarketHistoryRow } from "@/components/market-history-row";
 import { InvestmentGlobe } from "@/components/investment-globe";
 import { countryLocation, geographyLabel, marketGeography } from "@/lib/investment-geography";
-import { assetMonitorDefinitions } from "@/lib/asset-monitors";
+import { assetMonitorDefinitions, assetMonitorFilterDefinitions } from "@/lib/asset-monitors";
 import { cryptoMonitorIntervals, type CryptoMonitorInterval } from "@/lib/crypto-monitor-intervals";
 import type { FinanceAssetSearchResponse, MarketMonitorResponse, MarketMonitorRow } from "@/lib/finance-api";
 
@@ -342,6 +342,7 @@ export function UniversalMarketMonitor({ initialAssetClass = "all" }: { initialA
   const [failures, setFailures] = useState<string[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [savedKeys, setSavedKeys] = useState<string[]>([]);
+  const [showGeography, setShowGeography] = useState(false);
   const [selectedGeoId, setSelectedGeoId] = useState<string | undefined>();
   const [marketCountries, setMarketCountries] = useState<Record<string, ProviderCountry>>({});
   const [geoCheckingId, setGeoCheckingId] = useState<string | undefined>();
@@ -464,15 +465,17 @@ export function UniversalMarketMonitor({ initialAssetClass = "all" }: { initialA
   }, []);
 
   useEffect(() => {
+    if (!showGeography) return;
     const companies = rows.filter((row) => row.assetClass === "equities" && !row.countryCode);
     void (async () => {
       for (let index = 0; index < companies.length; index += 3) {
         await Promise.all(companies.slice(index, index + 3).map((row) => lookupCountry(row, `${row.assetClass}:${row.symbol}`)));
       }
     })();
-  }, [lookupCountry, rows]);
+  }, [lookupCountry, rows, showGeography]);
 
   async function selectGeography(id: string) {
+    setShowGeography(true);
     setSelectedGeoId(id);
     const row = visibleRows.find((entry) => `${entry.assetClass}:${entry.symbol}` === id);
     if (row && !row.countryCode && !marketCountries[id]) await lookupCountry(row, id, true);
@@ -525,17 +528,20 @@ export function UniversalMarketMonitor({ initialAssetClass = "all" }: { initialA
 
   async function watch(row: UniversalRow) {
     const key = `${row.assetClass}:${row.symbol}`;
-    const response = await fetch("/api/finance/watchlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ticker: row.symbol, notes: `${row.assetClassLabel} · ${row.trend ?? "signal unavailable"} · ${interval}` }) });
-    if (response.ok) {
-      setSavedKeys((current) => [...current, key]);
+    try {
+      const response = await fetch("/api/finance/watchlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ticker: row.symbol, notes: `${row.assetClassLabel} · ${row.trend ?? "signal unavailable"} · ${interval}` }) });
+      if (!response.ok) {
+        const payload = (await response.json()) as RouteError;
+        throw new Error(payload.error?.message ?? "The market could not be added to the watchlist.");
+      }
+      setSavedKeys((current) => current.includes(key) ? current : [...current, key]);
       setStatus(`${row.symbol} added to the watchlist.`);
-    } else {
-      const payload = (await response.json()) as RouteError;
-      setStatus(payload.error?.message ?? "The market could not be added to the watchlist.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Watchlist unavailable. Try again shortly.");
     }
   }
 
-  const title = initialAssetClass === "all" ? "Adaptive Supertrend across every market." : `${assetMonitorDefinitions.find((item) => item.id === initialAssetClass)?.label ?? "Market"} Adaptive Supertrend map.`;
+  const title = initialAssetClass === "all" ? "Markets" : `${assetMonitorDefinitions.find((item) => item.id === initialAssetClass)?.label ?? "Market"} markets.`;
   const columnsPopover = columnsMenuOpen && columnsMenuPosition && typeof document !== "undefined"
     ? createPortal(
         <div
@@ -576,19 +582,20 @@ export function UniversalMarketMonitor({ initialAssetClass = "all" }: { initialA
 
     <section className="grid grid-cols-2 overflow-hidden border-y border-white/[0.06] bg-black/10 lg:grid-cols-4"><div className="p-4 sm:p-5"><p className="text-xs text-zinc-400">Markets monitored</p><p className="mt-2 font-mono text-2xl text-white">{rows.length || "—"}</p><p className="mt-1 text-xs text-zinc-400">{new Set(rows.map((row) => row.assetClass)).size || "—"} classes loaded</p></div><div className="border-l border-white/[0.06] p-4 sm:p-5"><p className="text-xs text-zinc-400">Bullish</p><p className="mt-2 font-mono text-2xl text-emerald-100">{rows.length ? metrics.bullish : "—"}</p><p className="mt-1 text-xs text-zinc-400">Confirmed candle</p></div><div className="border-t border-white/[0.06] p-4 sm:p-5 lg:border-l lg:border-t-0"><p className="text-xs text-zinc-400">Bearish</p><p className="mt-2 font-mono text-2xl text-rose-100">{rows.length ? metrics.bearish : "—"}</p><p className="mt-1 text-xs text-zinc-400">Confirmed candle</p></div><button type="button" onClick={jumpToNearest} disabled={!metrics.nearest} className="border-l border-t border-white/[0.06] p-4 text-left hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-200/35 disabled:cursor-default sm:p-5 lg:border-t-0"><p className="text-xs text-zinc-400">Nearest flip</p><p className="mt-2 truncate text-xl text-cyan-100">{metrics.nearest?.symbol ?? "—"}</p><p className="mt-1 text-xs text-zinc-400">{metrics.nearest ? `${metrics.nearest.distanceToFlipPercent!.toFixed(2)}% away` : "Waiting for signals"}</p></button></section>
 
-    <InvestmentGlobe items={globeItems} title="Where these markets are based" description="Select a market to inspect its reported issuer or operating location. The view follows your current asset class and table filters." selectedId={selectedGeoId} onSelect={(id) => void selectGeography(id)} />
+    <div><button type="button" aria-expanded={showGeography} aria-controls="market-geography" onClick={() => setShowGeography((value) => !value)} className="min-h-11 text-sm text-cyan-100 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200">{showGeography ? "Hide market geography" : "Show market geography"}</button></div>
+    {showGeography ? <div id="market-geography"><InvestmentGlobe items={globeItems} title="Where these markets are based" description="Select a market to inspect its reported issuer or operating location. The view follows your current asset class and table filters." selectedId={selectedGeoId} onSelect={(id) => void selectGeography(id)} /></div> : null}
 
     <section className="relative overflow-hidden rounded-[1rem] border border-white/[0.06] bg-[#080d0e]/96">
       <div className="relative border-b border-white/[0.06]">
-        <div className="grid gap-2.5 p-3 sm:grid-cols-2 sm:p-4 lg:grid-cols-3 2xl:grid-cols-[minmax(14rem,1.45fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(6rem,.8fr)_auto]">
-          <label className="relative min-w-0 sm:col-span-2 lg:col-span-3 2xl:col-span-1"><span className="sr-only">Search markets</span><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search symbol, name, or class" className="h-11 w-full rounded-[0.7rem] border border-white/10 bg-white/[0.025] pl-9 pr-3 text-sm text-white outline-none placeholder:text-zinc-400 focus:border-cyan-200/30 focus:ring-2 focus:ring-cyan-200/10" /></label>
-          <label className="flex min-w-0 items-center gap-2"><SlidersHorizontal className="size-4 shrink-0 text-zinc-400" /><span className="relative block min-w-0 flex-1"><span className="sr-only">Filter by market state</span><select value={trendFilter} onChange={(event) => setTrendFilter(event.target.value as TrendFilter)} className="h-11 w-full appearance-none rounded-[0.7rem] border border-white/10 bg-[#0c1213] px-3 pr-9 text-sm text-zinc-200 outline-none focus:border-cyan-200/40"><option value="all">All states</option><option value="bullish">Bullish</option><option value="bearish">Bearish</option><option value="recent">Recently flipped</option><option value="near">Within 1.5% of flip</option><option value="unavailable">Signal unavailable</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" /></span></label>
-          <label className="relative min-w-0"><span className="sr-only">Sort markets</span><select value={`${sortKey}:${sortDirection}`} onChange={(event) => applySortPreset(event.target.value)} className="h-11 w-full appearance-none rounded-[0.7rem] border border-cyan-200/20 bg-[#0c1213] px-3 pr-9 text-sm text-zinc-200 outline-none focus:border-cyan-200/40"><option value={`${sortKey}:${sortDirection}`}>Sort: {sortLabels[sortKey]} {sortDirection}</option><option value="volume:desc">Volume descending</option><option value="lastFlipAt:desc">Latest flip</option><option value="distanceToFlipPercent:asc">Nearest flip</option><option value="symbol:asc">Symbol ascending</option><option value="price:asc">Price ascending</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" /></label>
-          <label className="relative min-w-0"><span className="sr-only">Asset class</span><select value={assetClass} onChange={(event) => { const next = event.target.value; setAssetClass(next); void loadMarkets(next, interval); }} className="h-11 w-full appearance-none rounded-[0.7rem] border border-white/10 bg-[#0c1213] px-3 pr-9 text-sm text-zinc-200 outline-none focus:border-cyan-200/40"><option value="all">All asset classes</option>{assetMonitorDefinitions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" /></label>
-          <label className="relative min-w-0"><span className="sr-only">Timeframe</span><select value={interval} onChange={(event) => { const next = event.target.value as CryptoMonitorInterval; setInterval(next); void loadMarkets(assetClass, next); }} className="h-11 w-full appearance-none rounded-[0.7rem] border border-white/10 bg-[#0c1213] px-3 pr-9 text-sm text-zinc-200 outline-none focus:border-cyan-200/40">{cryptoMonitorIntervals.map((value) => <option key={value} value={value}>{intervalLabels[value]}</option>)}</select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" /></label>
-          <div className="flex items-center justify-end gap-2 sm:col-span-2 lg:col-span-1">
-            <button ref={columnsButtonRef} type="button" aria-haspopup="dialog" aria-expanded={columnsMenuOpen} aria-controls="market-column-visibility" onClick={() => setColumnsMenuOpen((current) => !current)} className="inline-flex h-11 items-center gap-2 rounded-[0.7rem] border border-white/10 bg-white/[0.025] px-3 text-xs text-zinc-300 transition-colors hover:border-cyan-200/25 hover:bg-cyan-200/[0.05] hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/30"><SlidersHorizontal aria-hidden="true" className="size-3.5 text-cyan-100/80" /><span>Columns</span><span className="font-mono text-xs text-cyan-100/70">{visibleColumnCount}/{columnOptions.length}</span></button>
-            <Button type="button" variant="outline" size="icon" aria-label={loading ? "Loading markets" : "Refresh markets"} title={loading ? "Loading markets" : "Refresh markets"} disabled={loading} onClick={() => void loadMarkets(assetClass, interval)} className="h-11 w-11 border-cyan-200/20 bg-cyan-200/[0.04] p-0 text-cyan-100 hover:bg-cyan-200/15"><RefreshCw aria-hidden="true" className={loading ? "size-4 animate-spin" : "size-4"} /></Button>
+        <div className="flex items-center gap-2 overflow-x-auto p-3">
+          <label className="relative w-56 shrink-0 xl:min-w-56 xl:flex-1"><span className="sr-only">Search markets</span><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search symbol, name, or class" className="h-10 w-full rounded-[0.7rem] border border-white/10 bg-white/[0.025] pl-9 pr-3 text-sm text-white outline-none placeholder:text-zinc-400 focus:border-cyan-200/30 focus:ring-2 focus:ring-cyan-200/10" /></label>
+          <span aria-hidden="true" className="mx-1 h-6 w-px shrink-0 bg-white/10" /><label className="flex w-36 shrink-0 items-center"><span className="relative block min-w-0 flex-1"><span className="sr-only">Filter by market state</span><select value={trendFilter} onChange={(event) => setTrendFilter(event.target.value as TrendFilter)} className="h-10 w-full appearance-none rounded-[0.7rem] border border-white/10 bg-[#0c1213] px-3 pr-9 text-sm text-zinc-200 outline-none focus:border-cyan-200/40"><option value="all">All states</option><option value="bullish">Bullish</option><option value="bearish">Bearish</option><option value="recent">Recently flipped</option><option value="near">Within 1.5% of flip</option><option value="unavailable">Signal unavailable</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" /></span></label>
+          <label className="relative w-44 shrink-0"><span className="sr-only">Sort markets</span><select value={`${sortKey}:${sortDirection}`} onChange={(event) => applySortPreset(event.target.value)} className="h-10 w-full appearance-none rounded-[0.7rem] border border-cyan-200/20 bg-[#0c1213] px-3 pr-9 text-sm text-zinc-200 outline-none focus:border-cyan-200/40"><option value={`${sortKey}:${sortDirection}`}>Sort: {sortLabels[sortKey]} {sortDirection}</option><option value="volume:desc">Volume descending</option><option value="lastFlipAt:desc">Latest flip</option><option value="distanceToFlipPercent:asc">Nearest flip</option><option value="symbol:asc">Symbol ascending</option><option value="price:asc">Price ascending</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" /></label>
+          <label className="relative w-44 shrink-0"><span className="sr-only">Asset class</span><select value={assetClass} onChange={(event) => { const next = event.target.value; setAssetClass(next); void loadMarkets(next, interval); }} className="h-10 w-full appearance-none rounded-[0.7rem] border border-white/10 bg-[#0c1213] px-3 pr-9 text-sm text-zinc-200 outline-none focus:border-cyan-200/40"><option value="all">All asset classes</option>{assetMonitorFilterDefinitions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" /></label>
+          <label className="relative w-28 shrink-0"><span className="sr-only">Timeframe</span><select value={interval} onChange={(event) => { const next = event.target.value as CryptoMonitorInterval; setInterval(next); void loadMarkets(assetClass, next); }} className="h-10 w-full appearance-none rounded-[0.7rem] border border-white/10 bg-[#0c1213] px-3 pr-9 text-sm text-zinc-200 outline-none focus:border-cyan-200/40">{cryptoMonitorIntervals.map((value) => <option key={value} value={value}>{intervalLabels[value]}</option>)}</select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" /></label>
+          <div className="flex shrink-0 items-center gap-2">
+            <button ref={columnsButtonRef} type="button" aria-haspopup="dialog" aria-expanded={columnsMenuOpen} aria-controls="market-column-visibility" onClick={() => setColumnsMenuOpen((current) => !current)} className="inline-flex h-10 items-center gap-2 rounded-[0.7rem] border border-white/10 bg-white/[0.025] px-3 text-xs text-zinc-300 transition-colors hover:border-cyan-200/25 hover:bg-cyan-200/[0.05] hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/30"><SlidersHorizontal aria-hidden="true" className="size-3.5 text-cyan-100/80" /><span>Columns</span><span className="font-mono text-xs text-cyan-100/70">{visibleColumnCount}/{columnOptions.length}</span></button>
+            <Button type="button" variant="outline" size="icon" aria-label={loading ? "Loading markets" : "Refresh markets"} title={loading ? "Loading markets" : "Refresh markets"} disabled={loading} onClick={() => void loadMarkets(assetClass, interval)} className="h-10 w-10 border-cyan-200/20 bg-cyan-200/[0.04] p-0 text-cyan-100 hover:bg-cyan-200/15"><RefreshCw aria-hidden="true" className={loading ? "size-4 animate-spin" : "size-4"} /></Button>
           </div>
         </div>
       </div>

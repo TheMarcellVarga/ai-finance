@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, BarChart3, Radar } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   movementScale,
@@ -33,8 +33,8 @@ type OverviewChartsProps = {
 
 const allocationColors = ["#a5f3fc", "#67e8f9", "#5eead4", "#fcd34d", "#94a3b8", "#c4b5fd"];
 const movementGridClassName = [
-  "grid grid-cols-[6rem_minmax(0,1fr)_4.75rem]",
-  "items-center gap-2 sm:grid-cols-[7.5rem_minmax(0,1fr)_5.25rem] sm:gap-3",
+  "grid grid-cols-[minmax(5.5rem,1fr)_minmax(5rem,1.15fr)_4.75rem]",
+  "items-center gap-3 sm:grid-cols-[minmax(7rem,1fr)_minmax(7rem,1.35fr)_5.5rem] sm:gap-4",
 ].join(" ");
 
 function percentFromBps(value: number) {
@@ -62,6 +62,22 @@ function formatSnapshot(value?: string) {
 }
 
 export function OverviewCharts({ allocation, watchlist, portfolioProvider = "market data provider", portfolioCapturedAt, movementProvider = "market data provider", movementCapturedAt, portfolioEmpty = false, watchlistEmpty = false, movementSource = "watchlist" }: OverviewChartsProps) {
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [scrollEdges, setScrollEdges] = useState({ top: false, bottom: false });
+  const updateScrollEdges = useCallback(() => {
+    const table = tableRef.current;
+    if (!table) return;
+    setScrollEdges({ top: table.scrollTop > 1, bottom: table.scrollTop + table.clientHeight < table.scrollHeight - 1 });
+  }, []);
+  useEffect(() => {
+    const table = tableRef.current;
+    if (!table) return;
+    updateScrollEdges();
+    const observer = new ResizeObserver(updateScrollEdges);
+    observer.observe(table);
+    for (const child of table.children) observer.observe(child);
+    return () => observer.disconnect();
+  }, [updateScrollEdges, watchlist]);
   const [activeAllocationIndex, setActiveAllocationIndex] = useState<number | null>(null);
   const allocationData = useMemo(() => normalizeAllocationData(allocation), [allocation]);
   const allocationTotal = totalWeightBps(allocationData);
@@ -182,10 +198,11 @@ export function OverviewCharts({ allocation, watchlist, portfolioProvider = "mar
         </div>
 
         {movementItems.length ? (
-          <div className="mt-6 space-y-4">
-            <div className={`${movementGridClassName} text-[0.62rem] uppercase tracking-[0.14em] text-zinc-400`}>
+          <div className="relative mt-7">
+          <div ref={tableRef} onScroll={updateScrollEdges} className="market-table-scroll xl:max-h-[max(10rem,calc(100dvh-37rem))] xl:overflow-y-scroll" tabIndex={0} role="region" aria-label="Market movement table">
+            <div className={`${movementGridClassName} border-b border-white/10 pb-3 text-[0.62rem] uppercase tracking-[0.14em] text-zinc-400`}>
               <span>Symbol</span>
-              <span className="text-center">Relative move</span>
+              <span className="text-center">Relative move <span className="sr-only">from zero</span></span>
               <span className="text-right">Move</span>
             </div>
             {movementItems.map((item) => {
@@ -193,30 +210,34 @@ export function OverviewCharts({ allocation, watchlist, portfolioProvider = "mar
               const width = movementWidth(value, movementMax) / 2;
               const isPositive = (value ?? 0) >= 0;
               return (
-                <div key={item.id} className={movementGridClassName}>
+                <div key={item.id} className={`${movementGridClassName} min-h-16 border-b border-white/[0.06] py-3 last:border-0`}>
                   <div className="min-w-0">
                     <p className="truncate whitespace-nowrap font-mono text-sm font-medium text-white" title={item.ticker}>{item.ticker}</p>
                     <p className="truncate text-[0.7rem] text-zinc-400" title={item.name}>{item.name}</p>
                   </div>
-                  <div className="relative h-7 rounded-[0.6rem] bg-white/[0.055]" aria-label={`${item.ticker} ${formatMove(value)} provider-reported movement`}>
-                    <span className="absolute inset-y-1.5 left-1/2 w-px -translate-x-1/2 bg-white/30" aria-hidden="true" />
+                  <div className="relative h-8" aria-label={`${item.ticker} ${formatMove(value)} provider-reported movement`}>
+                    <span className="absolute inset-x-0 top-1/2 h-px bg-white/[0.08]" aria-hidden="true" />
+                    <span className="absolute inset-y-1 left-1/2 w-px -translate-x-1/2 bg-white/30" aria-hidden="true" />
                     {value == null ? (
                       <span className="absolute inset-y-1/2 left-1/2 w-8 -translate-y-1/2 border-t border-dashed border-white/20" aria-hidden="true" />
                     ) : (
                       <span
-                        className={`absolute top-1/2 h-2.5 -translate-y-1/2 rounded-full ${isPositive ? "bg-cyan-200/85" : "bg-amber-200/85"}`}
+                        className={`absolute top-1/2 h-1.5 -translate-y-1/2 ${isPositive ? "rounded-r-full bg-cyan-200/90" : "rounded-l-full bg-amber-200/90"}`}
                         style={isPositive ? { left: "50%", width: `${width}%` } : { right: "50%", width: `${width}%` }}
                         aria-hidden="true"
                       />
                     )}
                   </div>
                   <div className="text-right">
-                    <p className={`font-mono text-xs ${value == null ? "text-zinc-400" : isPositive ? "text-cyan-100" : "text-amber-100"}`}>{formatMove(value)}</p>
+                    <p className={`font-mono text-sm tabular-nums ${value == null ? "text-zinc-400" : isPositive ? "text-cyan-100" : "text-amber-100"}`}>{formatMove(value)}</p>
                     <p className="mt-1 truncate font-mono text-[0.68rem] text-zinc-400" title={item.displayPrice ?? "N/A"}>{item.displayPrice ?? "N/A"}</p>
                   </div>
                 </div>
               );
             })}
+          </div>
+          {scrollEdges.top && <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-[#171c1b] to-transparent" />}
+          {scrollEdges.bottom && <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-[#171c1b] to-transparent" />}
           </div>
         ) : (
           <p className="mt-6 rounded-[1rem] bg-amber-100/[0.035] p-4 text-sm leading-6 text-amber-50/75">

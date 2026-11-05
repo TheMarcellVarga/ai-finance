@@ -122,6 +122,11 @@ export const assetMonitorDefinitions: AssetMonitorDefinition[] = [
   },
 ];
 
+export const assetMonitorFilterDefinitions = [
+  ...assetMonitorDefinitions.filter((definition) => definition.id === "crypto"),
+  ...assetMonitorDefinitions.filter((definition) => definition.id !== "crypto"),
+];
+
 export function getAssetMonitorDefinition(id: string) {
   return assetMonitorDefinitions.find((definition) => definition.id === id);
 }
