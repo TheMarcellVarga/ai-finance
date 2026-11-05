@@ -1,16 +1,12 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 
 import { BrandMark } from "@/components/brand";
-import { Button } from "@/components/ui/button";
 
 const footerGroups = [
   {
     title: "Platform",
     links: [
       { href: "/#product", label: "Product" },
-      { href: "/#how-it-works", label: "How it works" },
-      { href: "/#pricing", label: "Pricing" },
       { href: "/#security", label: "Security" },
     ],
   },
@@ -34,21 +30,10 @@ export function SiteFooter() {
         <div className="space-y-5">
           <BrandMark />
           <p className="max-w-xl text-sm leading-7 text-zinc-400 sm:text-base">
-            AI-assisted research and portfolio decision support for cited briefs,
-            scenario review, and risk explanation. Aperture does not execute trades,
-            provide personalized investment advice, or promise outcomes.
+            Market research, portfolio review, and scenario planning.
+            No trade execution or personalized investment advice.
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Button asChild size="lg" className="rounded-[0.95rem] px-5">
-              <Link href="/app" prefetch={false}>
-                Open workspace
-                <ArrowRight data-icon="inline-end" />
-              </Link>
-            </Button>
-            <p className="max-w-sm text-xs leading-5 text-zinc-600">
-              Built for research discipline, data freshness, citations, and secure backend boundaries.
-            </p>
-          </div>
+
         </div>
 
         <div className="grid gap-8 sm:grid-cols-2 lg:justify-self-end lg:gap-12">

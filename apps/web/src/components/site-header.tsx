@@ -6,13 +6,6 @@ import { BrandMark } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { hasClerkRuntimeKeys } from "@/lib/clerk-config";
 
-const navItems = [
-  { href: "/#product", label: "Product" },
-  { href: "/#how-it-works", label: "How it works" },
-  { href: "/#pricing", label: "Pricing" },
-  { href: "/#security", label: "Security" },
-];
-
 export function SiteHeader() {
   const authConfigured = hasClerkRuntimeKeys();
 
@@ -22,17 +15,6 @@ export function SiteHeader() {
         <div className="glass-surface flex h-16 w-full items-center justify-between rounded-[1.2rem] px-4 sm:px-5 lg:px-6">
           <div className="pointer-events-auto relative flex w-full items-center justify-between gap-4">
             <BrandMark />
-            <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center rounded-[0.95rem] bg-black/20 p-1 text-sm font-light text-zinc-400 xl:flex">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="rounded-[0.8rem] px-4 py-2 transition-[background-color,color] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-white/[0.05] hover:text-white"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
             <div className="flex shrink-0 items-center gap-2">
               <details className="group relative shrink-0 xl:hidden">
                 <summary
@@ -43,18 +25,7 @@ export function SiteHeader() {
                   <span className="sr-only">Menu</span>
                 </summary>
                 <div className="absolute right-0 top-[calc(100%+0.75rem)] w-[min(20rem,calc(100vw-2rem))] rounded-[1.1rem] border border-white/10 bg-[#0a0f10]/98 p-2 shadow-[0_24px_70px_rgba(0,0,0,0.42)] backdrop-blur-2xl">
-                  <nav aria-label="Compact marketing navigation" className="grid gap-1">
-                    {navItems.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className="rounded-[0.8rem] px-3 py-2.5 text-sm text-zinc-300 transition-[background-color,color] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/35"
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                  </nav>
-                  <div className="mt-2 grid gap-1 border-t border-white/10 pt-2">
+                  <div className="grid gap-1">
                     {authConfigured ? (
                       <>
                         <Show when="signed-in">
