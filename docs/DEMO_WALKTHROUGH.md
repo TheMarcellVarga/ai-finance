@@ -11,45 +11,39 @@ scripts/dev-local
 If a Next dev server is already running, use that server and confirm the Go API is healthy:
 
 ```bash
-curl -fsS http://127.0.0.1:8080/v1/health
+curl -fsS http://127.0.0.1:8120/v1/health
 ```
 
 ## Walkthrough
 
 1. Open `/`.
-   - Say: "Aperture is an AI financial research workspace, not a trading bot or brokerage product."
-   - Show the source, freshness, and advice-boundary signals in the hero preview.
+   - Say: "Aperture helps people research markets, review holdings, and compare goal scenarios. It is not a brokerage or an advice service."
+   - Introduce the five destinations: Overview, Markets, Portfolio, Plan, and Learn.
 
-2. Open `/product`.
-   - Say: "The product is built around a golden path: load a portfolio, inspect exposure, generate cited AI research, and save the result."
-   - Point out portfolio workspace, research room, filing intelligence, and goal scenarios.
+2. Open `/app` (Overview).
+   - Show portfolio state, market context, and freshness where available.
+   - Explain that unavailable services are surfaced as unavailable rather than replaced with invented values.
 
-3. Open `/app/portfolio`.
-   - Refresh provider-backed data.
-   - Show holdings, allocation, concentration, intraday chart, provider freshness, and the decision-support disclaimer.
+3. Open `/app/monitors` (Markets).
+   - Search and filter the supported asset universe; inspect monitor state, source, freshness, and coverage limits.
+   - Say: "The monitor gives market context. Provider gaps and proxy instruments are labeled, and the page does not tell users what to trade."
+
+4. Open `/app/portfolio`.
+   - Show provider-backed holdings, allocation, concentration, and the portfolio context available for review.
    - Say: "The browser does not compute authoritative finance state. The UI calls server routes backed by the Go finance API."
 
-4. Open `/app/monitors`.
-   - Move through equities, fixed income, funds, currencies, commodities, real estate, derivatives, private-market proxies, cash/rates, protection/contracts, and the dedicated crypto monitor.
-   - Say: "Each monitor uses a free public source, shows its quote convention and freshness, and marks proxy data instead of implying coverage we do not have."
+5. Open `/app/goals` (Plan).
+   - Show the goal scenario and the assumptions behind it.
+   - Say: "These are user-controlled illustrations, not forecasts or promises."
 
-5. Open `/app/research`.
-   - Show filing highlights, material risk review, and retrieved chunks.
-   - Say: "Phase 6 uses deterministic fixtures locally but keeps the final contract: citations, freshness, assumptions, and safety labels."
+6. Open `/app/learn`.
+   - Show how lessons and labs connect to market and planning questions.
 
-6. Open `/app/goals`.
-   - Show milestones, contribution scenarios, and educational challenges.
-   - Say: "Goal planning is framed as scenario education and research discipline, not a promise of returns."
+7. Optionally open `/app/research` for the supporting document workflow.
+   - Show private source upload, cited analysis, human section review, and reviewed export when local storage and the API are available.
+   - Clarify that this is a supporting research capability, not the primary navigation story.
 
-7. Open `/app/risk`.
-   - Show concentration, allocation, limitations, and review actions.
-   - Say: "The risk explainer gives review areas, not buy or sell instructions."
-
-8. Open `/app/billing`.
-   - Show plan limits and usage period.
-   - Say: "Entitlements are server-enforced and route handlers check usage before AI generation."
-
-9. Close with the engineering story.
+8. Close with the engineering story.
    - Next.js owns product and AI UX.
    - Go owns finance APIs, ownership, calculations, rate limits, and audit behavior.
    - Supabase stores user-owned finance data, AI persistence, usage, billing metadata, and research chunks.

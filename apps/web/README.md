@@ -1,31 +1,30 @@
 # Aperture Web App
 
-Next.js App Router scaffold for the AI Financial Intelligence Workspace.
+Next.js 16 App Router application for Aperture Financial Intelligence. It owns public marketing pages, authenticated workspace rendering, same-origin API routes, AI user experience, and Clerk/Stripe webhook handlers.
 
-This app owns:
-- marketing routes: `/`, `/product`, `/pricing`, `/security`
-- workspace shell routes: `/app`, `/app/portfolio`, `/app/research`, `/app/goals`, `/app/watchlist`, `/app/risk`, `/app/settings`, `/app/billing`
-- future Clerk session UX, AI streaming surfaces, Stripe/Clerk webhooks, and BFF routes
+The Go service in `services/api` owns authoritative finance APIs, portfolio calculations, provider normalization, and ownership enforcement. Next.js server code calls the Go API; browser code generally talks to Next.js.
 
-It does not own authoritative finance calculations or portfolio data access. Those belong to the planned Go API in `services/api`.
+## Primary Workspace Routes
+
+- `/app` — Overview
+- `/app/monitors` — Markets
+- `/app/portfolio` — Portfolio
+- `/app/goals` — Plan
+- `/app/learn` — Learn
+
+Research, risk, watchlist, evaluations, settings, and billing are supporting surfaces. The app also contains the same-origin BFF and research workflow routes.
 
 ## Commands
 
+For the integrated local workspace, run `scripts/dev-local` from the repository root. It starts or reuses the Go API, document worker, and web app on the configured local ports.
+
+For web-only work:
+
 ```bash
-npm run dev -- -p 3100
+npm run dev -- -p 3020
 npm run lint
 npm run build
 npm audit --omit=dev
 ```
 
-## Current Scope
-
-Phase 2 scaffold only:
-- Next.js 16 App Router
-- TypeScript
-- Tailwind CSS v4
-- shadcn/ui initialization
-- dark fintech theme tokens
-- responsive marketing and workspace skeletons
-
-Auth, Supabase, Go API integration, Stripe, real AI routes, and data persistence are later roadmap phases.
+External AI calls remain disabled by default. The web app does not contain finance service credentials or authoritative portfolio calculations.
