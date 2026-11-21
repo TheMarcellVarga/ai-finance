@@ -1559,3 +1559,19 @@ body {
   .market-table-scroll::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.08); border-radius: 999px; }
   .market-table-scroll::-webkit-scrollbar-thumb { background: #80b8bc; border-radius: 999px; }
 }
+
+/* Match globe hints and gestures to its actual container and input device. */
+.investment-globe-viewport { container-type: inline-size; }
+.investment-globe-viewport canvas { cursor: default; }
+.investment-globe-drag-hint { display: none; }
+@container (min-width: 520px) {
+  .investment-globe-touch-hint { display: none; }
+  .investment-globe-drag-hint { display: inline; }
+  .investment-globe-viewport canvas { cursor: grab; }
+  .investment-globe-viewport canvas:active { cursor: grabbing; }
+}
+@media (pointer: coarse) {
+  .investment-globe-touch-hint { display: inline; }
+  .investment-globe-drag-hint { display: none; }
+  .investment-globe-viewport canvas { cursor: default; }
+}

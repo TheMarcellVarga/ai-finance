@@ -65,6 +65,11 @@ Avoid nested cards and decorative card-heavy layouts.
 
 ## Investment Geography
 
+- Keep geography as an expandable supporting view in Markets and Portfolio, closed initially so the market table and holdings remain primary. Mount the 3D scene only while expanded. No new primary destination is needed.
+- Reuse the shared Button primitives, compact card-title typography, zinc secondary text, 16px workspace panel corners, graphite surfaces, and cyan/teal selection colors. The globe uses the same cyan accent family for its atmosphere and selection; it does not introduce a separate electric-blue identity.
+- A dominant globe sits beneath region controls, with the geographic breakdown adjacent on desktop and stacked below on mobile. A focused country is highlighted; its floating label uses existing asset names and available daily changes, with the selected asset's attribution basis, available provider, readable snapshot timestamp, and reported freshness shown in the breakdown. Never invent missing freshness or quote values.
+- Keep an expandable "All assets" disclosure for individual selection. Cross-border and missing-location assets remain explicit breakdown buckets, visible in every region, rather than decorative orbit rings or invented pins.
+- Rotation is opt-in, pauses on region or asset selection as well as direct globe interaction, and is disabled for reduced motion; camera changes are immediate for reduced motion. On narrow screens, region and asset controls guide the view while native vertical scrolling remains available. Set `touch-action: pan-y` inline on the OrbitControls element because its default inline `touch-action: none` overrides canvas CSS.
 - Every asset in Portfolio and Markets must appear in the geographic breakdown and remain selectable, even when it has no single country pin.
 - Resolve a country from live provider profile metadata first, then an explicit provider country name, ISIN registration, or a reported listing venue mapped to its country. Label the basis. Do not use a hand-maintained company-symbol list or assume a U.S. listing from ticker shape.
 - A fund's profile or listing country is its domicile/listing lens, not its underlying country allocation. Show look-through exposure only when a provider supplies actual country weights; the current FMP plan restricts that endpoint.

@@ -194,6 +194,8 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
   const [chartMode, setChartMode] = useState<"price" | "volume">("price");
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [liveRefresh, setLiveRefresh] = useState(false);
+  const [showGeography, setShowGeography] = useState(false);
+  const [geographyFocusToken, setGeographyFocusToken] = useState(0);
   const [monthlyContribution, setMonthlyContribution] = useState(1500);
   const [riskLens, setRiskLens] = useState<"concentration" | "income" | "review">("concentration");
   const [portfolioName, setPortfolioName] = useState("");
@@ -209,7 +211,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
   const holdings = useMemo(() => portfolio?.holdings ?? [], [portfolio]);
   const globeItems = useMemo(() => holdings.map((holding) => {
     const providerCountry = providerCountries[holding.id];
-    return assetGeography({ ...holding.asset, countryCode: providerCountry?.code ?? holding.asset.countryCode, countrySource: providerCountry?.source ?? holding.asset.provider }, holding.id, holding.marketValueCents);
+    return { ...assetGeography({ ...holding.asset, countryCode: providerCountry?.code ?? holding.asset.countryCode, countrySource: providerCountry?.source ?? holding.asset.provider }, holding.id, holding.marketValueCents), capturedAt: holding.asset.capturedAt, provider: holding.asset.provider, freshness: holding.asset.freshness };
   }), [holdings, providerCountries]);
   const geographyByHoldingId = useMemo(() => new Map(globeItems.map((item) => [item.id, item])), [globeItems]);
   const holdingLocationLabel = (holding: Holding) => geographyLabel(geographyByHoldingId.get(holding.id)!);
@@ -500,7 +502,8 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
             ))}
           </section>
 
-          <InvestmentGlobe items={globeItems} title="Where your holdings are based" description="Inspect the reported country behind each holding and see how much portfolio value can be mapped. Use this as a starting point for a diversification review." selectedId={selectedHolding?.id} onSelect={(id) => { const holding = holdings.find((entry) => entry.id === id); if (holding) void loadChart(holding.asset.ticker, interval); }} valueLabel="portfolio value" />
+          <div><Button variant="ghost" size="lg" type="button" aria-expanded={showGeography} aria-controls="portfolio-geography" onClick={() => setShowGeography((value) => !value)} className="px-0 text-cyan-100 hover:text-white">{showGeography ? "Hide holding geography" : "Explore holding geography"}</Button></div>
+          {showGeography ? <div id="portfolio-geography"><InvestmentGlobe items={globeItems} title="Where your holdings are based" description="Inspect the reported country behind each holding and see how much portfolio value can be mapped. Use this as a starting point for a diversification review." selectedId={selectedHolding?.id} focusToken={geographyFocusToken} onSelect={(id) => { const holding = holdings.find((entry) => entry.id === id); if (holding) void loadChart(holding.asset.ticker, interval); }} valueLabel="portfolio value" /></div> : null}
 
           <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
             <div className="section-shell rounded-[1.25rem] p-5 sm:p-6">
@@ -522,7 +525,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                   <button
                     key={`mobile-${holding.id}`}
                     type="button"
-                    onClick={() => void loadChart(holding.asset.ticker, interval)}
+                    onClick={() => { setGeographyFocusToken((value) => value + 1); void loadChart(holding.asset.ticker, interval); }}
                     className={`w-full rounded-[0.95rem] border p-4 text-left transition ${
                       selectedTicker === holding.asset.ticker
                         ? "border-cyan-200/35 bg-cyan-200/[0.07]"
@@ -583,7 +586,7 @@ export function PortfolioWorkspace({ initialPortfolio, initialMeta, initialChart
                         <td className="py-4">
                           <button
                             type="button"
-                            onClick={() => void loadChart(holding.asset.ticker, interval)}
+                            onClick={() => { setGeographyFocusToken((value) => value + 1); void loadChart(holding.asset.ticker, interval); }}
                             aria-label={`Load ${holding.asset.name} price history`}
                             className="rounded text-left hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60"
                           >

@@ -9,6 +9,10 @@ export type GeographyItem = {
   countryCode?: string;
   value?: number;
   basis: string;
+  dailyChangePercent?: number;
+  capturedAt?: string;
+  provider?: string;
+  freshness?: string;
 };
 
 type Country = { name: string; lat: number; lng: number };

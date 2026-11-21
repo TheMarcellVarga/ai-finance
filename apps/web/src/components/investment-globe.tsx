@@ -1,12 +1,33 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
-import { Globe2, MapPin } from "lucide-react";
+import { Component, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { ChevronDown, ChevronRight, Globe2, MapPin } from "lucide-react";
 
-import { countryLocation, geographyLabel, type GeographyItem } from "@/lib/investment-geography";
+import { GeographyReview } from "@/components/geography-review";
+import { Button } from "@/components/ui/button";
+import { geographyLabel, type GeographyItem } from "@/lib/investment-geography";
+import { countryRegion, globeRegions, groupGeography, type GlobeRegion } from "@/lib/investment-globe-data";
 
-const GlobeScene = dynamic(() => import("@/components/investment-globe-scene"), { ssr: false });
+const GlobeScene = dynamic(() => import("@/components/investment-globe-scene"), {
+  ssr: false,
+  loading: () => <div className="absolute inset-0 flex items-center justify-center text-sm text-zinc-400" role="status">Loading globe…</div>,
+});
+
+class GlobeBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+function formatSnapshot(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Timestamp unavailable" : new Intl.DateTimeFormat("en-US", {
+    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZoneName: "short",
+  }).format(date);
+}
 
 type Props = {
   items: GeographyItem[];
@@ -15,76 +36,112 @@ type Props = {
   selectedId?: string;
   onSelect?: (id: string) => void;
   valueLabel?: string;
+  focusToken?: number;
 };
 
-export function InvestmentGlobe({ items, title, description, selectedId, onSelect, valueLabel }: Props) {
+export function InvestmentGlobe({ items, title, description, selectedId, onSelect, valueLabel, focusToken = 0 }: Props) {
+  const breakdownId = useId();
+  const regionStripRef = useRef<HTMLDivElement>(null);
+  const [sceneUnavailable, setSceneUnavailable] = useState(false);
+  const [sceneGeneration, setSceneGeneration] = useState(0);
   const [localId, setLocalId] = useState<string | undefined>();
   const [activityToken, setActivityToken] = useState(0);
   const activeId = selectedId ?? localId;
-  const selected = items.find((item) => item.id === activeId);
-  const countryItems = useMemo(() => items.filter((item) => item.scope === "country" && countryLocation(item.countryCode)), [items]);
-  const globalItems = items.filter((item) => item.scope === "global");
-  const unattributedItems = items.filter((item) => item.scope === "unattributed" || (item.scope === "country" && !countryLocation(item.countryCode)));
-  const countries = new Set(countryItems.map((item) => item.countryCode?.toUpperCase())).size;
-  const totalValue = items.reduce((sum, item) => sum + (item.value ?? 0), 0);
-  const countryValue = countryItems.reduce((sum, item) => sum + (item.value ?? 0), 0);
-  const countryBreakdown = useMemo(() => {
-    const groups = new Map<string, { name: string; count: number; value: number }>();
-    for (const item of countryItems) {
-      const code = item.countryCode!.toUpperCase();
-      const current = groups.get(code) ?? { name: countryLocation(code)!.name, count: 0, value: 0 };
-      current.count += 1;
-      current.value += item.value ?? 0;
-      groups.set(code, current);
+  const selectedItem = items.find((item) => item.id === activeId);
+  const selectionKey = JSON.stringify([activeId, selectedItem?.scope, selectedItem?.countryCode, focusToken]);
+  const [regionView, setRegionView] = useState<{ region: GlobeRegion; selectionKey: string }>({ region: "global", selectionKey });
+  const region = regionView.selectionKey === selectionKey ? regionView.region : selectedItem?.scope === "country" ? countryRegion(selectedItem.countryCode) ?? "global" : "global";
+  // Preserve manual region browsing until an external selection or resolved location changes.
+  // Reconcile during render so a parent selection never paints behind a stale filter.
+  if (regionView.selectionKey !== selectionKey) setRegionView({ region, selectionKey });
+  function setRegion(nextRegion: GlobeRegion) { setRegionView({ region: nextRegion, selectionKey }); }
+  const selected = selectedItem && (region === "global" || selectedItem.scope !== "country" || countryRegion(selectedItem.countryCode) === region) ? selectedItem : undefined;
+  const groups = useMemo(() => groupGeography(items), [items]);
+  const countryGroups = groups.filter((group) => group.countryCode);
+  const visibleGroups = groups.filter((group) => !group.countryCode || region === "global" || countryRegion(group.countryCode) === region);
+  const reviewCounts = { mapped: 0, crossBorder: 0, unattributed: 0 };
+  let latestSnapshot = "";
+  for (const group of visibleGroups) {
+    const theme = group.countryCode ? "mapped" : group.id === "global" ? "crossBorder" : "unattributed";
+    reviewCounts[theme] += group.items.length;
+    for (const item of group.items) {
+      if (!item.capturedAt) continue;
+      const capturedAt = Date.parse(item.capturedAt);
+      if (Number.isFinite(capturedAt)) {
+        const timestamp = new Date(capturedAt).toISOString();
+        if (timestamp > latestSnapshot) latestSnapshot = timestamp;
+      }
     }
-    const otherGroups = [
-      { name: "Global / cross-border", count: globalItems.length, value: globalItems.reduce((sum, item) => sum + (item.value ?? 0), 0) },
-      { name: "Country not supplied", count: unattributedItems.length, value: unattributedItems.reduce((sum, item) => sum + (item.value ?? 0), 0) },
-    ].filter((group) => group.count > 0);
-    return [...groups.values(), ...otherGroups].sort((left, right) => totalValue > 0 ? right.value - left.value : right.count - left.count);
-  }, [countryItems, globalItems, totalValue, unattributedItems]);
+  }
+  const totalValue = groups.reduce((sum, group) => sum + group.value, 0);
+  const regionLabel = globeRegions.find((entry) => entry.id === region)!.label;
+
+  useEffect(() => {
+    const strip = regionStripRef.current;
+    const active = strip?.querySelector<HTMLButtonElement>('[aria-pressed="true"]');
+    if (!strip || !active) return;
+    const stripBox = strip.getBoundingClientRect();
+    const activeBox = active.getBoundingClientRect();
+    const delta = activeBox.left < stripBox.left ? activeBox.left - stripBox.left : activeBox.right > stripBox.right ? activeBox.right - stripBox.right : 0;
+    if (delta) strip.scrollTo({ left: strip.scrollLeft + delta, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }, [region, selectionKey]);
+
+  const unavailableScene = <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-8 text-center" role="status"><p className="max-w-sm text-sm leading-6 text-zinc-300">The 3D globe is unavailable. Your locations and assets are still available in the list.</p><Button variant="outline" size="lg" type="button" onClick={() => { setSceneUnavailable(false); setSceneGeneration((value) => value + 1); }}>Retry globe</Button></div>;
 
   function select(id: string) {
+    const item = items.find((entry) => entry.id === id);
+    if (item?.scope === "country") setRegion(countryRegion(item.countryCode) ?? "global");
+    else setRegion("global");
     setActivityToken((current) => current + 1);
     setLocalId(id);
     onSelect?.(id);
   }
 
   return (
-    <section className="overflow-hidden rounded-[1.25rem] border border-white/[0.07] bg-[#081113]" aria-label={title}>
-      <div className="grid lg:grid-cols-[minmax(15rem,0.9fr)_minmax(22rem,1.1fr)]">
-        <div className="flex flex-col justify-between p-5 sm:p-7">
-          <div>
-            <div className="flex items-center gap-2 text-cyan-100/80"><Globe2 className="size-4" aria-hidden="true" /><h2 className="type-card-title text-xl text-white">{title}</h2></div>
-            <p className="mt-3 max-w-lg text-sm leading-6 text-zinc-400">{description}</p>
-            <div className="mt-6 grid grid-cols-2 gap-4 border-y sm:grid-cols-4 border-white/[0.07] py-4">
-              <div><p className="font-mono text-xl text-white">{countries}</p><p className="mt-1 text-xs text-zinc-400">Countries</p></div>
-              <div><p className="font-mono text-xl text-cyan-100">{countryItems.length}</p><p className="mt-1 text-xs text-zinc-400">Country linked</p></div>
-              <div><p className="font-mono text-xl text-cyan-100">{globalItems.length}</p><p className="mt-1 text-xs text-zinc-400">Global</p></div>
-              <div><p className="font-mono text-xl text-zinc-300">{unattributedItems.length}</p><p className="mt-1 text-xs text-zinc-400">No country data</p></div>
-            </div>
-            {totalValue > 0 ? <p className="mt-4 text-xs text-zinc-400">{((countryValue / totalValue) * 100).toFixed(1)}% of {valueLabel ?? "value"} is country linked. Every asset is included in the breakdown below.</p> : null}
-            {countryBreakdown.length > 0 ? <div className="mt-5 max-h-56 space-y-3 overflow-y-auto pr-1" aria-label="Complete geography breakdown">
-              {countryBreakdown.map((country) => <div key={country.name} className="grid grid-cols-[minmax(0,1fr)_4rem] items-center gap-x-3 gap-y-1 text-xs"><span className="truncate text-cyan-50/80">{country.name}</span><span className="text-right font-mono text-cyan-100">{totalValue > 0 ? `${((country.value / totalValue) * 100).toFixed(1)}%` : country.count}</span><span className="col-span-2 h-1 overflow-hidden rounded-full bg-white/[0.07]"><span className="block h-full rounded-full bg-cyan-200/70" style={{ width: `${totalValue > 0 ? (country.value / totalValue) * 100 : (country.count / Math.max(items.length, 1)) * 100}%` }} /></span></div>)}
-            </div> : null}
-          </div>
-          <div className="mt-6 min-h-20 rounded-xl bg-white/[0.035] p-4" aria-live="polite">
-            {selected ? <><p className="font-mono text-sm text-white">{selected.label}</p><p className="mt-1 text-sm text-cyan-100">{geographyLabel(selected)}</p><p className="mt-2 text-xs leading-5 text-zinc-400">{selected.basis ?? "Provider country metadata"}</p></> : <><p className="text-sm text-white">Select an asset or marker</p><p className="mt-1 text-xs leading-5 text-zinc-400">Rotate the globe to inspect locations. Listed country or issuer location does not equal underlying economic exposure.</p></>}
-          </div>
+    <section className="w-full min-w-0 overflow-hidden rounded-[1rem] border border-white/[0.07] bg-[#080d0e]" aria-label={title}>
+      <header className="px-5 pt-6 sm:px-7 sm:pt-7">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="type-card-title text-xl text-white">{title}</h2>
+          <p className="flex items-center gap-2 text-xs text-zinc-400"><Globe2 className="size-4 text-cyan-200" aria-hidden="true" />{countryGroups.length} {countryGroups.length === 1 ? "country" : "countries"}<span aria-hidden="true">·</span>{items.length} {items.length === 1 ? "asset" : "assets"}</p>
         </div>
-        <div className="relative min-h-[19rem] overflow-hidden border-t border-white/[0.06] bg-[radial-gradient(circle_at_50%_50%,#133136_0%,#091719_47%,#071012_75%)] lg:min-h-[24rem] lg:border-l lg:border-t-0">
-          <GlobeScene items={items} selectedId={activeId} activityToken={activityToken} onSelect={select} />
-          <div className="pointer-events-none absolute right-3 top-3 z-10 flex max-w-[11rem] flex-col gap-1.5 text-right text-[0.64rem]">
-            {globalItems.length > 0 ? <span className="rounded-full border border-cyan-100/25 bg-[#10292c]/90 px-2.5 py-1 text-cyan-50">Cyan ring · Cross-border · {globalItems.length}</span> : null}
-            {unattributedItems.length > 0 ? <span className="rounded-full border border-amber-100/25 bg-[#30271a]/90 px-2.5 py-1 text-amber-50">Amber ring · No country data · {unattributedItems.length}</span> : null}
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">{description}</p>
+        <div ref={regionStripRef} className="mt-5 flex gap-1 overflow-x-auto pb-2" role="group" aria-label="Globe region">
+          {globeRegions.map((entry) => <Button key={entry.id} variant="ghost" size="lg" type="button" aria-pressed={region === entry.id} onClick={() => { setRegion(entry.id); setActivityToken((value) => value + 1); }} className={`min-h-11 shrink-0 rounded-full px-4 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-200 ${region === entry.id ? "bg-cyan-200/10 text-cyan-50 hover:bg-cyan-200/15" : "text-zinc-400 hover:bg-white/5 hover:text-white"}`}>{entry.label}</Button>)}
+        </div>
+      </header>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.8fr)_minmax(16rem,1fr)]">
+        <div className="investment-globe-viewport relative isolate h-[23rem] overflow-hidden sm:h-[31rem] lg:h-[34rem]">
+          {sceneUnavailable ? unavailableScene : <GlobeBoundary key={sceneGeneration} fallback={unavailableScene}><GlobeScene items={items} selectedId={activeId} region={region} activityToken={activityToken + focusToken} onSelect={select} onUnavailable={() => setSceneUnavailable(true)} /></GlobeBoundary>}
+          <p className="pointer-events-none absolute bottom-4 left-5 right-5 flex items-center justify-center gap-2 text-xs text-zinc-400"><MapPin className="size-3.5 text-cyan-200" aria-hidden="true" /><span className="investment-globe-touch-hint">Choose a region or asset to explore</span><span className="investment-globe-drag-hint">Drag to explore · select a country or asset</span></p>
+        </div>
+        <div className="flex min-w-0 flex-col border-t border-white/[0.07] px-5 py-5 sm:px-7 lg:border-t-0 lg:pl-2">
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            <h3 id={breakdownId} tabIndex={-1} className="scroll-mt-40 rounded text-base font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring xl:scroll-mt-6">
+              {region === "global" ? "All locations" : regionLabel}
+            </h3>
+            <span className="text-xs text-zinc-400">{totalValue > 0 ? `% of ${valueLabel ?? "value"}` : "Assets"}</span>
           </div>
-          <span className="pointer-events-none absolute bottom-3 left-4 flex items-center gap-1.5 text-[0.65rem] text-zinc-400"><MapPin className="size-3 text-cyan-200" aria-hidden="true" /><span className="lg:hidden">Select an asset below to rotate</span><span className="hidden lg:inline">Drag to rotate · scroll to zoom</span></span>
+          <div className="max-h-64 overflow-y-auto lg:max-h-72 lg:overscroll-contain" aria-label="Geography breakdown">
+            {visibleGroups.length === 0 ? <p className="py-5 text-sm leading-6 text-zinc-400">{items.length === 0 ? "No assets available in this view yet." : "No assets mapped to this region. Choose Global to see all locations."}</p> : visibleGroups.map((group) => {
+              const active = group.items.some((item) => item.id === activeId);
+              return <button key={group.id} type="button" onClick={() => select(group.items[0].id)} aria-pressed={active} className={`flex min-h-12 w-full items-center gap-3 border-b border-white/[0.055] py-3 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-200 ${active ? "text-cyan-100" : "text-zinc-300 hover:text-white"}`}>
+                <span className={`flex size-8 shrink-0 items-center justify-center rounded-full text-[0.65rem] font-medium ${active ? "bg-cyan-200/15" : "bg-white/[0.06]"}`}>{group.countryCode ?? (group.id === "global" ? <Globe2 className="size-4" aria-hidden="true" /> : "—")}</span>
+                <span className="min-w-0 flex-1 truncate">{group.name}</span><span className="font-mono text-xs tabular-nums">{totalValue > 0 ? `${((group.value / totalValue) * 100).toFixed(1)}%` : group.items.length}</span><ChevronRight className="size-3.5 shrink-0 text-zinc-500" aria-hidden="true" />
+              </button>;
+            })}
+          </div>
+          {region !== "global" && groups.some((group) => !group.countryCode) ? <p className="mt-3 text-xs leading-5 text-zinc-400">Cross-border and unlocated assets stay visible in every region.</p> : null}
+          <div className="mt-auto break-words pt-6" aria-live="polite">
+            {selected ? <><p className="text-lg font-medium text-white">{selected.label}</p><p className="mt-1 text-sm text-cyan-100">{geographyLabel(selected)}</p>{Number.isFinite(selected.dailyChangePercent) ? <p className={`mt-2 font-mono text-sm tabular-nums ${selected.dailyChangePercent! >= 0 ? "text-emerald-300" : "text-rose-300"}`}>{selected.dailyChangePercent! >= 0 ? "+" : ""}{selected.dailyChangePercent!.toFixed(2)}% <span className="font-sans text-xs text-zinc-400">24h</span></p> : null}<p className="mt-2 text-xs leading-5 text-zinc-400">{selected.basis}</p>{selected.provider ? <p className="mt-1 text-xs leading-5 text-zinc-400">Source: {selected.provider}</p> : null}{selected.capturedAt ? <p className="mt-1 text-xs leading-5 text-zinc-400">Snapshot: <time dateTime={selected.capturedAt}>{formatSnapshot(selected.capturedAt)}</time></p> : null}{selected.freshness ? <p className="mt-1 text-xs leading-5 text-zinc-400">Freshness: {selected.freshness}</p> : null}</> : <><p className="text-sm text-white">{items.length ? "Explore a location" : "Your geography starts here"}</p><p className="mt-2 text-xs leading-5 text-zinc-400">{items.length ? "Select a country to highlight it on the globe, or choose an asset below." : "Assets appear here when they are available in this view. No country locations have been assumed."}</p></>}
+          </div>
         </div>
       </div>
-      {items.length > 0 ? <div className="flex gap-2 overflow-x-auto border-t border-white/[0.06] px-5 py-3" aria-label="Asset geography selections">
-        {items.map((item) => <button key={item.id} type="button" onClick={() => select(item.id)} aria-pressed={activeId === item.id} className={`shrink-0 rounded-full border px-3 py-1.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/50 ${activeId === item.id ? "border-cyan-200/50 bg-cyan-200/10 text-cyan-50" : "border-white/10 text-cyan-50/65 hover:border-white/25 hover:text-white"}`} title={`${item.label}: ${geographyLabel(item)}`}>{item.label}<span className="ml-2 text-cyan-100/70">{item.scope === "global" ? "Global" : item.scope === "unattributed" ? "No country" : item.countryCode}</span></button>)}
-      </div> : null}
-      <p className="border-t border-white/[0.06] px-5 py-3 text-[0.68rem] leading-5 text-zinc-400">Geography is an issuer or provider location lens, not a measure of revenue, holdings, currency, or risk exposure. Crypto networks have no single country. Not financial advice.</p>
+      {items.length > 0 ? <details className="group border-t border-white/[0.07] open:bg-white/[0.018]">
+        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 text-sm font-medium text-zinc-200 hover:bg-white/[0.025] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-7 [&::-webkit-details-marker]:hidden">All assets <span className="ml-auto font-mono text-xs text-zinc-400">{items.length}</span><ChevronDown className="size-4 shrink-0 text-zinc-400 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" /></summary>
+        <div className="grid max-h-64 gap-1 overflow-y-auto px-5 pb-4 sm:grid-cols-2 sm:px-7 xl:grid-cols-3" aria-label="Asset geography selections">{items.map((item) => <button key={item.id} type="button" onClick={() => select(item.id)} aria-pressed={activeId === item.id} className={`flex min-h-11 items-center justify-between gap-3 rounded-lg px-3 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-200 ${activeId === item.id ? "bg-cyan-200/10 text-cyan-50" : "text-zinc-300 hover:bg-white/5 hover:text-white"}`}><span className="truncate">{item.label}</span><span className="max-w-[60%] truncate text-xs text-zinc-400">{item.scope === "global" ? "Cross-border" : item.scope === "unattributed" ? "No country" : geographyLabel(item)}</span></button>)}</div>
+      </details> : null}
+      <GeographyReview counts={reviewCounts} breakdownId={breakdownId} capturedAt={latestSnapshot || undefined} />
+      <p className="border-t border-white/[0.07] px-5 py-4 text-xs leading-5 text-zinc-400 sm:px-7">Geography reflects reported issuer, registration, or listing location, not underlying economic exposure. Crypto networks have no single country. Not financial advice.</p>
     </section>
   );
 }
