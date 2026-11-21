@@ -3,6 +3,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 
 import type { PortfolioBrief, PortfolioSnapshot } from "@/lib/ai/portfolio-brief";
+import type { GeographyReviewInput, GeographyTheme } from "@/lib/ai/geography-review";
 
 type PersistenceResult = {
   status: "persisted" | "not_configured" | "failed";
@@ -20,6 +21,48 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export function aiPersistenceConfigured() {
   return Boolean(supabaseUrl && supabaseServiceRoleKey);
+}
+
+export async function persistGeographyReview(input: {
+  authToken: string;
+  input: GeographyReviewInput;
+  order: GeographyTheme[];
+  provider: string;
+  model: string;
+  usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
+  latencyMs: number;
+}) {
+  try {
+    const [profile] = await supabaseFetch<Array<{ id: string }>>("profiles?on_conflict=clerk_user_id", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+      body: JSON.stringify([{ clerk_user_id: decodeJwtSubject(input.authToken) }]),
+    });
+    await supabaseFetch("usage_events", {
+      method: "POST",
+      body: JSON.stringify({
+        user_id: profile.id,
+        feature: "structured_research",
+        count: 1,
+        billing_period: billingPeriod(),
+        metadata: { workflow: "geography_review", model: input.model, provider: input.provider, usage: input.usage, latencyMs: input.latencyMs, estimatedCost: null },
+      }),
+    });
+    const [thread] = await supabaseFetch<Array<{ id: string }>>("ai_threads", {
+      method: "POST",
+      body: JSON.stringify({ user_id: profile.id, title: "Geography review", surface: "geography" }),
+    });
+    await supabaseFetch("ai_messages", {
+      method: "POST",
+      body: JSON.stringify([
+        { thread_id: thread.id, role: "user", content: "Rank the topics in the current geography breakdown.", safety_labels: ["research_only"] },
+        { thread_id: thread.id, role: "assistant", content: JSON.stringify({ order: input.order }), citations: [{ source: "geography_breakdown", counts: input.input }], safety_labels: ["research_only"] },
+      ]),
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isUuid(value?: string) {

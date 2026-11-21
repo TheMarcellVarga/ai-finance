@@ -57,6 +57,7 @@ Never expose service-role keys, provider keys, webhook secrets, raw JWTs, or pri
 - `AI_RESEARCH_FIXTURE_SCENARIO`, development/test only; `valid`, `repair`, `partial`, or `provider_failure`
 - `AI_RESEARCH_FIXTURE_DELAY_MS`, development/test only; abortable deterministic delay capped at 30 seconds for cancellation verification
 - `AI_EXTERNAL_CALLS_ENABLED`, optional kill switch; must be exactly `true` before any live external AI provider is called
+- `AI_GEOGRAPHY_REVIEW_ENABLED`, optional and off by default. After provider spend is approved, set this and `AI_EXTERNAL_CALLS_ENABLED` to `true` with a configured model provider and server-side AI persistence to enable on-demand geography ranking. Algo mode works without any model or AI infrastructure. AI ranking uses the shared research allowance and receives only aggregate geography counts.
 - `AI_MODEL_PROVIDER`, optional; use `openai` for direct OpenAI or `gateway` for Vercel AI Gateway. Defaults to `openai` only when live calls are explicitly enabled.
 - `OPENAI_API_KEY`, optional for direct OpenAI testing
 - `OPENAI_MODEL`, optional for direct OpenAI testing; defaults to `gpt-5-mini`
